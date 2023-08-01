@@ -22,15 +22,6 @@ const HomeClient = ({ numberOfPlayers = 2 }: Props) => {
   const [players, setPlayers] = useState<Players>([]);
   const [winner, setWinner] = useState<Player>();
 
-  const createNewDeck = (): number[] => {
-    //  const newDeck = [1, 1, 2, 2, 2]; // 0 = Squirrel, 1 = Nut
-    const newDeck = [
-      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1,
-    ]; // 0 = Squirrel, 1 = Nut
-    return shuffle(newDeck);
-  };
   const shuffle = (deck: number[]): number[] => {
     let currentIndex = deck.length,
       randomIndex;
@@ -52,6 +43,16 @@ const HomeClient = ({ numberOfPlayers = 2 }: Props) => {
   };
 
   useEffect(() => {
+    const createNewDeck = (): number[] => {
+      //  const newDeck = [1, 1, 2, 2, 2]; // 0 = Squirrel, 1 = Nut
+      const newDeck = [
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1,
+      ]; // 0 = Squirrel, 1 = Nut
+      return shuffle(newDeck);
+    };
+
     if (!currentDeck) setCurrentDeck(createNewDeck());
   }, [currentDeck]);
 
@@ -60,14 +61,14 @@ const HomeClient = ({ numberOfPlayers = 2 }: Props) => {
       const playersArray = [];
       for (let i = 0; i < numberOfPlayers; i++) {
         playersArray.push({
-          name: `Player ${i + 1}`,
+          name: i + 1 === numberOfPlayers ? "Harbor" : `Player ${i + 1}`,
           hasTurn: i === 0,
           bankedCards: [],
         });
       }
       setPlayers(playersArray);
     }
-  }, []);
+  }, [players.length, numberOfPlayers]);
 
   const drawCard = () => {
     if (!currentDeck) return;
@@ -153,45 +154,42 @@ const HomeClient = ({ numberOfPlayers = 2 }: Props) => {
       ))}
       <div className="col-span-2 flex flex-col gap-2 items-center p-4 rounded shadow bg-white">
         {isGameOver && (
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center py-1 px-2 rounded-sm shadow bg-blue-400 text-white">
             <span>Game Over!</span>
             {winner && (
-              <span>
-                <span className="bg-green-400 py-1 px-2 rounded-sm">
-                  {winner.name}
-                </span>{" "}
-                is the Winner!
-              </span>
+              <span>{`${winner.name.toLocaleUpperCase()} Wins!`}</span>
             )}
           </div>
         )}
-        <div className="flex gap-2">
-          {currentCard === 2 ? (
-            <button
-              className="bg-slate-400 text-white rounded-sm py-2 px-4"
-              onClick={finishTurn}
-            >
-              Dang It!!
-            </button>
-          ) : (
-            <>
+        {!isGameOver && (
+          <div className="flex gap-2">
+            {currentCard === 2 ? (
               <button
-                className="bg-blue-500 disabled:bg-blue-300 text-white rounded-sm py-2 px-4"
-                onClick={drawCard}
-                disabled={currentDeck && currentDeck.length < 1}
+                className="bg-slate-400 text-white rounded-sm py-2 px-4"
+                onClick={finishTurn}
               >
-                Draw Card
+                Dang It!!
               </button>
-              <button
-                className="bg-green-500 disabled:bg-green-300 disabled:cursor-not-allowed text-white rounded-sm py-2 px-4"
-                onClick={bankCards}
-                disabled={!currentStreak.length}
-              >
-                Bank Cards
-              </button>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <button
+                  className="bg-blue-500 disabled:bg-blue-300 text-white rounded-sm py-2 px-4"
+                  onClick={drawCard}
+                  disabled={currentDeck && currentDeck.length < 1}
+                >
+                  Draw Card
+                </button>
+                <button
+                  className="bg-green-500 disabled:bg-green-300 disabled:cursor-not-allowed text-white rounded-sm py-2 px-4"
+                  onClick={bankCards}
+                  disabled={!currentStreak.length}
+                >
+                  Bank Cards
+                </button>
+              </>
+            )}
+          </div>
+        )}
         <div className="flex justify-center h-full w-full">
           {currentCard && (
             <div
@@ -221,7 +219,7 @@ const HomeClient = ({ numberOfPlayers = 2 }: Props) => {
           )}
         </div>
       </div>
-      <div className="col-span-2 flex gap-2 p-4 rounded shadow bg-white">
+      {/* <div className="col-span-2 flex gap-2 p-4 rounded shadow bg-white">
         {currentDeck &&
           currentDeck.map((card: number, index) => (
             <div
@@ -232,7 +230,7 @@ const HomeClient = ({ numberOfPlayers = 2 }: Props) => {
             `}
             ></div>
           ))}
-      </div>
+      </div> */}
     </div>
   );
 };

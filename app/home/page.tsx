@@ -1,7 +1,14 @@
 import HomeClient from "./HomeClient";
 
-const Home = () => {
-  return <HomeClient numberOfPlayers={10} />;
+const Home = async () => {
+  const result = await fetch("http://localhost:3000/api/hello", {
+    method: "GET",
+    headers: { "Content-type": "application/json" },
+  }).then((res) => res.json());
+
+  console.log("result:", result);
+
+  return <HomeClient numberOfPlayers={2} />;
 };
 
 export default Home;
