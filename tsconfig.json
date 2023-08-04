@@ -20,9 +20,17 @@
          }
       ],
       "paths": {
+         "@/components/*": ["./lib/components/*"],
+         "@/types/*": ["./lib/types/*"],
          "@/*": ["./*"]
       }
    },
-   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+   "include": [
+      "next-env.d.ts",
+      "**/*.ts",
+      "**/*.tsx",
+      ".next/types/**/*.ts",
+      "utilities/scripts/generateIconNameTypes.js"
+   ],
    "exclude": ["node_modules"]
 }
