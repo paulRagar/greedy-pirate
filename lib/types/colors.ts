@@ -4,9 +4,13 @@ export type Colors =
    | 'cyan'
    | 'orange'
    | 'red'
+   | 'purple'
+   | 'pink'
    | 'teal'
    | 'dark'
+   | 'mid'
    | 'light'
    | 'transparent'
    | 'white'
-   | 'black';
+   | 'black'
+   | 'none';

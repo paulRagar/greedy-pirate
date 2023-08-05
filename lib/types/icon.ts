@@ -12,4 +12,4 @@ export const iconColorClasses = {
    black: 'fill-black',
 };
 
-export type IconNames = 'XmarkSolid';
+export type IconNames = "Acorn" | "Coin1" | "Coin2" | "Coin3" | "Coin4" | "Coin5" | "Moon" | "NotAllowed" | "Pirate" | "Squirrel" | "Sun" | "Warning" | "XMark";

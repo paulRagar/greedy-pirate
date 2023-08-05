@@ -41,12 +41,10 @@ function writeFile(filePath: string, data: string): Promise<void> {
 
 async function generateIconTypes() {
    try {
-      console.log('generateIconTypes');
       const dirPath = './lib/components/icons';
       const filenames = await readDirectory(dirPath);
       const types: Array<string | undefined> = filenames
          .map((fileName: string) => {
-            console.log('fileName:', fileName);
             const typeName = path.parse(fileName).name;
             if (typeName === 'index') return;
             return `"${typeName}"`;
@@ -65,9 +63,9 @@ async function generateIconTypes() {
       }
 
       await writeFile(targetFilePath, targetFileContent);
-      console.log('generated icon type name definition!');
+      console.log('Generated icon type name definition(s)!');
    } catch (err: any) {
-      console.log('error generating icon name type definition...', err);
+      console.log('Error generating icon name type definition(s)...', err);
    }
 }
 

@@ -1,1 +1,13 @@
-export { default as XmarkSolid } from './XmarkSolid';
+export { default as Acorn } from './Acorn';
+export { default as Coin1 } from './Coin1';
+export { default as Coin2 } from './Coin2';
+export { default as Coin3 } from './Coin3';
+export { default as Coin4 } from './Coin4';
+export { default as Coin5 } from './Coin5';
+export { default as Moon } from './Moon';
+export { default as NotAllowed } from './NotAllowed';
+export { default as Pirate } from './Pirate';
+export { default as Squirrel } from './Squirrel';
+export { default as Sun } from './Sun';
+export { default as Warning } from './Warning';
+export { default as XMark } from './XMark';

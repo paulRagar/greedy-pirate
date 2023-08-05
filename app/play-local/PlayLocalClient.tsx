@@ -1,5 +1,7 @@
 'use client';
 
+import Button from '@/components/button/Button';
+import Icon from '@/components/icon/Icon';
 import { useEffect, useState } from 'react';
 
 type Player = {
@@ -9,9 +11,13 @@ type Player = {
    bankedCards: number[];
 };
 
-type Players = Player[];
+type Players = Array<Player>;
 
-const PlayLocalClient = () => {
+interface Props {
+   showDeck?: boolean;
+}
+
+const PlayLocalClient = ({ showDeck }: Props) => {
    const [currentCard, setCurrentCard] = useState<number | null>();
    const [currentDeck, setCurrentDeck] = useState<number[]>();
    const [currentStreak, setCurrentStreak] = useState<number[]>([]);
@@ -38,11 +44,12 @@ const PlayLocalClient = () => {
 
    useEffect(() => {
       const createNewDeck = (): number[] => {
-         //  const newDeck = [1, 1, 2, 2, 2]; // 0 = Squirrel, 1 = Nut
          const newDeck = [
             2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-         ]; // 0 = Squirrel, 1 = Nut
+         ];
+         // Squirrel = 2; Nut = 1;
+         // newDeck.length = 52; 37 Nuts and 15 Squirrels
          return shuffle(newDeck);
       };
 
@@ -64,15 +71,23 @@ const PlayLocalClient = () => {
 
    const drawCard = () => {
       if (!currentDeck) return;
-      const deckCopy = [...currentDeck];
-      const topCard = deckCopy.shift();
-      if (!topCard) return;
-      setCurrentCard(topCard);
-      setCurrentDeck(deckCopy);
-      if (!deckCopy.length) setIsGameOver(true);
-      setWinner([...players].sort((a, b) => b.bankedCards.length - a.bankedCards.length)[0]);
-      const newCurrentStreak = [...currentStreak, topCard];
-      setCurrentStreak(newCurrentStreak);
+      setCurrentDeck((prevState) => {
+         const tempState = prevState?.length ? [...prevState] : [];
+         const topCard = tempState.shift();
+         if (!topCard) return tempState;
+
+         setCurrentCard(topCard);
+
+         if (!tempState.length) setIsGameOver(true);
+         setWinner([...players].sort((a, b) => b.bankedCards.length - a.bankedCards.length)[0]);
+
+         setCurrentStreak((prevState) => [...prevState, topCard]);
+         return tempState;
+      });
+      // if (!deckCopy.length) setIsGameOver(true);
+      // setWinner([...players].sort((a, b) => b.bankedCards.length - a.bankedCards.length)[0]);
+      // const newCurrentStreak = [...currentStreak, topCard];
+      // setCurrentStreak(newCurrentStreak);
    };
 
    const bankCards = () => {
@@ -143,35 +158,47 @@ const PlayLocalClient = () => {
             {!isGameOver && (
                <div className='flex gap-2'>
                   {currentCard === 2 ? (
-                     <button className='bg-slate-400 text-white rounded-sm py-2 px-4' onClick={finishTurn}>
+                     <Button color='teal' onClick={finishTurn}>
                         Dang It!!
-                     </button>
+                     </Button>
                   ) : (
                      <>
-                        <button
-                           className='bg-blue-500 disabled:bg-blue-300 text-white rounded-sm py-2 px-4'
-                           onClick={drawCard}
-                           disabled={currentDeck && currentDeck.length < 1}>
+                        <Button color='teal' onClick={drawCard} disabled={currentDeck && currentDeck.length < 1}>
                            Draw Card
-                        </button>
-                        <button
-                           className='bg-green-500 disabled:bg-green-300 disabled:cursor-not-allowed text-white rounded-sm py-2 px-4'
-                           onClick={bankCards}
-                           disabled={!currentStreak.length}>
+                        </Button>
+                        <Button color='purple' onClick={bankCards} disabled={!currentStreak.length}>
                            Bank Cards
-                        </button>
+                        </Button>
                      </>
                   )}
                </div>
             )}
             <div className='flex justify-center h-full w-full'>
-               {currentCard && (
+               {/* Deck Card START */}
+               <div className='min-w-[200px] min-h-[250px] p-4 flex justify-center items-center rounded border-[1px] border-slate-200 shadow-xl'>
+                  <div className='w-full h-full border-4 border-green-700 p-2'>
+                     <div className='w-full h-full bg-green-700 p-2'></div>
+                  </div>
+               </div>
+               {/* Deck Card END */}
+               {currentCard ? (
                   <div
                      className={`
-               card min-w-[100px] min-h-[150px] flex justify-center items-center rounded
+               card min-w-[200px] min-h-[250px] flex justify-center items-center rounded border-2 border-black
                ${currentCard === 1 ? 'bg-green-200' : 'bg-red-200'}
               `}>
-                     <span>{currentCard === 1 ? 'Nut' : 'Squirrel'}</span>
+                     {currentCard === 1 ? (
+                        <Icon name='Acorn' className='fill-yellow-600' width={200} />
+                     ) : (
+                        <Icon name='Squirrel' className='fill-orange-900' width={200} />
+                     )}
+                  </div>
+               ) : (
+                  <div
+                     className={`
+         card min-w-[200px] min-h-[250px] flex justify-center items-center rounded
+        `}>
+                     Greedy Pirate
                   </div>
                )}
             </div>
@@ -191,18 +218,19 @@ const PlayLocalClient = () => {
                )}
             </div>
          </div>
-         {/* <div className="col-span-2 flex gap-2 p-4 rounded shadow bg-white">
-        {currentDeck &&
-          currentDeck.map((card: number, index) => (
-            <div
-              key={index}
-              className={`
-               card min-w-[15px] min-h-[23px] flex justify-center items-center rounded-sm
-               ${card === 1 ? "bg-green-200" : "bg-red-200"}
-            `}
-            ></div>
-          ))}
-      </div> */}
+         {showDeck && (
+            <div className='col-span-2 flex gap-2 p-4 rounded shadow bg-white'>
+               {currentDeck &&
+                  currentDeck.map((card: number, index) => (
+                     <div
+                        key={index}
+                        className={`
+                  card min-w-[15px] min-h-[23px] flex justify-center items-center rounded-sm
+                  ${card === 1 ? 'bg-green-200' : 'bg-red-200'}
+                  `}></div>
+                  ))}
+            </div>
+         )}
       </div>
    );
 };

@@ -1,37 +1,48 @@
-import React, { useRef } from 'react';
-import { ButtonIcon, btnColorClasses, btnSizeClasses } from '@/lib/types/button';
-import { useButton, AriaButtonProps } from 'react-aria';
+import React from 'react';
+import { buttonColorClasses, DefaultButton, iconButtonSizeClasses } from '@/lib/types/button';
 import { twMerge } from 'tailwind-merge';
 import Icon from '../icon/Icon';
 import Spinner from '../spinner/Spinner';
+import { IconNames } from '@/types/icon';
 
-const ButtonIcon = ({ children, color, size, iconName, iconSize, loading, ...rest }: ButtonIcon & AriaButtonProps) => {
-   let ref = useRef(null);
-   let { buttonProps } = useButton(rest, ref);
+export interface ButtonIcon extends DefaultButton {
+   iconName: IconNames;
+   iconSize?: number;
+}
 
+const ButtonIcon = ({
+   color,
+   size,
+   onClick,
+   iconName,
+   iconSize,
+   loading,
+   ...rest
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & ButtonIcon) => {
    return (
       <button
-         ref={ref}
-         {...buttonProps}
          className={twMerge(`
             group rounded-sm disabled:cursor-not-allowed disabled:opacity-40
-            ${color === 'transparent' ? 'text-black dark:text-white' : 'text-white'}
-            ${btnSizeClasses[(size as keyof object) || 'md']}
-            ${btnColorClasses[(color as keyof object) || 'blue']}
-         `)}>
+            ${color === 'transparent' ? 'text-slate-700 dark:text-white' : 'text-white'}
+            ${iconButtonSizeClasses[(size as keyof object) || 'md']}
+            ${buttonColorClasses[(color as keyof object) || 'none']}
+         `)}
+         onClick={(e) => {
+            e.preventDefault();
+            onClick && onClick(e);
+         }}
+         {...rest}>
          {loading && <Spinner />}
          {!loading && (
             <span className='flex flex-row items-center justify-center'>
                <Icon
-                  name={iconName || 'Calendar'}
+                  name={iconName || 'NotAllowed'}
                   width={`${iconSize || 16}`}
                   height={`${iconSize || 16}`}
                   className={twMerge(`
-                     ${children && 'mr-[5px]'}
                      ${color === 'transparent' ? 'fill-black dark:fill-white' : 'fill-white'}
                   `)}
                />
-               {children}
             </span>
          )}
       </button>
