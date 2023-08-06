@@ -101,8 +101,10 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
          tempState[currentPlayerIndex].hasTurn = false;
          if (tempState[currentPlayerIndex + 1]) {
             tempState[currentPlayerIndex + 1].hasTurn = true;
+            setPlayerWithTurn(tempState[currentPlayerIndex + 1]);
          } else {
             tempState[0].hasTurn = true;
+            setPlayerWithTurn(tempState[0]);
          }
          return tempState;
       });
@@ -121,6 +123,7 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
             setPlayerWithTurn(tempState[currentPlayerIndex + 1]);
          } else {
             tempState[0].hasTurn = true;
+            setPlayerWithTurn(tempState[0]);
          }
          return tempState;
       });
