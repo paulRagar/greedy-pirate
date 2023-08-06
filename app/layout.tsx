@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <title>Greedy Pirate</title>
          </head>
          <body>
-            <div className='h-screen w-screen p-4 bg-gray-200 dark:bg-slate-900'>{children}</div>
+            <div className='h-screen w-screen max-w-[1460px] m-auto p-4 bg-gray-200 dark:bg-slate-900'>{children}</div>
             <Analytics />
             <ThemeToggle />
          </body>

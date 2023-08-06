@@ -19,8 +19,8 @@ const ChooseGameClient = ({}: Props) => {
 
    return (
       <Page>
-         <Panel>
-            <h1 className='font-semibold mb-4'>Greedy Pirate</h1>
+         <Panel className='flex flex-col items-center'>
+            <span className='mb-4 text-3xl font-semibold text-yellow-500'>Greedy Pirate</span>
             <span className='mb-1 text-secondary'>Choose a Game Mode</span>
             <div className='flex gap-4'>
                <Button color='teal' onClick={() => handleGameChoice('local')}>

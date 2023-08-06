@@ -7,6 +7,7 @@ export type Colors =
    | 'purple'
    | 'pink'
    | 'teal'
+   | 'yellow'
    | 'dark'
    | 'mid'
    | 'light'
