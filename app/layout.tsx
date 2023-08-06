@@ -1,7 +1,8 @@
 'use client';
-import ThemeToggle from '@/components/theme-toggle/ThemeToggle';
-import { useEffect } from 'react';
 import './globals.css';
+import { useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
+import ThemeToggle from '@/components/theme-toggle/ThemeToggle';
 
 const description = `Embark on a thrilling voyage with 'Greedy Pirate', where a treasure of coins awaits, but beware - one wrong card could plunder your loot in this high-stakes, risk-and-reward browser card game!`;
 
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
          </head>
          <body>
             <div className='h-screen w-screen p-4 bg-gray-200 dark:bg-slate-900'>{children}</div>
+            <Analytics />
             <ThemeToggle />
          </body>
       </html>
