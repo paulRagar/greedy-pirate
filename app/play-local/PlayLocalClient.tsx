@@ -55,12 +55,12 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
    useEffect(() => {
       const createNewDeck = (): Deck => {
          let newDeck: Array<number | 'pirate'>;
-         // if (evenGreedier) {
-         //    newDeck = [...evenGreedierDeck];
-         // } else {
-         //    newDeck = [...greedyDeck];
-         // }
-         newDeck = [1, 1, 1, 'pirate', 'pirate'];
+         if (evenGreedier) {
+            newDeck = [...evenGreedierDeck];
+         } else {
+            newDeck = [...greedyDeck];
+         }
+
          return shuffle(newDeck);
       };
 
