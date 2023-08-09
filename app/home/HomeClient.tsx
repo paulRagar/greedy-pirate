@@ -12,8 +12,8 @@ const HomeClient = () => {
    };
    return (
       <Page>
-         <Panel>
-            <h1 className='font-semibold mb-4 bg-purp'>Greedy Pirate</h1>
+         <Panel className='flex flex-col items-center'>
+            <span className='mb-4 text-3xl font-semibold text-yellow-500'>Greedy Pirate</span>
             <Button onClick={handlePlay} color='purple'>
                Start Game
             </Button>

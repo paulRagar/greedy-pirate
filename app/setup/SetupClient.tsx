@@ -49,8 +49,8 @@ const SetupClient = () => {
 
    return (
       <Page>
-         <Panel>
-            <h1 className='font-semibold mb-4'>Greedy Pirate</h1>
+         <Panel className='flex flex-col items-center'>
+            <span className='mb-4 text-3xl font-semibold text-yellow-500'>Greedy Pirate</span>
             <div className='flex flex-col gap-2'>
                <span className='text-sm text-secondary'>{`Enter Player Names`}</span>
                {players.map((player, index) => (
@@ -71,7 +71,9 @@ const SetupClient = () => {
                   </div>
                ))}
                <div className='flex justify-center'>
-                  <Button onClick={handleAddPlayer}>+ Add Player</Button>
+                  <Button color='teal' size='xs' onClick={handleAddPlayer}>
+                     + Add Player
+                  </Button>
                </div>
             </div>
             <div className='w-full grid mt-4'>
