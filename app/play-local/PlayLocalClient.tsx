@@ -3,13 +3,14 @@
 import Button from '@/components/button/Button';
 import Icon from '@/components/icon/Icon';
 import Panel from '@/components/panel/Panel';
+import { Deck, evenGreedierDeck, greedyDeck } from '@/types/deck';
 import { useEffect, useState } from 'react';
 
 type Player = {
    id: string;
    name: string;
    hasTurn: boolean;
-   bankedCards: number[];
+   coins: number;
 };
 
 type Players = Array<Player>;
@@ -20,15 +21,15 @@ interface Props {
 }
 
 const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
-   const [currentCard, setCurrentCard] = useState<number | null>();
-   const [currentDeck, setCurrentDeck] = useState<number[]>();
-   const [currentStreak, setCurrentStreak] = useState<number[]>([]);
+   const [currentCard, setCurrentCard] = useState<number | 'pirate' | null>();
+   const [currentDeck, setCurrentDeck] = useState<Deck>();
+   const [currentStreak, setCurrentStreak] = useState<Deck>([]);
    const [isGameOver, setIsGameOver] = useState<boolean>(false);
    const [players, setPlayers] = useState<Players>([]);
    const [playerWithTurn, setPlayerWithTurn] = useState<Player>();
    const [winner, setWinner] = useState<Player>();
 
-   const shuffle = (deck: number[]): number[] => {
+   const shuffle = (deck: Deck): Deck => {
       let currentIndex = deck.length,
          randomIndex;
 
@@ -46,13 +47,13 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
    };
 
    useEffect(() => {
-      const createNewDeck = (): number[] => {
-         const newDeck = [
-            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-         ];
-         // Squirrel = 2; Nut = 1;
-         // newDeck.length = 52; 37 Nuts and 15 Squirrels
+      const createNewDeck = (): Deck => {
+         let newDeck: Array<number | 'pirate'>;
+         if (evenGreedier) {
+            newDeck = [...evenGreedierDeck];
+         } else {
+            newDeck = [...greedyDeck];
+         }
          return shuffle(newDeck);
       };
 
@@ -68,7 +69,7 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
             const newPlayer = {
                ...player,
                hasTurn: index === 0,
-               bankedCards: [],
+               coins: 0,
             };
             if (index === 0) setPlayerWithTurn(newPlayer);
             return newPlayer;
@@ -84,20 +85,47 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
          if (!topCard) return tempState;
 
          setCurrentCard(topCard);
-
-         if (!tempState.length) setIsGameOver(true);
-         setWinner([...players].sort((a, b) => b.bankedCards.length - a.bankedCards.length)[0]);
+         if (!tempState.length) {
+            finishGame(topCard);
+            return tempState;
+         }
 
          setCurrentStreak((prevState) => [...prevState, topCard]);
          return tempState;
       });
    };
 
+   const finishGame = (topCard: number | 'pirate') => {
+      setIsGameOver(true);
+      if (topCard !== 'pirate') {
+         setPlayers((prevState) => {
+            const tempState = [...prevState];
+            const playerWithTurn = tempState.find((player) => player.hasTurn);
+            if (!playerWithTurn) return tempState;
+            const currentStreakSum = currentStreak.reduce((acc: number, curr: number | 'pirate') => {
+               if (curr !== 'pirate') {
+                  acc += curr;
+               }
+               return acc;
+            }, 0);
+            playerWithTurn.coins += currentStreakSum + topCard;
+            setWinner([...tempState].sort((a, b) => b.coins - a.coins)[0]);
+
+            return tempState;
+         });
+      }
+      setCurrentStreak([]);
+   };
+
    const bankCards = () => {
       setPlayers((prevState) => {
          const tempState = [...prevState];
          const currentPlayerIndex = tempState.findIndex((player) => player.hasTurn);
-         currentStreak.forEach((card) => tempState[currentPlayerIndex].bankedCards.push(card));
+         currentStreak.forEach((card) => {
+            if (card !== 'pirate') {
+               tempState[currentPlayerIndex].coins += card;
+            }
+         });
          tempState[currentPlayerIndex].hasTurn = false;
          if (tempState[currentPlayerIndex + 1]) {
             tempState[currentPlayerIndex + 1].hasTurn = true;
@@ -109,6 +137,10 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
          return tempState;
       });
 
+      clearStreakAndCard();
+   };
+
+   const clearStreakAndCard = () => {
       setCurrentStreak([]);
       setCurrentCard(null);
    };
@@ -127,8 +159,7 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
          }
          return tempState;
       });
-      setCurrentStreak([]);
-      setCurrentCard(null);
+      clearStreakAndCard();
    };
 
    return (
@@ -142,7 +173,7 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
             )}
             {!isGameOver && (
                <div className='min-h-[30px] flex items-center gap-2'>
-                  {currentCard === 2 ? (
+                  {currentCard === 'pirate' ? (
                      <>
                         <span className='text-lg'>Argh! That pirate has plundered your gold!</span>
                         <Button color='teal' size='sm' onClick={finishTurn}>
@@ -158,29 +189,35 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
                <Button
                   color='teal'
                   onClick={drawCard}
-                  disabled={(currentDeck && currentDeck.length < 1) || currentCard === 2}>
+                  disabled={(currentDeck && currentDeck.length < 1) || currentCard === 'pirate'}>
                   Draw Card
                </Button>
                {/* Deck Start */}
-               <div className='w-[200px] h-[250px] max-w-[200px] max-h-[250px] p-4 flex justify-center items-center rounded shadow-lg border-[1px] border-slate-500 dark:border-slate-500 bg-slate-800 '>
-                  <div className='w-full h-full border-4 border-teal-500 p-2'>
-                     <div className='w-full h-full p-2 flex flex-col items-center justify-center bg-purple-500'>
-                        <span className='text-3xl font-semibold text-yellow-500'>Greedy</span>
-                        <span className='text-3xl font-semibold text-yellow-500'>Pirate</span>
+               {currentDeck?.length ? (
+                  <div className='w-[200px] h-[250px] max-w-[200px] max-h-[250px] p-4 flex justify-center items-center rounded shadow-lg border-[1px] border-slate-500 dark:border-slate-500 bg-slate-800 '>
+                     <div className='w-full h-full border-4 border-teal-500 p-2'>
+                        <div className='w-full h-full p-2 flex flex-col items-center justify-center bg-purple-500'>
+                           <span className='text-3xl font-semibold text-yellow-500'>Greedy</span>
+                           <span className='text-3xl font-semibold text-yellow-500'>Pirate</span>
+                        </div>
                      </div>
                   </div>
-               </div>
+               ) : (
+                  <div
+                     className={`w-[200px] h-[250px] flex justify-center items-center rounded border-[1px] border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700`}></div>
+               )}
                {/* Deck End */}
                {/* Card Start */}
                {currentCard ? (
                   <div
                      className={`w-[200px] h-[250px] max-w-[200px] max-h-[250px] flex justify-center items-center rounded border-2 border-black
-                        ${currentCard === 1 ? 'bg-slate-800' : 'bg-red-900'}
+                        ${currentCard === 'pirate' ? 'bg-red-900' : 'bg-slate-800'}
                      `}>
-                     {currentCard === 1 ? (
-                        <Icon name='Coin1' className='fill-yellow-500' height={200} />
-                     ) : (
+                     {currentCard === 'pirate' ? (
                         <Icon name='Pirate' className='fill-purple-500' height={200} />
+                     ) : (
+                        // @ts-ignore
+                        <Icon name={`Coin${currentCard}`} className='fill-yellow-500' height={200} />
                      )}
                   </div>
                ) : (
@@ -188,15 +225,16 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
                      className={`w-[200px] h-[250px] flex justify-center items-center rounded border-[1px] border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700`}></div>
                )}
                {/* Card End */}
-               <Button color='purple' onClick={bankCards} disabled={!currentStreak.length || currentCard === 2}>
+               <Button color='purple' onClick={bankCards} disabled={!currentStreak.length || currentCard === 'pirate'}>
                   Bank Cards
                </Button>
             </div>
             <div className='flex gap-2 pt-2 items-center'>
                <span>Current Streak:</span>
-               {currentStreak.map((card, index) => (
-                  <Icon key={index} name='Coin1' color='yellow' width={15} />
-               ))}
+               {currentStreak.map((card, index) => {
+                  // @ts-ignore
+                  if (card !== 'pirate') return <Icon key={index} name={`Coin${card}`} color='yellow' width={15} />;
+               })}
             </div>
          </Panel>
          <div className='col-span-4 flex justify-center items-center gap-4'>
@@ -208,7 +246,7 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
                      <span className='text-2xl font-semibold pb-2'>{player.name}</span>
                   </div>
                   <div className='pt-2'>
-                     <span className='text-5xl font-bold text-yellow-500'>{player.bankedCards.length}</span>
+                     <span className='text-5xl font-bold text-yellow-500'>{player.coins}</span>
                   </div>
                </Panel>
             ))}
@@ -216,13 +254,15 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
          {showDeck && (
             <Panel className='col-span-4 flex flex-wrap gap-1'>
                {currentDeck &&
-                  currentDeck.map((card: number, index) => (
+                  currentDeck.map((card: number | 'pirate', index) => (
                      <div
                         key={index}
                         className={`
-                  card min-w-[15px] min-h-[23px] flex justify-center items-center rounded-sm
-                  ${card === 1 ? 'bg-green-200' : 'bg-red-200'}
-                  `}></div>
+                  card min-w-[15px] min-h-[23px] flex justify-center items-center rounded-sm text-slate-700
+                  ${card === 'pirate' ? 'bg-red-900' : 'bg-yellow-500'}
+                  `}>
+                        {card !== 'pirate' && card}
+                     </div>
                   ))}
             </Panel>
          )}
