@@ -1,6 +1,7 @@
 'use client';
 import ButtonIcon from '@/components/button-icon/ButtonIcon';
 import Button from '@/components/button/Button';
+import Checkbox from '@/components/checkbox/Checkbox';
 import Input from '@/components/input-text/InputText';
 import Page from '@/components/page/Page';
 import Panel from '@/components/panel/Panel';
@@ -14,7 +15,9 @@ interface Player {
 
 const SetupClient = () => {
    const router = useRouter();
+
    const [players, setPlayers] = useState<Array<Player>>([{ id: crypto.randomUUID(), name: '' }]);
+   const [isEvenGreedier, setIsEvenGreedier] = useState<boolean>(false);
 
    const handleAddPlayer = () => {
       setPlayers((prevState) => {
@@ -44,13 +47,13 @@ const SetupClient = () => {
 
    const handleStartGame = () => {
       localStorage.setItem('players', JSON.stringify(players));
-      router.push('/play-local');
+      router.push(`/play-local${isEvenGreedier ? '?evenGreedier=true' : ''}`);
    };
 
    return (
       <Page>
-         <Panel className='flex flex-col items-center'>
-            <span className='mb-4 text-3xl font-semibold text-yellow-500'>Greedy Pirate</span>
+         <Panel className='flex flex-col items-center gap-4'>
+            <span className='text-3xl font-semibold text-yellow-500'>Greedy Pirate</span>
             <div className='flex flex-col gap-2'>
                <span className='text-sm text-secondary'>{`Enter Player Names`}</span>
                {players.map((player, index) => (
@@ -76,7 +79,14 @@ const SetupClient = () => {
                   </Button>
                </div>
             </div>
-            <div className='w-full grid mt-4'>
+            <Checkbox
+               label={'Even Greedier?'}
+               checked={isEvenGreedier}
+               onChange={(e: any) => {
+                  setIsEvenGreedier(!isEvenGreedier);
+               }}
+            />
+            <div className='w-full grid'>
                <Button
                   color='purple'
                   disabled={players?.length < 2 || players.some((player) => !player.name)}
