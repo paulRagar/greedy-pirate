@@ -4,7 +4,7 @@ import Button from '@/components/button/Button';
 import Icon from '@/components/icon/Icon';
 import Modal from '@/components/modal/Modal';
 import Panel from '@/components/panel/Panel';
-import { Deck, evenGreedierDeck, greedyDeck } from '@/types/deck';
+import { Deck, evenGreedierDeck, greedyDeck, superGreedyDeck } from '@/types/deck';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -56,7 +56,8 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
       const createNewDeck = (): Deck => {
          let newDeck: Array<number | 'pirate'>;
          if (evenGreedier) {
-            newDeck = [...evenGreedierDeck];
+            // newDeck = [...evenGreedierDeck];
+            newDeck = [...superGreedyDeck];
          } else {
             newDeck = [...greedyDeck];
          }
@@ -186,7 +187,9 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
                   <div className='min-h-[30px] flex items-center gap-2'>
                      {currentCard === 'pirate' ? (
                         <>
-                           <span className='text-lg'>Argh! A pirate has plundered your gold!</span>
+                           <span className='text-lg'>
+                              Shiver me timbers! Your greed for gold has lured a pirate to plunder!
+                           </span>
                            <Button color='teal' size='sm' onClick={finishTurn}>
                               End Turn
                            </Button>
@@ -201,7 +204,7 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
                      color='teal'
                      onClick={drawCard}
                      disabled={(currentDeck && currentDeck.length < 1) || currentCard === 'pirate'}>
-                     Draw Card
+                     Plunder
                   </Button>
                   {/* Deck Start */}
                   {currentDeck?.length ? (
@@ -226,6 +229,8 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
                      `}>
                         {currentCard === 'pirate' ? (
                            <Icon name='Pirate' className='fill-purple-500' height={200} />
+                        ) : currentCard > 5 ? (
+                           currentCard
                         ) : (
                            // @ts-ignore
                            <Icon name={`Coin${currentCard}`} className='fill-yellow-500' height={200} />
@@ -240,11 +245,11 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
                      color='purple'
                      onClick={bankCards}
                      disabled={!currentStreak.length || currentCard === 'pirate'}>
-                     Bank Cards
+                     Bury It
                   </Button>
                </div>
                <div className='flex gap-2 pt-2 items-center'>
-                  <span>Current Booty:</span>
+                  <span>Booty:</span>
                   <span className='text-lg font-semibold text-yellow-500'>
                      {currentStreak.reduce((acc: number, curr: number | 'pirate') => {
                         if (curr !== 'pirate') {
@@ -276,17 +281,27 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
                ))}
             </div>
             {showDeck && (
+               // <Panel className='col-span-4 flex flex-wrap gap-1'>
+               //    {currentDeck &&
+               //       currentDeck.map((card: number | 'pirate', index) => (
+               //          <div
+               //             key={index}
+               //             className={`
+               //    card min-w-[15px] min-h-[23px] flex justify-center items-center rounded-sm text-slate-700
+               //    ${card === 'pirate' ? 'bg-red-900' : 'bg-yellow-500'}
+               //    `}>
+               //             {card !== 'pirate' && card}
+               //          </div>
+               //       ))}
+               // </Panel>
                <Panel className='col-span-4 flex flex-wrap gap-1'>
                   {currentDeck &&
                      currentDeck.map((card: number | 'pirate', index) => (
                         <div
                            key={index}
                            className={`
-                  card min-w-[15px] min-h-[23px] flex justify-center items-center rounded-sm text-slate-700
-                  ${card === 'pirate' ? 'bg-red-900' : 'bg-yellow-500'}
-                  `}>
-                           {card !== 'pirate' && card}
-                        </div>
+               card min-w-[15px] min-h-[23px] flex justify-center items-center rounded-sm bg-slate-700
+               `}></div>
                      ))}
                </Panel>
             )}

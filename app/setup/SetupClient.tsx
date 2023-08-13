@@ -6,7 +6,7 @@ import Input from '@/components/input-text/InputText';
 import Page from '@/components/page/Page';
 import Panel from '@/components/panel/Panel';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Player {
    id: string;
@@ -16,8 +16,18 @@ interface Player {
 const SetupClient = () => {
    const router = useRouter();
 
-   const [players, setPlayers] = useState<Array<Player>>([{ id: crypto.randomUUID(), name: '' }]);
+   const [players, setPlayers] = useState<Array<Player>>([]);
    const [isEvenGreedier, setIsEvenGreedier] = useState<boolean>(false);
+
+   useEffect(() => {
+      const localStorageDataString: string = `${localStorage.getItem('players')}`;
+      const playerData: Array<{ id: string; name: string }> = JSON.parse(localStorageDataString);
+      if (playerData?.length) {
+         setPlayers(playerData);
+      } else {
+         setPlayers([{ id: crypto.randomUUID(), name: '' }]);
+      }
+   }, []);
 
    const handleAddPlayer = () => {
       setPlayers((prevState) => {
