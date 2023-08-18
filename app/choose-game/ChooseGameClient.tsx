@@ -25,7 +25,7 @@ const ChooseGameClient = ({}: Props) => {
                <span className='mb-1 text-secondary'>Choose a Game Mode</span>
             </div>
             <div className='flex justify-between gap-8 p-4'>
-               <div className='w-1/2 flex flex-col items-center justify-between gap-2 bg-gray-100 dark:bg-slate-700'>
+               <div className='w-1/2 flex flex-col items-center justify-between gap-2 rounded bg-gray-200 dark:bg-slate-700'>
                   <div className='p-2 pb-0 flex flex-col items-center'>
                      <span className='text-lg uppercase font-semibold'>Shipmate Duel</span>
                      <span className='text-center text-secondary'>{`Ahoy, mateys! Duel with yer crew, grab coins, but be wary! Too much greed and the pirate card'll send ye overboard!`}</span>

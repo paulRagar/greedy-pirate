@@ -14,7 +14,7 @@ const HomeClient = () => {
       <Page>
          <Panel className='flex flex-col items-center justify-between'>
             <span className='mb-4 text-5xl font-semibold text-yellow-500'>Greedy Pirate</span>
-            <span className='p-2 text-xl text-center bg-gray-100 dark:bg-slate-700'>{`Embark on a thrilling voyage with Greedy Pirate, where a treasure of coins awaits, but beware - one wrong card could plunder your loot in this high-stakes, risk-and-reward browser card game!`}</span>
+            <span className='p-2 text-xl text-center bg-gray-200 dark:bg-slate-700'>{`Embark on a thrilling voyage with Greedy Pirate, where a treasure of coins awaits, but beware - one wrong card could plunder your loot in this high-stakes, risk-and-reward browser card game!`}</span>
             <Button onClick={handlePlay} color='purple'>
                Set Sail
             </Button>
