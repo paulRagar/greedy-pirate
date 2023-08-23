@@ -26,8 +26,6 @@ const SetupClient = () => {
       const playerData: Array<{ id: string; name: string }> = JSON.parse(localStorageDataString);
       if (playerData?.length) {
          setPlayers(playerData);
-      } else {
-         setPlayers([{ id: crypto.randomUUID(), name: '' }]);
       }
    }, []);
 
