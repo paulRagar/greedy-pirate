@@ -3,6 +3,7 @@
 import Button from '@/components/button/Button';
 import Icon from '@/components/icon/Icon';
 import Modal from '@/components/modal/Modal';
+import Page from '@/components/page/Page';
 import Panel from '@/components/panel/Panel';
 import { Deck, evenGreedierDeck, greedyDeck, superGreedyDeck } from '@/types/deck';
 import { useRouter } from 'next/navigation';
@@ -66,7 +67,7 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
       };
 
       if (!currentDeck) setCurrentDeck(createNewDeck());
-   }, [currentDeck]);
+   }, [currentDeck, evenGreedier]);
 
    useEffect(() => {
       if (newGame) {
@@ -74,19 +75,23 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
          const localStorageDataString: string = `${localStorage.getItem('players')}`;
          const playerData: Array<{ id: string; name: string }> = JSON.parse(localStorageDataString);
 
-         setPlayers(
-            playerData.map((player, index) => {
-               const newPlayer = {
-                  ...player,
-                  hasTurn: index === 0,
-                  coins: 0,
-               };
-               if (index === 0) setPlayerWithTurn(newPlayer);
-               return newPlayer;
-            })
-         );
+         if (playerData?.length) {
+            setPlayers(
+               playerData.map((player, index) => {
+                  const newPlayer = {
+                     ...player,
+                     hasTurn: index === 0,
+                     coins: 0,
+                  };
+                  if (index === 0) setPlayerWithTurn(newPlayer);
+                  return newPlayer;
+               })
+            );
+         } else {
+            router.push('/setup');
+         }
       }
-   }, [newGame]);
+   }, [newGame, router]);
 
    const drawCard = () => {
       if (!currentDeck) return;
@@ -113,17 +118,21 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
             const tempState = [...prevState];
             const playerWithTurn = tempState.find((player) => player.hasTurn);
             if (!playerWithTurn) return tempState;
+
             const currentStreakSum = currentStreak.reduce((acc: number, curr: number | 'pirate') => {
                if (curr !== 'pirate') {
                   acc += curr;
                }
                return acc;
             }, 0);
+
             playerWithTurn.coins += currentStreakSum + topCard;
             setWinner([...tempState].sort((a, b) => b.coins - a.coins)[0]);
 
             return tempState;
          });
+      } else {
+         setWinner([...players].sort((a, b) => b.coins - a.coins)[0]);
       }
       setCurrentStreak([]);
       setShowEndGameModal(true);
@@ -175,147 +184,120 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
    };
 
    return (
-      <>
-         <div className='grid grid-cols-4 gap-4'>
-            <Panel className='col-span-4 flex flex-col items-center gap-2'>
-               {isGameOver && (
-                  <div className='min-h-[30px] flex items-center gap-2'>
-                     <span className='text-lg'>{`Looks like we've plundered everything! Let's sail home!`}</span>
-                  </div>
-               )}
-               {!isGameOver && (
-                  <div className='min-h-[30px] flex items-center gap-2'>
+      <Page>
+         <Panel className='flex flex-col items-center gap-4'>
+            {isGameOver && (
+               <div className='min-h-[30px] flex items-center gap-2'>
+                  <span className='text-lg'>{`The treasure be all ours now! Set course for home!`}</span>
+               </div>
+            )}
+            {!isGameOver && (
+               <div className='min-h-[30px] flex items-center gap-2'>
+                  {currentCard === 'pirate' ? (
+                     <>
+                        <span className='text-lg'>
+                           Shiver me timbers! Yer greed for gold has lured a pirate to plunder!
+                        </span>
+                     </>
+                  ) : (
+                     <span className='text-lg'>{playerWithTurn?.name}! Take the helm for it be yer turn!</span>
+                  )}
+               </div>
+            )}
+            <div className='grid grid-cols-3 gap-4'>
+               {currentCard ? (
+                  <div
+                     className={`w-[190px] h-[250px] max-w-[190px] max-h-[250px] flex justify-center items-center rounded border-2 border-black
+                        ${currentCard === 'pirate' ? 'bg-red-900' : 'bg-slate-800'}
+                     `}>
                      {currentCard === 'pirate' ? (
-                        <>
-                           <span className='text-lg'>
-                              Shiver me timbers! Your greed for gold has lured a pirate to plunder!
-                           </span>
-                           <Button color='teal' size='sm' onClick={finishTurn}>
-                              End Turn
-                           </Button>
-                        </>
+                        <Icon name='Pirate' className='fill-purple-500' height={200} />
+                     ) : currentCard > 5 ? (
+                        <span className='text-2xl text-yellow-500'>{currentCard}</span>
                      ) : (
-                        <span className='text-lg'>{playerWithTurn?.name}! Take the helm for it is your turn!</span>
+                        // @ts-ignore
+                        <Icon name={`Coin${currentCard}`} className='fill-yellow-500' height={200} />
                      )}
                   </div>
+               ) : (
+                  <div className='w-[190px] h-[250px] max-w-[190px] max-h-[250px] p-4 flex justify-center items-center rounded shadow-lg border-[1px] border-slate-500 dark:border-slate-500 bg-slate-800 '>
+                     <div className='w-full h-full border-4 border-teal-500 p-2'>
+                        <div className='w-full h-full p-2 flex flex-col items-center justify-center bg-purple-500'>
+                           <span className='text-3xl font-semibold text-yellow-500'>Greedy</span>
+                           <span className='text-3xl font-semibold text-yellow-500'>Pirate</span>
+                        </div>
+                     </div>
+                  </div>
                )}
-               <div className='flex justify-center items-center h-full w-full gap-4'>
+               <div className='flex flex-col gap-2'>
                   <Button
                      color='teal'
                      onClick={drawCard}
                      disabled={(currentDeck && currentDeck.length < 1) || currentCard === 'pirate'}>
                      Plunder
                   </Button>
-                  {/* Deck Start */}
-                  {currentDeck?.length ? (
-                     <div className='w-[200px] h-[250px] max-w-[200px] max-h-[250px] p-4 flex justify-center items-center rounded shadow-lg border-[1px] border-slate-500 dark:border-slate-500 bg-slate-800 '>
-                        <div className='w-full h-full border-4 border-teal-500 p-2'>
-                           <div className='w-full h-full p-2 flex flex-col items-center justify-center bg-purple-500'>
-                              <span className='text-3xl font-semibold text-yellow-500'>Greedy</span>
-                              <span className='text-3xl font-semibold text-yellow-500'>Pirate</span>
-                           </div>
-                        </div>
-                     </div>
-                  ) : (
-                     <div
-                        className={`w-[200px] h-[250px] flex justify-center items-center rounded border-[1px] border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700`}></div>
-                  )}
-                  {/* Deck End */}
-                  {/* Card Start */}
-                  {currentCard ? (
-                     <div
-                        className={`w-[200px] h-[250px] max-w-[200px] max-h-[250px] flex justify-center items-center rounded border-2 border-black
-                        ${currentCard === 'pirate' ? 'bg-red-900' : 'bg-slate-800'}
-                     `}>
-                        {currentCard === 'pirate' ? (
-                           <Icon name='Pirate' className='fill-purple-500' height={200} />
-                        ) : currentCard > 5 ? (
-                           currentCard
-                        ) : (
-                           // @ts-ignore
-                           <Icon name={`Coin${currentCard}`} className='fill-yellow-500' height={200} />
-                        )}
-                     </div>
-                  ) : (
-                     <div
-                        className={`w-[200px] h-[250px] flex justify-center items-center rounded border-[1px] border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700`}></div>
-                  )}
-                  {/* Card End */}
                   <Button
                      color='purple'
                      onClick={bankCards}
                      disabled={!currentStreak.length || currentCard === 'pirate'}>
                      Bury It
                   </Button>
+                  {!isGameOver && currentCard === 'pirate' && (
+                     <Button color='teal' size='sm' onClick={finishTurn}>
+                        End Turn
+                     </Button>
+                  )}
+                  <div className='flex justify-center gap-2 pt-2 items-center'>
+                     <span>Booty:</span>
+                     <span className='text-lg font-semibold text-yellow-500'>
+                        {currentStreak.reduce((acc: number, curr: number | 'pirate') => {
+                           if (curr !== 'pirate') {
+                              acc += curr;
+                           }
+                           return acc;
+                        }, 0)}
+                     </span>
+                  </div>
+                  <div className='flex flex-wrap justify-center'>
+                     {currentStreak.map((card, index) => {
+                        if (card !== 'pirate')
+                           return (
+                              <span className='mx-1'>
+                                 {/* @ts-ignore */}
+                                 <Icon key={index} name={`Coin${card}`} color='yellow' width={15} />
+                              </span>
+                           );
+                     })}
+                  </div>
                </div>
-               <div className='flex gap-2 pt-2 items-center'>
-                  <span>Booty:</span>
-                  <span className='text-lg font-semibold text-yellow-500'>
-                     {currentStreak.reduce((acc: number, curr: number | 'pirate') => {
-                        if (curr !== 'pirate') {
-                           acc += curr;
-                        }
-                        return acc;
-                     }, 0)}
-                  </span>
-               </div>
-               <div className='min-h-[25px] flex gap-2 items-center'>
-                  {currentStreak.map((card, index) => {
-                     // @ts-ignore
-                     if (card !== 'pirate') return <Icon key={index} name={`Coin${card}`} color='yellow' width={15} />;
-                  })}
-               </div>
-            </Panel>
-            <div className='col-span-4 flex justify-center items-center gap-4'>
-               {players.map((player, index) => (
-                  <Panel
-                     key={index}
-                     className={`w-1/4 flex flex-col items-center ${player.hasTurn && 'border-4 border-teal-500'}`}>
-                     <div className={`w-full flex justify-center border-b-2 ${player.hasTurn && 'border-teal-500'}`}>
-                        <span className='text-2xl font-semibold pb-2'>{player.name}</span>
-                     </div>
-                     <div className='pt-2'>
-                        <span className='text-5xl font-bold text-yellow-500'>{player.coins}</span>
-                     </div>
-                  </Panel>
-               ))}
-            </div>
-            {showDeck && (
-               // <Panel className='col-span-4 flex flex-wrap gap-1'>
-               //    {currentDeck &&
-               //       currentDeck.map((card: number | 'pirate', index) => (
-               //          <div
-               //             key={index}
-               //             className={`
-               //    card min-w-[15px] min-h-[23px] flex justify-center items-center rounded-sm text-slate-700
-               //    ${card === 'pirate' ? 'bg-red-900' : 'bg-yellow-500'}
-               //    `}>
-               //             {card !== 'pirate' && card}
-               //          </div>
-               //       ))}
-               // </Panel>
-               <Panel className='col-span-4 flex flex-wrap gap-1'>
-                  {currentDeck &&
-                     currentDeck.map((card: number | 'pirate', index) => (
+               <div className='grid items-center'>
+                  <div className='flex flex-col p-2 bg-gray-200 dark:bg-slate-700'>
+                     {players.map((player, index) => (
                         <div
                            key={index}
-                           className={`
-               card min-w-[15px] min-h-[23px] flex justify-center items-center rounded-sm bg-slate-700
-               `}></div>
+                           className={`max-h-[18px] flex justify-between items-center p-2 rounded ${
+                              players.length > 9 ? 'my-[3px]' : 'my-1'
+                           }`}>
+                           <span className={`text-lg ${player.hasTurn && 'text-teal-500 font-semibold'}`}>
+                              {player.name}
+                           </span>
+                           <span className='text-lg font-bold text-yellow-500'>{player.coins}</span>
+                        </div>
                      ))}
-               </Panel>
-            )}
-         </div>
+                  </div>
+               </div>
+            </div>
+         </Panel>
          <Modal
             showModal={showEndGameModal}
             onClose={() => setShowEndGameModal(!showEndGameModal)}
             closeOnBackdropClick={false}>
-            <div className='w-full flex flex-col items-center p-4'>
-               <span className='text-4xl font-semibold text-yellow-500'>{winner?.name} Wins!</span>
-               <span className='mb-2 text-2xl font-semibold text-yellow-500'>
+            <div className='w-full flex flex-col items-center px-4 py-2'>
+               <span className='text-2xl font-semibold text-yellow-500'>{winner?.name} Wins!</span>
+               <span className='text-xl font-semibold text-yellow-500'>
                   Coins: <span className='pl-1'>{winner?.coins}</span>
                </span>
-               <div className='w-full flex flex-col px-12 gap-2'>
+               <div className='w-full max-h-[250px] px-14 flex flex-col flex-wrap'>
                   {players
                      .filter((player) => player.id !== winner?.id)
                      .sort((a, b) => b.coins - a.coins)
@@ -330,7 +312,7 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
                      ))}
                </div>
 
-               <div className='mt-4 flex gap-4'>
+               <div className='mt-2 flex gap-4'>
                   <Button color='teal' onClick={() => router.push('/setup')}>
                      Change Players
                   </Button>
@@ -349,7 +331,7 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
                </div>
             </div>
          </Modal>
-      </>
+      </Page>
    );
 };
 

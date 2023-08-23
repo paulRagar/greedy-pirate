@@ -2,13 +2,10 @@
 import './globals.css';
 import { useEffect } from 'react';
 import { Analytics } from '@vercel/analytics/react';
-import ThemeToggle from '@/components/theme-toggle/ThemeToggle';
-
-const description = `Embark on a thrilling voyage with 'Greedy Pirate', where a treasure of coins awaits, but beware - one wrong card could plunder your loot in this high-stakes, risk-and-reward browser card game!`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
    useEffect(() => {
-      if (!localStorage.theme) localStorage.setItem('theme', 'light');
+      if (!localStorage.theme) localStorage.setItem('theme', 'dark');
 
       if (
          localStorage.theme === 'dark' ||
@@ -22,15 +19,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       }
    }, []);
 
+   useEffect(() => {
+      window.addEventListener('load', function () {
+         setTimeout(function () {
+            // This helps to hide the address bar
+            window.scrollTo(0, 1);
+         }, 0);
+      });
+
+      document?.documentElement?.requestFullscreen && document.documentElement.requestFullscreen();
+   }, []);
+
    return (
       <html lang='en'>
          <head>
             <title>Greedy Pirate</title>
+            <meta
+               name='viewport'
+               content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+            />
          </head>
          <body>
             <div className='h-screen w-screen max-w-[1460px] m-auto p-4 bg-gray-200 dark:bg-slate-900'>{children}</div>
             <Analytics />
-            <ThemeToggle />
          </body>
       </html>
    );
