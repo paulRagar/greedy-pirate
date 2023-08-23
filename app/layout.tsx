@@ -37,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                property='og:description'
                content='Embark on a thrilling voyage with Greedy Pirate, where a treasure of coins awaits, but beware - one wrong card could plunder your loot in this high-stakes, risk-and-reward browser card game!'
             />
+            <meta property='og:image' content='/assets/open-graph-image.svg' />
             <meta property='og:url' content='https://greedypirate.com' />
             <link rel='canonical' href='https://greedypirate.com' />
          </head>
