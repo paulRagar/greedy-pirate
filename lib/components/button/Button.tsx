@@ -1,6 +1,5 @@
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
-import { useRouter } from 'next/navigation';
 import { buttonColorClasses, DefaultButton, iconSize } from '@/types/button';
 import Icon from '../icon/Icon';
 import { IconNames } from '@/types/icon';
@@ -25,14 +24,12 @@ const Button = ({
    children,
    ...rest
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & Button) => {
-   const router = useRouter();
-
    const buttonSizeClasses = {
-      xs: 'min-h-[24px] max-h-[24px] px-[10px] text-[13px]',
-      sm: 'min-h-[30px] max-h-[30px] px-[20px] text-[14px]',
-      md: 'min-h-[40px] max-h-[40px] px-[20px] text-[14px]',
-      lg: 'min-h-[50px] max-h-[50px] px-[24px] text-[18px]',
-      xl: 'min-h-[60px] max-h-[60px] px-[24px] text-[20px]',
+      xs: 'min-h-[24px] max-h-[24px] px-[10px] text-sm',
+      sm: 'min-h-[30px] max-h-[30px] px-[20px] text-base',
+      md: 'min-h-[40px] max-h-[40px] px-[20px] text-base',
+      lg: 'min-h-[50px] max-h-[50px] px-[24px] text-lg',
+      xl: 'min-h-[60px] max-h-[60px] px-[24px] text-xl',
    };
    const iconButtonSizeClasses = {
       xs: 'min-h-[24px] max-h-[24px] min-w-[24px] max-w-[24px]',
