@@ -258,15 +258,15 @@ const PlayLocalClient = ({ evenGreedier, showDeck }: Props) => {
                         }, 0)}
                      </span>
                   </div>
-                  <div className='flex flex-wrap justify-center'>
+                  <div className='flex flex-wrap justify-center gap-2'>
                      {currentStreak.map((card, index) => {
-                        if (card !== 'pirate')
+                        if (card !== 'pirate') {
                            return (
-                              <span className='mx-1'>
-                                 {/* @ts-ignore */}
-                                 <Icon key={index} name={`Coin${card}`} color='yellow' width={15} />
-                              </span>
+                              <div key={index} className='w-[28px] text-center rounded-sm bg-yellow-500'>
+                                 <span className='text-lg font-bold text-slate-700'>{card}</span>
+                              </div>
                            );
+                        }
                      })}
                   </div>
                </div>

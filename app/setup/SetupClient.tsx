@@ -36,7 +36,6 @@ const SetupClient = () => {
       });
       setPlayerName('');
       if (ref?.current) {
-         console.log('focus', ref.current);
          ref.current.focus();
       }
    };
