@@ -23,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <html lang='en'>
          <head>
             <title>Greedy Pirate</title>
+            <link rel='icon' href='/assets/favicon-greedy-pirate.png' />
             <meta
                name='description'
                content='Embark on a thrilling voyage with Greedy Pirate, where a treasure of coins awaits, but beware - one wrong card could plunder your loot in this high-stakes, risk-and-reward browser card game!'
