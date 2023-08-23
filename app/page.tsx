@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation';
+import HomeClient from './HomeClient';
 
-const Home = () => {
-   redirect('/home');
+const Home = async () => {
+   return <HomeClient />;
 };
 
 export default Home;
