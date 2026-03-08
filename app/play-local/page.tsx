@@ -2,15 +2,15 @@ import PlayLocalClient from './PlayLocalClient';
 
 interface Props {
    searchParams?: {
-      evenGreedier: string;
+      deckConfig: string;
       showDeck: string;
    };
 }
 
 const PlayLocal = async ({ searchParams }: Props) => {
-   const evenGreedier = searchParams?.evenGreedier?.toLocaleLowerCase() === 'true';
+   const deckConfig = searchParams?.deckConfig || undefined;
    const showDeck = searchParams?.showDeck?.toLocaleLowerCase() === 'true';
-   return <PlayLocalClient evenGreedier={evenGreedier} showDeck={showDeck} />;
+   return <PlayLocalClient deckConfig={deckConfig} showDeck={showDeck} />;
 };
 
 export default PlayLocal;
