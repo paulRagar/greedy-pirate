@@ -1,27 +1,651 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Outfit:wght@400;500;600;700&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-html,
-body {
-   padding: 0;
-   margin: 0;
-   font-family: outfit, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans,
-      Droid Sans, Helvetica Neue, sans-serif;
-   @apply text-slate-700 dark:text-white bg-gray-200 dark:bg-slate-900;
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+   --font-sans:
+      Outfit, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', sans-serif;
+   --font-display: 'Pirata One', 'IM Fell DW Pica', Georgia, serif;
+
+   /* ─────────────────────────────────────────────────────────
+      Pirate palette — Sea of Thieves inspired.
+      Deep abyss + ocean teal + vibrant coral/orchid + treasure gold.
+      Use SEMANTIC ALIASES (below) in components; raw scale only for
+      one-off art (cards, badges, avatar parts).
+      ───────────────────────────────────────────────────────── */
+
+   /* Abyss — page background, deepest layer */
+   --color-abyss-950: #02060f;
+   --color-abyss-900: #061427;
+   --color-abyss-800: #0a2240;
+
+   /* Deep teal — surfaces, panels, card felt */
+   --color-deep-800: #07304d;
+   --color-deep-700: #0b3550;
+   --color-deep-600: #0e4f70;
+   --color-deep-500: #16708f;
+
+   /* Teal — glow, foam, accents */
+   --color-teal-600: #16a5b5;
+   --color-teal-500: #2dd4bf;
+   --color-teal-400: #5eead4;
+   --color-teal-300: #8efff0;
+
+   /* Coral — primary attention accent (hot pink/magenta) */
+   --color-coral-700: #a01250;
+   --color-coral-600: #d8186b;
+   --color-coral-500: #ff3b8a;
+   --color-coral-400: #ff6fb0;
+   --color-coral-300: #ffa3cc;
+
+   /* Orchid — mystical purple, secondary accent */
+   --color-orchid-800: #4c1d95;
+   --color-orchid-700: #6d28d9;
+   --color-orchid-600: #8b3df0;
+   --color-orchid-500: #b969ff;
+   --color-orchid-400: #d4a3ff;
+
+   /* Gold — treasure, primary CTA, candle light */
+   --color-gold-200: #ffeaa0;
+   --color-gold-300: #ffd966;
+   --color-gold-400: #ffb627;
+   --color-gold-500: #f59410;
+   --color-gold-600: #c97108;
+   --color-gold-700: #8a4d05;
+
+   /* Cream — text on dark, parchment */
+   --color-cream-100: #fff8e7;
+   --color-cream-200: #f9efce;
+   --color-cream-300: #e8d49c;
+   --color-cream-400: #d4b87a;
+
+   /* Wood — frames, dividers, secondary */
+   --color-wood-900: #2a1810;
+   --color-wood-800: #3d2412;
+   --color-wood-700: #5c3a1e;
+   --color-wood-600: #7a4a26;
+   --color-wood-500: #92633c;
+
+   /* Blood — danger, pirate reveal */
+   --color-blood-700: #b8174d;
+   --color-blood-800: #861237;
+
+   /* Parchment — light card faces (gold cards), light surfaces */
+   --color-parchment-100: #f9f1d8;
+   --color-parchment-200: #f3e3b6;
+   --color-parchment-300: #e8d49c;
+   --color-parchment-400: #d4b87a;
+
+   /* Treasure aliases (kept for back-compat with existing card art) */
+   --color-treasure-200: #ffeaa0;
+   --color-treasure-300: #ffd966;
+   --color-treasure-400: #ffb627;
+   --color-treasure-500: #f59410;
+   --color-treasure-600: #c97108;
+
+   /* Curse aliases (back-compat) */
+   --color-curse-500: #b969ff;
+   --color-curse-600: #8b3df0;
+   --color-curse-700: #6d28d9;
+
+   /* Foam aliases (back-compat) */
+   --color-foam-400: #5eead4;
+   --color-foam-500: #2dd4bf;
+
+   /* Blood aliases (back-compat with prior keys) */
+   --color-blood-600: #d8186b;
+
+   /* ─── Semantic aliases — USE THESE IN COMPONENTS ─── */
+   --color-bg: var(--color-abyss-950);
+   --color-bg-mist: var(--color-abyss-900);
+   --color-surface: var(--color-deep-800);
+   --color-surface-hi: var(--color-deep-600);
+   --color-surface-border: rgb(94 234 212 / 0.18);
+   --color-text: var(--color-cream-100);
+   --color-text-muted: rgb(232 212 156 / 0.72);
+   --color-text-dim: rgb(232 212 156 / 0.5);
+   --color-primary: var(--color-gold-400);
+   --color-primary-hi: var(--color-gold-300);
+   --color-primary-lo: var(--color-gold-600);
+   --color-accent: var(--color-coral-500);
+   --color-accent-hi: var(--color-coral-400);
+   --color-accent-soft: var(--color-orchid-500);
+   --color-glow: var(--color-teal-400);
+   --color-danger: var(--color-coral-600);
+
+   /* Shadows + glows — atmospheric depth */
+   --shadow-card: 0 6px 14px -2px rgb(0 0 0 / 0.55), 0 2px 4px -2px rgb(0 0 0 / 0.45);
+   --shadow-card-deep: 0 16px 36px -6px rgb(0 0 0 / 0.65), 0 6px 12px -4px rgb(0 0 0 / 0.5);
+   --shadow-treasure: 0 0 28px rgb(255 182 39 / 0.55), 0 0 8px rgb(255 217 102 / 0.45);
+   --shadow-coral-glow: 0 0 32px rgb(255 59 138 / 0.45), 0 0 12px rgb(255 111 176 / 0.35);
+   --shadow-teal-glow: 0 0 32px rgb(94 234 212 / 0.4), 0 0 10px rgb(45 212 191 / 0.3);
+   --shadow-orchid-glow: 0 0 32px rgb(185 105 255 / 0.45), 0 0 10px rgb(139 61 240 / 0.3);
+   --shadow-inner-bevel: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 -2px 0 rgb(0 0 0 / 0.25);
+
+   /* Radius scale */
+   --radius-card: 1rem;
+   --radius-panel: 1.25rem;
 }
 
-a {
-   color: inherit;
-   text-decoration: none;
+@layer base {
+   :root {
+      color-scheme: dark;
+   }
+
+   html,
+   body {
+      padding: 0;
+      margin: 0;
+      min-height: 100%;
+      font-family: var(--font-sans);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: contain;
+   }
+
+   body {
+      background-image:
+         /* Top-left teal glow (lagoon mist) */
+         radial-gradient(ellipse 60% 50% at 8% 12%, rgb(45 212 191 / 0.22) 0%, transparent 60%),
+         /* Top-right orchid mist (mystical) */
+         radial-gradient(ellipse 55% 50% at 92% 8%, rgb(139 61 240 / 0.28) 0%, transparent 60%),
+         /* Bottom-right coral reef glow */
+         radial-gradient(ellipse 60% 55% at 88% 92%, rgb(255 59 138 / 0.22) 0%, transparent 60%),
+         /* Bottom-left warm candle gold */
+         radial-gradient(ellipse 50% 45% at 10% 90%, rgb(255 182 39 / 0.14) 0%, transparent 65%),
+         /* Vignette pulling focus to center */
+         radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgb(2 6 15 / 0.75) 100%),
+         /* Base abyss gradient */
+         linear-gradient(180deg, #061427 0%, #02060f 100%);
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+   }
+
+   a {
+      color: inherit;
+      text-decoration: none;
+   }
+
+   * {
+      box-sizing: border-box;
+   }
+
+   button {
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+   }
+
+   h1, h2, h3, h4 {
+      font-family: var(--font-display);
+      letter-spacing: 0.02em;
+      font-weight: 400;
+   }
+
+   h1 { @apply text-3xl sm:text-4xl; }
+   h2 { @apply text-2xl sm:text-3xl; }
+   h3 { @apply text-xl sm:text-2xl; }
 }
 
-* {
-   box-sizing: border-box;
+@layer components {
+   .pirate-display {
+      font-family: var(--font-display);
+      letter-spacing: 0.04em;
+   }
+
+   /* Gold filigree wordmark — for the GREEDY PIRATE logo */
+   .wordmark-gold {
+      font-family: var(--font-display);
+      background: linear-gradient(180deg, var(--color-gold-200) 0%, var(--color-gold-400) 50%, var(--color-gold-600) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow:
+         0 0 24px rgb(255 217 102 / 0.35),
+         0 2px 0 rgb(138 77 5 / 0.4);
+      filter: drop-shadow(0 4px 8px rgb(255 59 138 / 0.25));
+   }
+
+   /* Card felt — used on play tables, gives that ornate-board feel */
+   .felt-bg {
+      background-color: var(--color-deep-800);
+      background-image:
+         radial-gradient(circle at 18% 22%, rgb(94 234 212 / 0.08) 0%, transparent 45%),
+         radial-gradient(circle at 82% 78%, rgb(185 105 255 / 0.1) 0%, transparent 45%),
+         linear-gradient(180deg, var(--color-deep-700) 0%, var(--color-abyss-900) 100%);
+   }
+
+   .card-shadow {
+      box-shadow: var(--shadow-card-deep);
+   }
+
+   /* Shared text input — pirate chrome, ≥44px touch target */
+   .input-pirate {
+      min-height: 52px;
+      width: 100%;
+      border-radius: 0.75rem;
+      background-color: rgb(2 6 15 / 0.6);
+      padding-inline: 1rem;
+      color: var(--color-cream-100);
+      outline: none;
+      box-shadow:
+         inset 0 2px 6px rgb(0 0 0 / 0.45),
+         0 0 0 1px rgb(94 234 212 / 0.22);
+      transition: box-shadow 150ms ease;
+   }
+   .input-pirate::placeholder {
+      color: rgb(232 212 156 / 0.35);
+   }
+   .input-pirate:focus {
+      box-shadow:
+         inset 0 2px 6px rgb(0 0 0 / 0.45),
+         0 0 0 2px var(--color-teal-400),
+         0 0 18px rgb(94 234 212 / 0.35);
+   }
+
+   /* Pill chip — back/leave links, stat tags */
+   .chip-pirate {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      min-height: 36px;
+      border-radius: 9999px;
+      padding-inline: 0.875rem;
+      background-color: rgb(2 6 15 / 0.5);
+      box-shadow: 0 0 0 1px rgb(94 234 212 / 0.18), inset 0 1px 0 rgb(255 255 255 / 0.06);
+      color: rgb(249 239 206 / 0.8);
+      backdrop-filter: blur(6px);
+   }
+
+   /* Blood-red vignette — flashes when a pirate is drawn */
+   .bust-vignette {
+      background:
+         radial-gradient(ellipse 75% 65% at 50% 50%, transparent 42%, rgb(184 23 77 / 0.55) 100%),
+         radial-gradient(ellipse 100% 100% at 50% 110%, rgb(134 18 55 / 0.35) 0%, transparent 55%);
+   }
+
+   .treasure-glow {
+      box-shadow: var(--shadow-treasure);
+   }
+
+   .coral-glow {
+      box-shadow: var(--shadow-coral-glow);
+   }
+
+   .teal-glow {
+      box-shadow: var(--shadow-teal-glow);
+   }
+
+   .orchid-glow {
+      box-shadow: var(--shadow-orchid-glow);
+   }
 }
 
-.text-secondary {
-   @apply text-slate-500 dark:text-slate-300;
+@layer utilities {
+   .text-secondary {
+      color: var(--color-text-muted);
+   }
+
+   .text-muted {
+      color: var(--color-text-muted);
+   }
+
+   .text-dim {
+      color: var(--color-text-dim);
+   }
+
+   .safe-bottom {
+      padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+   }
+
+   .safe-top {
+      padding-top: max(env(safe-area-inset-top), 0.5rem);
+   }
+
+   .scrollbar-none {
+      scrollbar-width: none;
+   }
+   .scrollbar-none::-webkit-scrollbar {
+      display: none;
+   }
+}
+
+/* ─── Animations ─── */
+
+.card-flip-container {
+   perspective: 1200px;
+}
+
+.card-flip {
+   transform-style: preserve-3d;
+   transition: transform 600ms cubic-bezier(0.2, 0.85, 0.4, 1.1);
+}
+
+.card-flip.is-flipped {
+   transform: rotateY(180deg);
+}
+
+.card-face {
+   backface-visibility: hidden;
+   -webkit-backface-visibility: hidden;
+}
+
+.card-face-back {
+   transform: rotateY(180deg);
+}
+
+@keyframes coin-pop {
+   0% { transform: translateY(8px) scale(0.6); opacity: 0; }
+   60% { transform: translateY(-2px) scale(1.1); opacity: 1; }
+   100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.animate-coin-pop {
+   animation: coin-pop 280ms ease-out;
+}
+
+@keyframes pirate-shake {
+   0%, 100% { transform: translateX(0); }
+   25% { transform: translateX(-3px) rotate(-1deg); }
+   50% { transform: translateX(3px) rotate(1deg); }
+   75% { transform: translateX(-2px) rotate(-1deg); }
+}
+
+.animate-pirate-shake {
+   animation: pirate-shake 380ms ease-in-out;
+}
+
+/* Slow ambient drift for background mist particles */
+@keyframes mist-drift {
+   0%, 100% { transform: translate(0, 0); opacity: 0.6; }
+   50% { transform: translate(12px, -8px); opacity: 0.9; }
+}
+
+.animate-mist-drift {
+   animation: mist-drift 8s ease-in-out infinite;
+}
+
+/* Gentle pulse for glowing accents (treasure chest, etc) */
+@keyframes glow-pulse {
+   0%, 100% { filter: brightness(1) drop-shadow(0 0 8px rgb(255 217 102 / 0.4)); }
+   50% { filter: brightness(1.15) drop-shadow(0 0 16px rgb(255 217 102 / 0.7)); }
+}
+
+.animate-glow-pulse {
+   animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Wordmark shimmer — gold sheen sweeps across periodically */
+@keyframes gold-shimmer {
+   0%, 100% { background-position: -200% 0; }
+   50% { background-position: 200% 0; }
+}
+
+/* Coins drifting up — used on home hero ambient layer */
+@keyframes float-up {
+   0% { transform: translateY(40px) rotate(0deg) scale(0.7); opacity: 0; }
+   12% { opacity: 0.55; }
+   88% { opacity: 0.55; }
+   100% { transform: translateY(-120px) rotate(360deg) scale(1); opacity: 0; }
+}
+
+.animate-float-up {
+   animation: float-up linear infinite;
+   will-change: transform, opacity;
+}
+
+/* Slow ornate compass rotation — for the home emblem */
+@keyframes compass-spin {
+   from { transform: rotate(0deg); }
+   to { transform: rotate(360deg); }
+}
+
+.animate-compass-spin {
+   animation: compass-spin 60s linear infinite;
+}
+
+/* Gentle floating bob for emblem */
+@keyframes hero-bob {
+   0%, 100% { transform: translateY(0); }
+   50% { transform: translateY(-6px); }
+}
+
+.animate-hero-bob {
+   animation: hero-bob 4.5s ease-in-out infinite;
+}
+
+/* Gold rain — celebration coins falling with a lateral sway */
+@keyframes gold-rain-fall {
+   0% {
+      transform: translateY(-12vh) translateX(0) rotate(0deg);
+      opacity: 0;
+   }
+   8% {
+      opacity: 1;
+   }
+   88% {
+      opacity: 1;
+   }
+   100% {
+      transform: translateY(112vh) translateX(var(--rain-sway, 24px)) rotate(540deg);
+      opacity: 0;
+   }
+}
+
+.animate-gold-rain {
+   animation: gold-rain-fall linear infinite;
+   will-change: transform, opacity;
+}
+
+/* Bust flash — vignette punches in then settles to a simmer */
+@keyframes bust-flash {
+   0% { opacity: 0; }
+   18% { opacity: 1; }
+   60% { opacity: 0.55; }
+   100% { opacity: 0.4; }
+}
+
+.animate-bust-flash {
+   animation: bust-flash 700ms ease-out forwards;
+}
+
+/* Toast slide-up */
+@keyframes toast-in {
+   0% { transform: translateY(16px) scale(0.92); opacity: 0; }
+   100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.animate-toast-in {
+   animation: toast-in 240ms cubic-bezier(0.2, 0.85, 0.4, 1.15);
+}
+
+/* Stronger shake for bust moments — more violent than pirate-shake */
+@keyframes bust-shake {
+   0%, 100% { transform: translateX(0); }
+   15% { transform: translateX(-6px) rotate(-1.5deg); }
+   30% { transform: translateX(6px) rotate(1.5deg); }
+   45% { transform: translateX(-5px) rotate(-1deg); }
+   60% { transform: translateX(5px) rotate(1deg); }
+   75% { transform: translateX(-3px); }
+   90% { transform: translateX(2px); }
+}
+
+.animate-bust-shake {
+   animation: bust-shake 550ms ease-in-out;
+}
+
+/* Slow diagonal sheen sweep — card back ornament */
+@keyframes card-sheen {
+   0%, 70%, 100% { transform: translateX(-160%) skewX(-18deg); }
+   85% { transform: translateX(260%) skewX(-18deg); }
+}
+
+.animate-card-sheen {
+   animation: card-sheen 6s ease-in-out infinite;
+   will-change: transform;
+}
+
+/* Winner trophy pop */
+@keyframes trophy-pop {
+   0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+   65% { transform: scale(1.12) rotate(2deg); opacity: 1; }
+   100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.animate-trophy-pop {
+   animation: trophy-pop 500ms cubic-bezier(0.2, 0.85, 0.4, 1.2) both;
+}
+
+/* Route enter — fade + rise on every navigation (app/template.tsx).
+   fill-mode backwards (NOT both/forwards): a lingering transform would make
+   the wrapper a containing block and break fixed overlays + GoldRain. */
+@keyframes route-enter {
+   0% { opacity: 0; transform: translateY(14px) scale(0.985); }
+   100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.route-enter {
+   animation: route-enter 260ms cubic-bezier(0.2, 0.85, 0.4, 1) backwards;
+}
+
+/* Ambient sea — wave bands slide horizontally at different speeds */
+@keyframes wave-drift {
+   from { transform: translateX(0); }
+   to { transform: translateX(-50%); }
+}
+
+.animate-wave {
+   animation: wave-drift linear infinite;
+   will-change: transform;
+}
+
+/* Distant ship sails across the horizon */
+@keyframes ship-sail {
+   0% { transform: translateX(-12vw); }
+   100% { transform: translateX(112vw); }
+}
+
+.animate-ship-sail {
+   animation: ship-sail 90s linear infinite;
+   will-change: transform;
+}
+
+/* Bank: treasure chest pops in center screen */
+@keyframes chest-pop {
+   0% { transform: scale(0.3) rotate(-6deg); opacity: 0; }
+   55% { transform: scale(1.12) rotate(2deg); opacity: 1; }
+   80% { transform: scale(0.98); }
+   100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-chest-pop {
+   animation: chest-pop 420ms cubic-bezier(0.2, 0.85, 0.4, 1.2) both;
+}
+
+/* Bank: coins arc from above into the chest */
+@keyframes coin-fly-in {
+   0% { transform: translate(var(--fly-from-x, 0px), -90px) scale(1); opacity: 0; }
+   15% { opacity: 1; }
+   100% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+}
+
+.animate-coin-fly {
+   animation: coin-fly-in 500ms ease-in both;
+}
+
+/* Bank: "+N" rises and fades */
+@keyframes bank-amount-rise {
+   0% { transform: translateY(6px); opacity: 0; }
+   25% { opacity: 1; }
+   100% { transform: translateY(-34px); opacity: 0; }
+}
+
+.animate-bank-amount {
+   animation: bank-amount-rise 900ms ease-out both;
+}
+
+/* Hero Ken Burns — slow breathing pan for the landing backdrop.
+   Scale never drops below 1.08 so parallax offsets (±14px) never
+   expose the image edges. */
+@keyframes hero-pan {
+   0%, 100% { transform: scale(1.12) translate(0.6%, 0.8%); }
+   50% { transform: scale(1.08) translate(-0.6%, -0.8%); }
+}
+
+.animate-hero-pan {
+   animation: hero-pan 36s ease-in-out infinite;
+   will-change: transform;
+}
+
+/* Count-up tick emphasis — tiny scale bump while a number animates */
+@keyframes score-bump {
+   0%, 100% { transform: scale(1); }
+   50% { transform: scale(1.18); }
+}
+
+.animate-score-bump {
+   animation: score-bump 240ms ease-out;
+}
+
+/* Skeleton shimmer for loading states */
+@keyframes skeleton-shimmer {
+   0% { background-position: -200% 0; }
+   100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+   background: linear-gradient(
+      100deg,
+      rgb(14 79 112 / 0.25) 35%,
+      rgb(94 234 212 / 0.18) 50%,
+      rgb(14 79 112 / 0.25) 65%
+   );
+   background-size: 200% 100%;
+   animation: skeleton-shimmer 1.6s linear infinite;
+}
+
+/* Reduced motion — kill non-essential anims */
+@media (prefers-reduced-motion: reduce) {
+   .animate-mist-drift,
+   .animate-glow-pulse,
+   .animate-float-up,
+   .animate-compass-spin,
+   .animate-hero-bob,
+   .animate-gold-rain,
+   .animate-card-sheen,
+   .skeleton-shimmer {
+      animation: none;
+   }
+   .animate-bust-shake,
+   .animate-pirate-shake {
+      animation: none;
+   }
+   .animate-bust-flash {
+      animation: none;
+      opacity: 0.4;
+   }
+   .animate-toast-in,
+   .animate-trophy-pop,
+   .animate-chest-pop {
+      animation-duration: 1ms;
+   }
+   .route-enter,
+   .animate-wave,
+   .animate-ship-sail,
+   .animate-coin-fly,
+   .animate-bank-amount,
+   .animate-score-bump {
+      animation: none;
+   }
+   .animate-hero-pan {
+      animation: none;
+      transform: scale(1.08);
+   }
+   .card-flip {
+      transition: none;
+   }
 }

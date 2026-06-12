@@ -1,15 +1,16 @@
 {
    "compilerOptions": {
-      "target": "es5",
+      "target": "ES2022",
       "lib": ["dom", "dom.iterable", "esnext"],
       "allowJs": true,
       "skipLibCheck": true,
       "strict": true,
+      "noUncheckedIndexedAccess": true,
       "forceConsistentCasingInFileNames": true,
       "noEmit": true,
       "esModuleInterop": true,
       "module": "esnext",
-      "moduleResolution": "node",
+      "moduleResolution": "bundler",
       "resolveJsonModule": true,
       "isolatedModules": true,
       "jsx": "preserve",
@@ -20,17 +21,18 @@
          }
       ],
       "paths": {
-         "@/components/*": ["./lib/components/*"],
-         "@/types/*": ["./lib/types/*"],
-         "@/*": ["./*"]
+         "@/game/*": ["./src/game/*"],
+         "@/server/*": ["./src/server/*"],
+         "@/client/*": ["./src/client/*"],
+         "@/ui/*": ["./src/ui/*"],
+         "@/lib/*": ["./src/lib/*"]
       }
    },
    "include": [
       "next-env.d.ts",
       "**/*.ts",
       "**/*.tsx",
-      ".next/types/**/*.ts",
-      "utilities/scripts/generateIconNameTypes.js"
+      ".next/types/**/*.ts"
    ],
    "exclude": ["node_modules"]
 }

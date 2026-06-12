@@ -1,0 +1,230 @@
+import { describe, expect, it } from 'vitest';
+import { DECKS } from './deck';
+import { EngineError, initialState, reduce } from './engine';
+import { MAX_PLAYERS } from './rules';
+import type { GameAction, GameState, Player, PlayerInit } from './types';
+
+const p = (id: string, name = id): PlayerInit => ({ id, name });
+
+function buildLobby(...players: PlayerInit[]): GameState {
+   return players.reduce<GameState>((s, player) => reduce(s, { type: 'PLAYER_JOIN', player }), initialState);
+}
+
+function startGame(state: GameState, seed = 'test-seed'): GameState {
+   return reduce(state, { type: 'START_GAME', seed });
+}
+
+function dispatch(state: GameState, ...actions: GameAction[]): GameState {
+   return actions.reduce(reduce, state);
+}
+
+function findPlayer(state: GameState, id: string): Player {
+   const found = state.players.find((pl) => pl.id === id);
+   if (!found) throw new Error(`player ${id} missing`);
+   return found;
+}
+
+function drawUntilGold(state: GameState): GameState {
+   let s = state;
+   while (s.deck.length > 0 && s.currentCard?.kind !== 'gold') {
+      s = reduce(s, { type: 'DRAW' });
+      if (s.currentCard?.kind === 'pirate') {
+         s = reduce(s, { type: 'END_TURN' });
+      }
+   }
+   return s;
+}
+
+describe('PLAYER_JOIN', () => {
+   it('adds players with zero coins', () => {
+      const s = buildLobby(p('a'), p('b'));
+      expect(s.players).toHaveLength(2);
+      expect(s.players[0]).toMatchObject({ id: 'a', coins: 0 });
+   });
+
+   it('rejects duplicate ids', () => {
+      const s = buildLobby(p('a'));
+      expect(() => reduce(s, { type: 'PLAYER_JOIN', player: p('a') })).toThrow(EngineError);
+   });
+
+   it('rejects when lobby full', () => {
+      let s: GameState = initialState;
+      for (let i = 0; i < MAX_PLAYERS; i++) s = reduce(s, { type: 'PLAYER_JOIN', player: p(`p${i}`) });
+      expect(() => reduce(s, { type: 'PLAYER_JOIN', player: p('overflow') })).toThrow(/full/);
+   });
+
+   it('rejects after game started', () => {
+      const s = startGame(buildLobby(p('a'), p('b')));
+      expect(() => reduce(s, { type: 'PLAYER_JOIN', player: p('c') })).toThrow(/after game start/);
+   });
+});
+
+describe('START_GAME', () => {
+   it('requires minimum players', () => {
+      const solo = buildLobby(p('a'));
+      expect(() => startGame(solo)).toThrow(/at least/);
+   });
+
+   it('produces deterministic deck given same seed', () => {
+      const lobby = buildLobby(p('a'), p('b'));
+      const g1 = startGame(lobby, 'same-seed');
+      const g2 = startGame(lobby, 'same-seed');
+      expect(g1.deck).toEqual(g2.deck);
+   });
+
+   it('produces different deck given different seed', () => {
+      const lobby = buildLobby(p('a'), p('b'));
+      const g1 = startGame(lobby, 'seed-1');
+      const g2 = startGame(lobby, 'seed-2');
+      expect(g1.deck).not.toEqual(g2.deck);
+   });
+
+   it('transitions status to active with full deck', () => {
+      const s = startGame(buildLobby(p('a'), p('b')));
+      expect(s.status).toBe('active');
+      expect(s.deck.length).toBe(DECKS.greedy.length);
+   });
+});
+
+describe('DRAW gold', () => {
+   it('appends gold to streak, keeps turn', () => {
+      // Force a seed where top card is gold. With variant greedy, gold dominates so most seeds work.
+      let s = startGame(buildLobby(p('a'), p('b')), 'gold-seed-1');
+      s = drawUntilGold(s);
+      const turnBefore = s.turnIndex;
+      const streakBefore = s.currentStreak.length;
+      s = reduce(s, { type: 'DRAW' });
+      expect(s.currentCard?.kind).toBe('gold');
+      expect(s.currentStreak.length).toBe(streakBefore + 1);
+      expect(s.turnIndex).toBe(turnBefore);
+   });
+});
+
+describe('DRAW pirate', () => {
+   it('clears streak and increments pirateCount; turn stays until END_TURN', () => {
+      let s = startGame(buildLobby(p('a'), p('b')), 'pirate-seed');
+      let pirateCount = 0;
+      // draw until a pirate appears
+      while (s.deck.length > 0 && s.currentCard?.kind !== 'pirate') {
+         s = reduce(s, { type: 'DRAW' });
+         if (s.currentCard?.kind === 'pirate') pirateCount = s.pirateCount;
+      }
+      expect(s.currentCard?.kind).toBe('pirate');
+      expect(s.currentStreak).toEqual([]);
+      expect(s.pirateCount).toBe(pirateCount);
+   });
+
+   it('rejects DRAW while pirate revealed', () => {
+      let s = startGame(buildLobby(p('a'), p('b')), 'pirate-seed');
+      while (s.deck.length > 0 && s.currentCard?.kind !== 'pirate') {
+         s = reduce(s, { type: 'DRAW' });
+      }
+      expect(s.currentCard?.kind).toBe('pirate');
+      expect(() => reduce(s, { type: 'DRAW' })).toThrow(/end turn/i);
+   });
+});
+
+describe('BANK', () => {
+   it('adds streak sum to current player and advances turn', () => {
+      let s = startGame(buildLobby(p('a'), p('b')), 'gold-seed-1');
+      s = drawUntilGold(s);
+      s = reduce(s, { type: 'DRAW' });
+      const sum = s.currentStreak.reduce((acc, c) => acc + c.value, 0);
+      const actorId = s.players[s.turnIndex]!.id;
+      const coinsBefore = findPlayer(s, actorId).coins;
+      s = reduce(s, { type: 'BANK' });
+      expect(findPlayer(s, actorId).coins).toBe(coinsBefore + sum);
+      expect(s.currentStreak).toEqual([]);
+      expect(s.currentCard).toBeNull();
+      expect(s.players[s.turnIndex]!.id).not.toBe(actorId);
+   });
+
+   it('rejects with empty streak', () => {
+      const s = startGame(buildLobby(p('a'), p('b')), 'any');
+      expect(() => reduce(s, { type: 'BANK' })).toThrow(/no streak/);
+   });
+
+   it('rejects after pirate revealed', () => {
+      let s = startGame(buildLobby(p('a'), p('b')), 'pirate-seed');
+      while (s.deck.length > 0 && s.currentCard?.kind !== 'pirate') {
+         s = reduce(s, { type: 'DRAW' });
+      }
+      expect(() => reduce(s, { type: 'BANK' })).toThrow(/pirate/);
+   });
+});
+
+describe('END_TURN', () => {
+   it('advances turn after pirate', () => {
+      let s = startGame(buildLobby(p('a'), p('b')), 'pirate-seed');
+      while (s.deck.length > 0 && s.currentCard?.kind !== 'pirate') {
+         s = reduce(s, { type: 'DRAW' });
+      }
+      const before = s.turnIndex;
+      s = reduce(s, { type: 'END_TURN' });
+      expect(s.turnIndex).not.toBe(before);
+      expect(s.currentCard).toBeNull();
+   });
+
+   it('rejects without pirate', () => {
+      const s = startGame(buildLobby(p('a'), p('b')), 'any');
+      expect(() => reduce(s, { type: 'END_TURN' })).toThrow(/pirate/);
+   });
+});
+
+describe('game completion', () => {
+   it('last gold draw auto-banks and completes', () => {
+      let s = startGame(buildLobby(p('a'), p('b')), 'finish-seed');
+      let safety = 200;
+      while (s.status === 'active' && safety-- > 0) {
+         if (s.currentCard?.kind === 'pirate') {
+            s = reduce(s, { type: 'END_TURN' });
+         } else {
+            s = reduce(s, { type: 'DRAW' });
+         }
+      }
+      expect(s.status).toBe('complete');
+      expect(s.winnerId).not.toBeNull();
+   });
+
+   it('winner is highest coins', () => {
+      let s = startGame(buildLobby(p('a'), p('b'), p('c')), 'rank-seed');
+      let safety = 500;
+      while (s.status === 'active' && safety-- > 0) {
+         if (s.currentCard?.kind === 'pirate') s = reduce(s, { type: 'END_TURN' });
+         else s = reduce(s, { type: 'DRAW' });
+      }
+      const ranked = [...s.players].sort((a, b) => b.coins - a.coins);
+      expect(s.winnerId).toBe(ranked[0]!.id);
+   });
+
+   it('rejects DRAW after completion', () => {
+      let s = startGame(buildLobby(p('a'), p('b')), 'finish-seed');
+      let safety = 200;
+      while (s.status === 'active' && safety-- > 0) {
+         if (s.currentCard?.kind === 'pirate') s = reduce(s, { type: 'END_TURN' });
+         else s = reduce(s, { type: 'DRAW' });
+      }
+      expect(() => reduce(s, { type: 'DRAW' })).toThrow(/not active/);
+   });
+});
+
+describe('purity', () => {
+   it('does not mutate input state', () => {
+      const lobby = buildLobby(p('a'), p('b'));
+      const frozen = JSON.parse(JSON.stringify(lobby));
+      reduce(lobby, { type: 'START_GAME', seed: 's' });
+      expect(lobby).toEqual(frozen);
+   });
+
+   it('same seed + actions → identical final states', () => {
+      const lobby = buildLobby(p('a'), p('b'));
+      const actions: GameAction[] = [
+         { type: 'START_GAME', seed: 'parity' },
+         { type: 'DRAW' },
+         { type: 'DRAW' },
+      ];
+      const r1 = dispatch(lobby, ...actions);
+      const r2 = dispatch(lobby, ...actions);
+      expect(r1).toEqual(r2);
+   });
+});

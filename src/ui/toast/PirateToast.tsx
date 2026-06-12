@@ -1,0 +1,64 @@
+'use client';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/cn';
+
+export type ToastTone = 'gold' | 'blood' | 'teal';
+
+interface ToastState {
+   id: number;
+   message: string;
+   tone: ToastTone;
+}
+
+const TONE: Record<ToastTone, string> = {
+   gold:
+      'bg-gradient-to-b from-[color:var(--color-gold-300)] to-[color:var(--color-gold-500)] ' +
+      'text-[color:var(--color-wood-900)] treasure-glow border-[color:var(--color-gold-600)]',
+   blood:
+      'bg-gradient-to-b from-[color:var(--color-coral-600)] to-[color:var(--color-blood-800)] ' +
+      'text-white coral-glow border-[color:var(--color-blood-800)] [text-shadow:0_1px_2px_rgb(0_0_0/0.5)]',
+   teal:
+      'bg-gradient-to-b from-[color:var(--color-teal-400)] to-[color:var(--color-teal-600)] ' +
+      'text-[color:var(--color-abyss-900)] teal-glow border-[color:var(--color-teal-600)]',
+};
+
+/**
+ * One-at-a-time event toast for game moments ("Banked 12!", "Robbed!").
+ * Returns the element to render plus a show() trigger. Auto-dismisses.
+ */
+export function useGameToast(duration = 1600) {
+   const [toast, setToast] = useState<ToastState | null>(null);
+   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+   const show = useCallback(
+      (message: string, tone: ToastTone = 'gold') => {
+         if (timer.current) clearTimeout(timer.current);
+         setToast({ id: Date.now(), message, tone });
+         timer.current = setTimeout(() => setToast(null), duration);
+      },
+      [duration],
+   );
+
+   useEffect(() => {
+      return () => {
+         if (timer.current) clearTimeout(timer.current);
+      };
+   }, []);
+
+   const element = toast ? (
+      <div className='pointer-events-none fixed inset-x-0 top-20 z-50 flex justify-center px-4' aria-live='polite'>
+         <div
+            key={toast.id}
+            className={cn(
+               'animate-toast-in pirate-display rounded-full border-2 px-6 py-2.5 text-xl tracking-wider shadow-card-deep',
+               TONE[toast.tone],
+            )}
+         >
+            {toast.message}
+         </div>
+      </div>
+   ) : null;
+
+   return { toastElement: element, showToast: show };
+}

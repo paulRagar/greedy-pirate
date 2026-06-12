@@ -1,131 +1,111 @@
 'use client';
-import ButtonIcon from '@/components/button-icon/ButtonIcon';
-import Button from '@/components/button/Button';
-import Checkbox from '@/components/checkbox/Checkbox';
-import Input from '@/components/input-text/InputText';
-import Page from '@/components/page/Page';
-import Panel from '@/components/panel/Panel';
-import { useRouter } from 'next/navigation';
+
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { PirateButton } from '@/ui/pirate-button/PirateButton';
+import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
+import { CrewGrid } from '@/ui/game-room/CrewGrid';
+import { MAX_PLAYERS, MIN_PLAYERS } from '@/game/rules';
 
 interface Player {
    id: string;
    name: string;
 }
 
-const SetupClient = () => {
+export default function SetupClient() {
    const router = useRouter();
-   const ref = useRef<any>(null);
+   const inputRef = useRef<HTMLInputElement>(null);
 
-   const [playerName, setPlayerName] = useState<string>('');
-   const [players, setPlayers] = useState<Array<Player>>([]);
-   const [isEvenGreedier, setIsEvenGreedier] = useState<boolean>(false);
+   const [playerName, setPlayerName] = useState('');
+   const [players, setPlayers] = useState<Player[]>([]);
 
    useEffect(() => {
-      const localStorageDataString: string = `${localStorage.getItem('players')}`;
-      const playerData: Array<{ id: string; name: string }> = JSON.parse(localStorageDataString);
-      if (playerData?.length) {
-         setPlayers(playerData);
+      try {
+         const raw = localStorage.getItem('players');
+         const parsed = raw ? (JSON.parse(raw) as Player[]) : [];
+         if (Array.isArray(parsed) && parsed.length) setPlayers(parsed);
+      } catch {
+         // ignore corrupt storage
       }
    }, []);
 
-   const handleAddPlayer = () => {
-      if (!playerName?.trim()) return;
-      setPlayers((prevState) => {
-         return [...prevState, { id: crypto.randomUUID(), name: playerName }];
-      });
+   const addPlayer = () => {
+      const name = playerName.trim();
+      if (!name || players.length >= MAX_PLAYERS) return;
+      setPlayers((prev) => [...prev, { id: crypto.randomUUID(), name }]);
       setPlayerName('');
-      if (ref?.current) {
-         ref.current.focus();
-      }
+      inputRef.current?.focus();
    };
 
-   const handleRemovePlayer = (id: string) => {
-      setPlayers((prevState) => {
-         return [...prevState].filter((player) => player.id !== id);
-      });
+   const removePlayer = (id: string) => {
+      setPlayers((prev) => prev.filter((p) => p.id !== id));
    };
 
-   const handleKeyPress = (e: any) => {
-      if (e.key === 'Enter' && players?.length < 10) handleAddPlayer();
-   };
-
-   const handleStartGame = () => {
+   const startGame = () => {
       localStorage.setItem('players', JSON.stringify(players));
-      router.push(`/play-local${isEvenGreedier ? '?evenGreedier=true' : ''}`);
+      router.push('/play-local');
    };
+
+   const canStart = players.length >= MIN_PLAYERS && players.length <= MAX_PLAYERS;
 
    return (
-      <Page>
-         <Panel className='flex flex-col gap-4 items-center justify-between'>
-            <span className='text-3xl font-semibold text-yellow-500'>Greedy Pirate</span>
-            <div className='w-full flex justify-between gap-4'>
-               <div className='w-1/2 flex flex-col items-center justify-center gap-2'>
-                  <div className='flex flex-col items-center'>
-                     <span className='text-lg'>{`Enter Crewmate Name`}</span>
-                     <span className='text-sm text-secondary'>{`( 2 to 10 Pirates )`}</span>
-                  </div>
-                  <div className='w-full pb-2'>
-                     <Input
-                        ref={ref}
-                        type='text'
-                        placeholder='Name...'
-                        autoFocus
-                        value={playerName}
-                        onChange={(e) => setPlayerName(e.target.value)}
-                        onKeyDown={handleKeyPress}
-                     />
-                  </div>
-                  <Button color='teal' size='sm' onClick={handleAddPlayer} disabled={players?.length === 10}>
-                     + Add Player
-                  </Button>
-               </div>
-               <div className='w-1/2 flex items-center'>
-                  <div className='w-full mb-[-10px] grid grid-cols-2 gap-2 items-center'>
-                     {players?.length ? (
-                        players.map((player, index) => (
-                           <div
-                              key={index}
-                              className='max-h-[32px] flex justify-between items-center px-2 py-1 rounded bg-gray-200 dark:bg-slate-700'>
-                              <span>{player.name}</span>
-                              <ButtonIcon
-                                 size='xs'
-                                 color='transparent'
-                                 iconName='XMark'
-                                 onClick={() => handleRemovePlayer(player.id)}
-                              />
-                           </div>
-                        ))
-                     ) : (
-                        <div className='col-span-2 flex justify-center p-2 rounded text-secondary bg-gray-200 dark:bg-slate-700'>
-                           <span>{`Yer Ship Be Empty. Add Yer Crew.`}</span>
-                        </div>
-                     )}
-                  </div>
-               </div>
-            </div>
-            <div className='flex justify-center'>
-               <div>
-                  <Button
-                     color='purple'
-                     disabled={players?.length < 2 || players?.length > 10 || players.some((player) => !player.name)}
-                     onClick={handleStartGame}>
-                     Start Game!
-                  </Button>
-               </div>
-            </div>
-            <div className='absolute bottom-7 left-20'>
-               <Checkbox
-                  label={'Even Greedier?'}
-                  checked={isEvenGreedier}
-                  onChange={(e: any) => {
-                     setIsEvenGreedier(!isEvenGreedier);
-                  }}
-               />
-            </div>
-         </Panel>
-      </Page>
-   );
-};
+      <main className='flex min-h-0 flex-1 flex-col gap-3 px-5 pt-2 sm:gap-4'>
+         <header className='flex flex-col gap-1 text-center'>
+            <h1 className='wordmark-gold pirate-display text-4xl sm:text-6xl'>Muster Yer Crew</h1>
+            <p className='text-sm text-[color:var(--color-cream-200)]/75'>
+               {MIN_PLAYERS}–{MAX_PLAYERS} sailors. Add ye lot below.
+            </p>
+         </header>
 
-export default SetupClient;
+         <PiratePanel variant='deep' className='flex flex-col gap-2 p-3'>
+            <label htmlFor='player-name' className='text-sm font-semibold text-[color:var(--color-cream-100)]'>
+               Add a crewmate
+            </label>
+            <div className='flex gap-2'>
+               <input
+                  ref={inputRef}
+                  id='player-name'
+                  type='text'
+                  inputMode='text'
+                  autoComplete='off'
+                  autoCapitalize='words'
+                  maxLength={24}
+                  value={playerName}
+                  placeholder='Name…'
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  onKeyDown={(e) => {
+                     if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addPlayer();
+                     }
+                  }}
+                  className='input-pirate flex-1 text-base'
+               />
+               <PirateButton
+                  variant='tertiary'
+                  size='md'
+                  onClick={addPlayer}
+                  disabled={!playerName.trim() || players.length >= MAX_PLAYERS}
+               >
+                  + Add
+               </PirateButton>
+            </div>
+         </PiratePanel>
+
+         <div className='scrollbar-none min-h-0 flex-1 overflow-y-auto'>
+            <CrewGrid players={players} capacity={MAX_PLAYERS} onRemove={removePlayer} />
+         </div>
+
+         <div className='mt-auto pt-2 safe-bottom'>
+            <PirateButton variant='primary' size='lg' fullWidth onClick={startGame} disabled={!canStart}>
+               Hoist the Colors!
+            </PirateButton>
+            {!canStart && players.length < MIN_PLAYERS && (
+               <p className='mt-2 text-center text-xs text-[color:var(--color-cream-200)]/60'>
+                  Need at least {MIN_PLAYERS} crewmates.
+               </p>
+            )}
+         </div>
+      </main>
+   );
+}

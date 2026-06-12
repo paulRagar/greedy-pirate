@@ -1,0 +1,40 @@
+import type { Card, DeckVariant, GameStatus, GameState, GoldCard } from './types';
+
+export type PublicPlayer = {
+   readonly id: string;
+   readonly name: string;
+   readonly coins: number;
+};
+
+export type PublicGameState = {
+   readonly status: GameStatus;
+   readonly players: ReadonlyArray<PublicPlayer>;
+   readonly turnIndex: number;
+   readonly currentCard: Card | null;
+   readonly currentStreak: ReadonlyArray<GoldCard>;
+   readonly pirateCount: number;
+   readonly variant: DeckVariant;
+   readonly winnerId: string | null;
+   readonly deckCount: number;
+};
+
+export type RoomMetadata = {
+   readonly code: string;
+   readonly hostId: string;
+};
+
+export type RoomState = PublicGameState & RoomMetadata;
+
+export function toPublic(state: GameState): PublicGameState {
+   return {
+      status: state.status,
+      players: state.players.map((p) => ({ id: p.id, name: p.name, coins: p.coins })),
+      turnIndex: state.turnIndex,
+      currentCard: state.currentCard,
+      currentStreak: state.currentStreak,
+      pirateCount: state.pirateCount,
+      variant: state.variant,
+      winnerId: state.winnerId,
+      deckCount: state.deck.length,
+   };
+}
