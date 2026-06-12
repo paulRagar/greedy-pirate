@@ -24,6 +24,7 @@ export const initialState: GameState = {
    pirateCount: 0,
    variant: DEFAULT_VARIANT,
    winnerId: null,
+   absentIds: [],
 };
 
 export function reduce(state: GameState, action: GameAction): GameState {
@@ -40,6 +41,10 @@ export function reduce(state: GameState, action: GameAction): GameState {
          return handleBank(state);
       case 'END_TURN':
          return handleEndTurn(state);
+      case 'SKIP_TURN':
+         return handleSkipTurn(state, action.playerId);
+      case 'MARK_PRESENT':
+         return handleMarkPresent(state, action.playerId);
    }
 }
 
@@ -72,6 +77,7 @@ function handleStart(state: GameState, seed: string, variant = state.variant): G
       currentStreak: [],
       pirateCount: 0,
       winnerId: null,
+      absentIds: [],
    };
 }
 
@@ -122,6 +128,28 @@ function handleEndTurn(state: GameState): GameState {
    return advanceTurn({ ...state, currentCard: null });
 }
 
+/**
+ * Forfeit the current player's turn — used when the player who holds
+ * the helm disconnects mid-turn. Drops any in-flight streak (they walked
+ * away, no banking) and hands off to the next seat. Idempotent at the
+ * caller: SKIP_TURN with a stale playerId is rejected, so a slow client
+ * cannot accidentally skip the player who just took over.
+ */
+function handleSkipTurn(state: GameState, playerId: string): GameState {
+   assert(state.status === 'active', 'game not active');
+   const current = state.players[state.turnIndex];
+   assert(current?.id === playerId, 'turn has already advanced');
+   const absentIds = state.absentIds.includes(playerId)
+      ? state.absentIds
+      : [...state.absentIds, playerId];
+   return advanceTurn({ ...state, currentCard: null, currentStreak: [], absentIds });
+}
+
+function handleMarkPresent(state: GameState, playerId: string): GameState {
+   if (!state.absentIds.includes(playerId)) return state;
+   return { ...state, absentIds: state.absentIds.filter((id) => id !== playerId) };
+}
+
 function bankToCurrentPlayer(state: GameState): GameState {
    const sum = state.currentStreak.reduce((acc: number, c: GoldCard) => acc + c.value, 0);
    if (sum === 0) return state;
@@ -133,8 +161,19 @@ function bankToCurrentPlayer(state: GameState): GameState {
 
 function advanceTurn(state: GameState): GameState {
    if (state.players.length === 0) return state;
-   const turnIndex = (state.turnIndex + 1) % state.players.length;
-   return { ...state, turnIndex };
+   const n = state.players.length;
+   let next = (state.turnIndex + 1) % n;
+   // Walk past anyone flagged absent. If everyone is absent, fall back
+   // to the original advance — the table is effectively empty but the
+   // engine refuses to loop forever.
+   for (let i = 0; i < n; i++) {
+      const candidate = state.players[next];
+      if (candidate && !state.absentIds.includes(candidate.id)) {
+         return { ...state, turnIndex: next };
+      }
+      next = (next + 1) % n;
+   }
+   return { ...state, turnIndex: (state.turnIndex + 1) % n };
 }
 
 function complete(state: GameState): GameState {

@@ -24,6 +24,8 @@ export type GameState = {
    readonly pirateCount: number;
    readonly variant: DeckVariant;
    readonly winnerId: string | null;
+   /** Players marked absent — turn advance skips past their seat. */
+   readonly absentIds: ReadonlyArray<string>;
 };
 
 export type PlayerInit = { readonly id: string; readonly name: string };
@@ -34,4 +36,6 @@ export type GameAction =
    | { readonly type: 'START_GAME'; readonly seed: string; readonly variant?: DeckVariant }
    | { readonly type: 'DRAW' }
    | { readonly type: 'BANK' }
-   | { readonly type: 'END_TURN' };
+   | { readonly type: 'END_TURN' }
+   | { readonly type: 'SKIP_TURN'; readonly playerId: string }
+   | { readonly type: 'MARK_PRESENT'; readonly playerId: string };

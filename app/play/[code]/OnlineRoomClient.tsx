@@ -5,7 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useGameRoom, type RealtimeStatus } from '@/client/realtime/useGameRoom';
 import { useGameJuice, type JuiceSnapshot } from '@/client/hooks/useGameJuice';
 import type { PublicGameState, RoomState, RoomSpectatorView } from '@/game/public';
-import { bankOnline, drawOnline, endTurnOnline } from '@/server/actions/gameTurnActions';
+import {
+   bankOnline,
+   drawOnline,
+   endTurnOnline,
+   markPresentOnline,
+   skipAbsentTurn,
+} from '@/server/actions/gameTurnActions';
 import { startOnlineGame } from '@/server/actions/startOnlineGame';
 import { endGameByForfeit, restartRoom } from '@/server/actions/restartRoom';
 import { leaveSpectator } from '@/server/actions/spectatorActions';
@@ -359,6 +365,42 @@ function Play({
          cancelled = true;
       };
    }, [aloneInActiveGame, code]);
+
+   // Skip the helm forward when the current turn player has dropped off
+   // presence and the rest of the table is still waiting. Only one client
+   // dispatches per round (the lowest-seat seated player who is online)
+   // and the server is idempotent on stale skip attempts, so the race is
+   // harmless.
+   const turnHolderId = currentPlayer?.id ?? null;
+   const turnHolderOffline =
+      !isSpectator &&
+      state.status === 'active' &&
+      !isComplete &&
+      turnHolderId !== null &&
+      turnHolderId !== userId &&
+      !onlineIds.has(turnHolderId) &&
+      seatedOnline.length >= 2;
+   const skipLeaderId = seatedOnline[0]?.id ?? null;
+   const iAmSkipLeader = skipLeaderId === userId;
+   useEffect(() => {
+      if (!turnHolderOffline || !iAmSkipLeader || !turnHolderId) return;
+      const handle = setTimeout(() => {
+         void skipAbsentTurn({ code, expectedTurnPlayerId: turnHolderId }).catch((err) => {
+            console.error('skipAbsentTurn failed', err);
+         });
+      }, 1500);
+      return () => clearTimeout(handle);
+   }, [turnHolderOffline, iAmSkipLeader, turnHolderId, code]);
+
+   // I just reconnected after being skipped — clear my absent flag so
+   // the table stops jumping over my seat.
+   const iAmAbsent = !isSpectator && state.absentIds.includes(userId);
+   useEffect(() => {
+      if (!iAmAbsent || state.status !== 'active') return;
+      void markPresentOnline({ code }).catch((err) => {
+         console.error('markPresentOnline failed', err);
+      });
+   }, [iAmAbsent, state.status, code]);
 
    const handlePlayAgain = async () => {
       setRestarting(true);

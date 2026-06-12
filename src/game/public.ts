@@ -16,6 +16,7 @@ export type PublicGameState = {
    readonly variant: DeckVariant;
    readonly winnerId: string | null;
    readonly deckCount: number;
+   readonly absentIds: ReadonlyArray<string>;
 };
 
 export type RoomMetadata = {
@@ -43,5 +44,6 @@ export function toPublic(state: GameState): PublicGameState {
       variant: state.variant,
       winnerId: state.winnerId,
       deckCount: state.deck.length,
+      absentIds: state.absentIds,
    };
 }

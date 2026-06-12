@@ -46,6 +46,7 @@ export function parseEngineState(row: DbGame): GameState {
       pirateCount: raw.pirateCount ?? 0,
       variant: row.deckVariant as DeckVariant,
       winnerId: raw.winnerId ?? null,
+      absentIds: (raw.absentIds ?? []) as GameState['absentIds'],
    };
 }
 
@@ -56,6 +57,8 @@ export type EventType =
    | 'DRAW'
    | 'BANK'
    | 'END_TURN'
+   | 'SKIP_TURN'
+   | 'MARK_PRESENT'
    | 'GAME_ENDED';
 
 export type EventPayload = {
@@ -139,6 +142,7 @@ function serializeState(state: GameState): Record<string, unknown> {
       currentStreak: state.currentStreak,
       pirateCount: state.pirateCount,
       winnerId: state.winnerId,
+      absentIds: state.absentIds,
    };
 }
 
