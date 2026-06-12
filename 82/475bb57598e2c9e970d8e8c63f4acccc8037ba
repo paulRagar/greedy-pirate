@@ -1,0 +1,500 @@
+src/server/supabase/admin.ts
+  s_4a555bbf5ac77a::t_ef01abfe51483f 1-12
+src/ui/effects/RainCoin.tsx
+  s_5955c21642d3da::t_ac177fd3bd2ae4 1-10
+src/game/shuffle.ts
+  s_4a555bbf5ac77a::t_8e5df35dc8cee7 1-33
+app/template.tsx
+  s_5955c21642d3da::t_256d687ef1a50c 1-8
+src/ui/top-nav/TopNav.tsx
+  s_5955c21642d3da::t_d140e3c685ca53 16-17
+  s_5955c21642d3da::t_74a02b814aaa1f 8,12,18,183-185,203
+  s_5955c21642d3da::t_5a68da2af17f1a 44-45,47
+  s_5955c21642d3da::t_6bde8077088108 3,5-7,46,50,55-58,60,62,64-70,81-154,157-159,161-164,167-175,178-182,186-202
+  s_5955c21642d3da::t_b3e6c72021076c 71
+  s_5955c21642d3da::t_04baf68976a91c 72-80,155-156,160,165-166
+  s_5955c21642d3da::t_9dd3961ac44a3a 176-177
+  s_5955c21642d3da::t_514c25dd48023b 36-37
+  s_5955c21642d3da::t_85cfb6696b3f7b 9
+  s_9bac3c8581e9a1::t_033d2b1c56cab6 38-39
+  s_9bac3c8581e9a1::t_c94d76faca3a75 1-2,4,10-11,19,40-42,48-49,51-52,63,204-206,208,211-213
+  s_5955c21642d3da::t_5282d59f30b310 43
+  s_5955c21642d3da::t_ba0076b3efed28 53
+  s_2dbdc440ae9102::t_861e765eeede29 13-15,20-35,54,59,61,207,209-210
+src/server/actions/markAccountClaimed.ts
+  s_4a555bbf5ac77a::t_4ac64421337d84 1-23
+src/client/supabase/browser.ts
+  s_4a555bbf5ac77a::t_b8c9245b866d3e 1-15
+app/setup/SetupClient.tsx
+  s_2dbdc440ae9102::t_4f1be85a3e6633 53
+  s_5955c21642d3da::t_301424bd0fe6bd 95-97,99
+  s_9bac3c8581e9a1::t_d9b549e24ad99b 100
+  s_9bac3c8581e9a1::t_5cf580fc2af403 85
+  s_2dbdc440ae9102::t_afdd80c33cc40a 104
+  s_4a555bbf5ac77a::t_6b3a85c60a498b 8,46
+  s_2dbdc440ae9102::t_cfecaa540e6ca0 55
+  s_5955c21642d3da::t_c468600888c039 7
+  s_2dbdc440ae9102::t_3d5664b5b5a170 82
+  s_4a555bbf5ac77a::t_1e0c3977ccb211 2,4-6,15,17,19-20,23-28,32-35,37,40-41,44,49-50,56-59,62-80,84,86-91,93,98,101-103,105-111
+  s_5955c21642d3da::t_594d5afec7e526 52,54,60
+  s_9bac3c8581e9a1::t_62089b70822610 61
+src/server/db/client.ts
+  s_4a555bbf5ac77a::t_410f9a81532f38 1-18
+src/ui/pirate-button/PirateButton.tsx
+  s_9bac3c8581e9a1::t_9b223788bcea6b 4
+  s_9bac3c8581e9a1::t_d692171f78fde9 31-43,46,48,50-51
+  s_4a555bbf5ac77a::t_ea8adbd4e00807 1-3,5-7,44,57,63-64,66,70-78,80-86,89,91-101
+  s_9bac3c8581e9a1::t_01ffd5eb7b70f4 8-30,45,47,49,52-56,58-62,65,67-69,79,87-88,90
+src/ui/avatar/GuestAvatar.tsx
+  s_5955c21642d3da::t_827dbc3d922311 2-3,13,22
+  s_5955c21642d3da::t_cdc4fe698841ad 10,15-21
+  s_5955c21642d3da::t_f35ff955764994 1,6-9,23-26
+  s_5955c21642d3da::t_135610a69cdccf 4-5,11-12,14
+supabase/config.toml
+  s_4a555bbf5ac77a::t_ef7bbf5f852e5b 1-177,179-413
+  s_4a555bbf5ac77a::t_0e454e7ea9c537 178
+vercel.json
+  s_4a555bbf5ac77a::t_ec43b7d2beffc8 1-9
+src/server/db/index.ts
+  s_4a555bbf5ac77a::t_fa1365a9f80934 1-2
+app/play-local/page.tsx
+  s_4a555bbf5ac77a::t_10eff655b0a79b 5,7-8,22-23
+  s_4a555bbf5ac77a::t_fb61ed81d6bf8a 2-3,6,10-19,24
+.claude/docs/architecture.md
+  s_4a555bbf5ac77a::t_53b521e735e6ff 1-6,8-21,23,28-29,32-33,41-53,56-60,62-66,68-71,73-76,79-80,82-83,88-90,96-98,100,102,104,106-110,117-119,121,123,129-135,142-148,151,153,155-162,170-173,181,183
+  s_4a555bbf5ac77a::t_6305960f4c0270 7,22,24-27,30-31,34-40,54-55,61,67,72,77-78,81,84-87,91-95,99,101,103,105,111-116,120,122,124-128,136-141,149-150,152,154,163-169,174-180,182,184-188
+.claude/docs/roadmap.md
+  s_4a555bbf5ac77a::t_b685b82d7e102c 1-2,4-6,8,10,12-14,16,18,20-22,24,26,28-29,34,36,38,40,42,45,48,63,65,67,71-73,75,77,79,81,84-91
+  s_4a555bbf5ac77a::t_d9ab1a0cd2d610 3,7,9,11,15,17,19,23,25,27,30-33,35,37,39,41,43-44,46-47,49-62,64,66,68-70,74,76,78,80,82-83,92
+src/lib/cn.ts
+  s_4a555bbf5ac77a::t_24472e9b9c00ae 3-4
+middleware.ts
+  s_4a555bbf5ac77a::t_9e0ec4e5ae5afd 4-5,23-34,40-43
+  s_4a555bbf5ac77a::t_55f2d149fe4757 1-3,6-22,35-39,44
+src/server/db/schema.ts
+  s_4a555bbf5ac77a::t_f5f93d8fb1ecb1 1-121
+app/globals.css
+  s_9bac3c8581e9a1::t_7a9b11d9be26e3 12-64,70-73,75,81-93,97-129,143-144,152-163,165,198-210,213-219,273-276,278-285,290-298,316-317,360-387,611-613,621,643,648-650
+  s_5955c21642d3da::t_07229527584db0 571-583
+  s_9bac3c8581e9a1::t_e674e8732cb711 388-420,614-616
+  s_5955c21642d3da::t_ff4d57a13bef04 641
+  s_2dbdc440ae9102::t_4ccd1fbfd9d173 421-502,594-597,600-608,617-620,622-631,634
+  s_5955c21642d3da::t_222013dca5c442 644-647
+  s_5955c21642d3da::t_ca9b536c02d75c 308-314
+  s_5955c21642d3da::t_ad916260eec39d 503-570,584-591
+  s_5955c21642d3da::t_049db8b42a5609 632-633,635-640,642
+  s_4a555bbf5ac77a::t_cedbcae2f54515 1,9-11,65-69,74,76-80,94-96,133-136,141,145-147,151,164,175-197,211-212,221-225,271-272,277,286-289,299-302,304-306,315,318-359
+  s_2dbdc440ae9102::t_c13a9c2a4e905f 226-270
+  s_4a555bbf5ac77a::t_3afaa11a29db62 3,5-8,131-132,137-140,142,148-150,166-174,220,303,307
+src/server/stats.ts
+  s_4a555bbf5ac77a::t_7a04fc33405ee2 1-39
+src/game/engine.ts
+  s_4a555bbf5ac77a::t_5bc1dc2593483c 1-12,14,16-149
+  s_4a555bbf5ac77a::t_132b2c2ff7437e 13,15
+src/server/actions/setDisplayName.ts
+  s_4a555bbf5ac77a::t_cfbd0bde85e834 1-39
+supabase/migrations/20260611100000_cleanup_functions.sql
+  s_4a555bbf5ac77a::t_f27f6129e7f5cd 1-67
+next.config.js
+  s_4a555bbf5ac77a::t_1dff2bc341732a 1-2,6
+  s_5955c21642d3da::t_01364d5c45f1bb 7-9
+  s_4a555bbf5ac77a::t_014cafb8bd5c23 5
+src/server/db/migrations/0000_orange_khan.sql
+  s_4a555bbf5ac77a::t_cdd68536610426 1-2
+  s_4a555bbf5ac77a::t_ebbe81f1361684 3-71
+app/layout.tsx
+  s_5955c21642d3da::t_cfeab5ad8b9f66 5
+  s_4a555bbf5ac77a::t_011dfad08d5a19 17,19-40,46,48,50
+  s_4a555bbf5ac77a::t_2aa936dad2f80d 18
+  s_4a555bbf5ac77a::t_6a9e773e762635 2,8-11,13,15,41-45,47,52,55,63-65
+  s_5955c21642d3da::t_ef9de092e092e2 14
+  s_4a555bbf5ac77a::t_95acb6e5656856 4
+  s_9bac3c8581e9a1::t_6d5dd0a363e604 62
+  s_5955c21642d3da::t_8a884b5a770f85 54,56-58
+  s_5955c21642d3da::t_1043f863852133 59-61
+  s_9bac3c8581e9a1::t_f982e973c8dcc1 6
+  s_9bac3c8581e9a1::t_f2993c7dbd80c4 12
+.claude/docs/stack.md
+  s_4a555bbf5ac77a::t_cfb87a106498a1 11-12,18,21-22,24,30-31,37-38,40-41,48-55,60,62-70,74-76,78,80,82,84,88,90,94
+  s_4a555bbf5ac77a::t_4d381dc98d088c 1-10,13-17,19-20,23,25-29,32-36,39,42-47,56-59,61,71-73,77,79,81,83,85-87,89,91-93
+.claude/docs/game-rules.md
+  s_4a555bbf5ac77a::t_c4d7eaddcced68 28,36,42,44,49-51,53-58,81,89-97,101-106,114,116-117,119,121,124-145,151,154,157,161,163,166-173,175-181,184-186
+  s_4a555bbf5ac77a::t_95442585d84074 1-27,29-35,37-41,43,45-48,52,59-80,82-88,98-100,107-113,115,118,120,122-123,146-150,152-153,155-156,158-160,162,164-165,174,182-183,187
+src/ui/effects/BustVignette.tsx
+  s_2dbdc440ae9102::t_88b2ac1b1f574c 1-15
+src/game/index.ts
+  s_4a555bbf5ac77a::t_c80d7448536e95 1-6
+src/game/public.ts
+  s_4a555bbf5ac77a::t_443fad474ce389 1-40
+.claude/docs/progress.md
+  s_4a555bbf5ac77a::t_547cd9762f10dc 58-90
+  s_4a555bbf5ac77a::t_6d37a6c6676f55 126-161
+  s_4a555bbf5ac77a::t_4447eb192e7956 94,96-113,115-124
+  s_4a555bbf5ac77a::t_affd9fbe1d5615 1-30,32,46,57,91-93,162-164,209-214
+  s_4a555bbf5ac77a::t_2c3fb4041754c9 95,114,125
+  s_4a555bbf5ac77a::t_5be500c2c788a3 31,33-45,47-56
+  s_4a555bbf5ac77a::t_85d2c24c6bab47 165-186
+  s_4a555bbf5ac77a::t_e35e38abeefe9d 187-208
+src/server/realtime/broadcast.ts
+  s_4a555bbf5ac77a::t_eadbb287671194 1-29,32-49,51-57,60-61
+  s_4a555bbf5ac77a::t_bfc76d161a38a0 30-31,50,58-59
+src/client/stores/gameStore.ts
+  s_4a555bbf5ac77a::t_c33a7feadd82ee 1-18
+supabase/migrations/20260610200000_tighten_games_rls.sql
+  s_4a555bbf5ac77a::t_8f7bf79c026bc2 1-14
+supabase/.gitignore
+  s_4a555bbf5ac77a::t_ef7bbf5f852e5b 1-8
+app/api/cron/cleanup/route.ts
+  s_4a555bbf5ac77a::t_eda06369b7a61e 1-3,5-6,8,10-15,18-21,23-32,34-44
+src/client/hooks/useCountUp.ts
+  s_5955c21642d3da::t_f8e4006a304f79 1-39
+app/play/[code]/loading.tsx
+  s_5955c21642d3da::t_1587958c075c91 3-8,12-13,17-19,22-25,28
+  s_2dbdc440ae9102::t_1317f0518ba82f 1-2,9-11,14-16,20-21,26-27,29-33
+README.md
+  s_4a555bbf5ac77a::t_82e7365aad16b5 181,183
+  s_4a555bbf5ac77a::t_ea08ccd4e7ff41 199-202
+  s_4a555bbf5ac77a::t_2581d17daab97d 98-99
+  s_4a555bbf5ac77a::t_03f9ca72c28b33 12-13,21-23,31,33-36,38,51-53,55-59,64-71,73-79,81-90,100,106-112,114-119,126,135,142,144-145,149,162,169,171,192-195,197-198
+  s_4a555bbf5ac77a::t_6e18b1c8e63d87 1,3,5,10-11,14-20,24-30,37,39-42,45-50,54,63,80,91-96,101-105,113,120-125,134,147-148,150-161,163-167,170,172-173,175,177,179,185,187,189,191,196,204,206,208
+  h_dfece43287da50 7-9,32,72,97,190
+  s_4a555bbf5ac77a::t_ce2568141f0644 127-133,136-141,143,146
+app/play/[code]/JoinGate.tsx
+  s_2dbdc440ae9102::t_7c5b7043e07978 28-29,32,35,38
+  s_9bac3c8581e9a1::t_d9b549e24ad99b 39
+  s_4a555bbf5ac77a::t_dd80108aae01e1 1-27,30-31,33-34,36-37,40-45
+app/play/join/page.tsx
+  s_4a555bbf5ac77a::t_79975cb04e3c19 1-7
+src/ui/game-room/VictoryModal.tsx
+  s_5955c21642d3da::t_fe19bb92046bab 4,6
+  s_2dbdc440ae9102::t_51bfa39d56afe7 1-3,5,7-77,81-91
+  s_5955c21642d3da::t_62bcec480402db 78-80
+src/client/CLAUDE.md
+  s_4a555bbf5ac77a::t_66310c5f21f923 1-17
+app/not-found.tsx
+  s_4a555bbf5ac77a::t_4086198d57af2f 3-4,6,10,12-13,15-16,18-20,22
+  s_5955c21642d3da::t_fda51bb51f0b76 9
+  s_9bac3c8581e9a1::t_d9b549e24ad99b 17
+  s_9bac3c8581e9a1::t_62089b70822610 11,14
+src/client/realtime/useGameRoom.ts
+  s_9bac3c8581e9a1::t_fad2a268a8ff4f 80,89
+  s_4a555bbf5ac77a::t_f1f26605d734e9 1-2,4-6,23,26,41,60-66,187,192,201,203
+  s_9bac3c8581e9a1::t_3e2a7758f66d8b 11-14,16-17
+  s_4a555bbf5ac77a::t_727b2e28476c9f 3,7-8,19-22,24,42,44,67,175,177,193-200
+  s_9bac3c8581e9a1::t_bbb3222a35f5be 9-10,15,18,29-30,32-33,43,46,52-55,58-59,69-79,81-88,90-117,122-125,127,139-154,162,186,190-191,202
+  s_9bac3c8581e9a1::t_68673f7373b200 47-50
+  s_4a555bbf5ac77a::t_62c4f3222fc353 25,27-28,31,34-40,45,51,56-57,68,118-121,126,128-138,155-161,163-174,176,178-185,188-189
+CLAUDE.md
+  s_4a555bbf5ac77a::t_5d5a6294243269 1-5,8-9,11-12,14-17,26-27,33,37-42,44-45,48,50-52
+  s_4a555bbf5ac77a::t_c7feb0cd9aa643 6-7,10,13,18-25,28-32,34-36,43,46-47,49,53-59
+.claude/docs/conventions.md
+  s_4a555bbf5ac77a::t_bf34baaaaf185f 1-96
+src/game/types.ts
+  s_4a555bbf5ac77a::t_fa8dd94efb32a9 1-37
+src/ui/game-room/StreakStrip.tsx
+  s_5955c21642d3da::t_5ba4498f08beb7 1-3,6-10,12-20,22-26,28-37
+  s_2dbdc440ae9102::t_f726a8dd193017 4-5,11,21,27,38-40
+src/client/auth/NamePromptModal.tsx
+  s_2dbdc440ae9102::t_5486206d5c9be2 47
+  s_4a555bbf5ac77a::t_2fadc3e3ce5da2 5-6,33-34,36,44-46,54,56
+  s_9bac3c8581e9a1::t_d9b549e24ad99b 52
+  s_9bac3c8581e9a1::t_53bff309b6dbf5 25
+  s_4a555bbf5ac77a::t_676d8de147ab47 1-4,8-24,26-32,37-43,48-50,53,55,57-58
+  s_9bac3c8581e9a1::t_403ecb0840bee7 7
+  s_9bac3c8581e9a1::t_bcd7804c64b986 51
+  s_9bac3c8581e9a1::t_b6cf29d8472ede 35
+src/client/hooks/useParallax.ts
+  s_5955c21642d3da::t_fb64c6bd89ad07 1-64,72,74,76-85,87-102
+  s_5955c21642d3da::t_9d02ff240e48b5 65-71,73,75,86
+src/game/engine.test.ts
+  s_4a555bbf5ac77a::t_39f552889fadd6 1-230
+.claude/docs/database.md
+  s_4a555bbf5ac77a::t_7ba4030c83e2e3 7-11,18,23-24,28,32-33,36-41,44-46,49,53,55,57,59-60,64,67,73,75-76,79,81-82,84,88,91-93,96-98,108-114,118,124,127-145,147-150,152-161,163,165-169,173-177,179,181,187-188,190
+  s_4a555bbf5ac77a::t_581a8ae57eb7fa 1-6,12-17,19-22,25-27,29-31,34-35,42-43,47-48,50-52,54,56,58,61-63,65-66,68-72,74,77-78,80,83,85-87,89-90,94-95,99-107,115-117,119-123,125-126,146,151,162,164,170-172,178,180,182-186,189
+src/server/db/migrations/meta/0000_snapshot.json
+  s_4a555bbf5ac77a::t_ebbe81f1361684 1-549
+src/server/game-room.ts
+  s_4a555bbf5ac77a::t_1f56b9dd86ba71 178-189
+  s_4a555bbf5ac77a::t_e01f38bd0c269c 6
+  s_4a555bbf5ac77a::t_042ffb710d1f85 7
+  s_4a555bbf5ac77a::t_18b9979896d7a4 146,156
+  s_4a555bbf5ac77a::t_9066f652695c1e 208,210-220
+  s_4a555bbf5ac77a::t_6c62bb54fd26a0 14
+  s_4a555bbf5ac77a::t_7af6e65a03a265 1-5,10-13,15-145,148-155,157-177,190-207,209,221-222,224-237
+  s_4a555bbf5ac77a::t_392b3f1924a39e 8-9
+  s_4a555bbf5ac77a::t_4926bcf8278861 223
+  s_4a555bbf5ac77a::t_cf380e9fe2c90c 147
+src/server/actions/gameTurnActions.ts
+  s_4a555bbf5ac77a::t_bb3f3ae3745cbb 36
+  s_4a555bbf5ac77a::t_69dbfc0e989edd 38,42-43,45-47
+  s_4a555bbf5ac77a::t_b08b26dcd594c7 3,6
+  s_4a555bbf5ac77a::t_dd7a56607d5a0b 1-2,4-5,7-35,37,39-41,44,48-69
+src/game/deck.ts
+  s_4a555bbf5ac77a::t_d991ab68554922 1-37
+src/server/db/migrations/meta/_journal.json
+  s_4a555bbf5ac77a::t_ebbe81f1361684 1-13
+supabase/migrations/20260610190000_realtime_publication.sql
+  s_4a555bbf5ac77a::t_9a8a458f04212c 1-9
+scripts/dev-lan.mjs
+  s_4a555bbf5ac77a::t_1ac893a5848236 1-47
+src/ui/toast/PirateToast.tsx
+  s_2dbdc440ae9102::t_2953a56afbf26d 1-26,28-64
+  s_9bac3c8581e9a1::t_776db919a0b9fd 27
+src/server/actions/joinRoom.ts
+  s_4a555bbf5ac77a::t_c795c454915410 1-48,50-90,92-99
+  s_4a555bbf5ac77a::t_0dd46ec72ec924 49
+  s_4a555bbf5ac77a::t_ef790b21323396 91
+src/game/CLAUDE.md
+  s_4a555bbf5ac77a::t_b9e01d512922e6 1-59
+src/client/hooks/useGameJuice.ts
+  s_5955c21642d3da::t_e01fee73db2959 1,3-5,7-13,15-23,25,27-31,33-39,41-63,65,67-72
+supabase/migrations/20260610180000_rls_and_triggers.sql
+  s_4a555bbf5ac77a::t_9c441ad5d5d32f 1-94
+src/ui/effects/ChestBurst.tsx
+  s_5955c21642d3da::t_56711365df8da6 1,3-9,12-22,24-39,41-42,44
+src/ui/game-room/ScoreRibbon.tsx
+  s_5955c21642d3da::t_a125e52bbb039f 1-84
+src/client/juice/haptics.ts
+  s_5955c21642d3da::t_2988154be4b11d 1-21
+src/server/actions/restartRoom.ts
+  s_9bac3c8581e9a1::t_c8fd63261bad69 62
+  s_9bac3c8581e9a1::t_750e6b75bcaad8 17
+  s_9bac3c8581e9a1::t_413a29c32ea22b 1-16,18-61,63-212
+src/ui/effects/GoldRain.tsx
+  s_5955c21642d3da::t_a41d45e49fb541 3-4
+  s_2dbdc440ae9102::t_ba5f3ac5ce222d 1-2,5-56
+postcss.config.js
+  s_4a555bbf5ac77a::t_bd3e517b1e6604 3
+package.json
+  s_4a555bbf5ac77a::t_c94a7ddd6f6110 23-24,27,29,33
+  s_4a555bbf5ac77a::t_ea7fcc79074334 47
+  s_4a555bbf5ac77a::t_3c84984d91cbd3 2-3,11-13,25-26,28,30-31,37-41,44-46,48-50
+  s_4a555bbf5ac77a::t_2e5a102e002746 20
+  s_4a555bbf5ac77a::t_4c2a7d5af07cca 7
+  s_4a555bbf5ac77a::t_baebe866466349 32,34
+  s_4a555bbf5ac77a::t_d3daae8b8c2657 14-19
+  s_4a555bbf5ac77a::t_08f89b301133c9 42-43
+src/ui/pirate-card/PirateCard.tsx
+  s_5955c21642d3da::t_c61c593527a0e0 15-17
+  s_4a555bbf5ac77a::t_a9afd3d7444cf4 1-14,19-29,32-35,37-39,141,148-152,155,162-164,166-168,181,184,254-256,258,266,274,280,346-349
+  s_2dbdc440ae9102::t_2ed207d35b4951 18,30-31,36,40-140,142-147,153-154,156-161,165,169-180,182-183,185-253,257,259-265,267-273,275-279,281-345
+src/server/actions/createRoom.ts
+  s_4a555bbf5ac77a::t_0a50657e27a141 42
+  s_4a555bbf5ac77a::t_05398f64d25698 1-41,43-62
+.gitignore
+  s_86aaa73ccbdf6f::t_d4e47f90a6b69a 37
+src/game/rules.ts
+  s_4a555bbf5ac77a::t_f4ab778ecd9741 1-7
+  s_4a555bbf5ac77a::t_57b6170429b76c 8
+src/ui/game-room/CrewGrid.tsx
+  s_5955c21642d3da::t_5b817b8cf5229b 1-68
+app/play/new/page.tsx
+  s_9bac3c8581e9a1::t_081a4cc8b29ba1 1-4,6,8-21,23-39,42-45,49-56
+  s_4a555bbf5ac77a::t_8935bfdac7f322 5,7,22,40-41,46-48,57
+app/play/join/JoinClient.tsx
+  s_9bac3c8581e9a1::t_d9b549e24ad99b 77
+  s_4a555bbf5ac77a::t_e0d4bbeb7aee20 1-7,9-11,13-15,29-48,53-56,58-72,74,76,78-89
+  s_9bac3c8581e9a1::t_12f554e37e0bbe 8,12,16-28
+  s_2dbdc440ae9102::t_9d4b7f55a7e5c0 50
+  s_2dbdc440ae9102::t_1fd20362706f9b 51-52
+  s_9bac3c8581e9a1::t_b73716f846dcab 57
+  s_2dbdc440ae9102::t_62cf9c6a8aca68 73,75
+  s_5955c21642d3da::t_73b99615d5335d 49
+app/play-local/PlayLocalClient.tsx
+  s_2dbdc440ae9102::t_73997b7686fead 8,13,16-18,33,76,100-101,103-104,110-112,124-126,138-139,141,175-180,182-189,207,214,219
+  s_4a555bbf5ac77a::t_ce281afba99456 5,7,21,24,26,28-32,35,52-58,60-74,77-81,115-116,118,194-197,199-202,204,208,215-216,220-222
+  s_9bac3c8581e9a1::t_5cf580fc2af403 160,181
+  s_9bac3c8581e9a1::t_747fe6a2ee8179 102
+  s_5955c21642d3da::t_c0b6a4b65c56dc 3,6,10,14-15,82-93,95-98,106-107,132-137,140,142-143,151-154,158,165,168,217-218
+  s_9bac3c8581e9a1::t_fc4ff1deba2d9b 213
+  s_4a555bbf5ac77a::t_bc8911f63c94b6 11-12,75,121-123,127-129,144-150,155-157,159,161-164,167,170,172-173,190,192,198,203,205-206,209-212
+  s_4a555bbf5ac77a::t_8bdd4dea74aa68 9
+  s_4a555bbf5ac77a::t_ff4022aeaf5b81 36,39-49
+  s_4a555bbf5ac77a::t_22f87d48f9314e 117
+src/server/CLAUDE.md
+  s_4a555bbf5ac77a::t_322f14444896d8 1-26
+src/ui/pirate-panel/PiratePanel.tsx
+  s_9bac3c8581e9a1::t_9b89c6c3807fb0 7-11,18
+  s_9bac3c8581e9a1::t_57d8eade60ceeb 4
+  s_4a555bbf5ac77a::t_319970a05404ec 1-3,5-6,12-17,19-27
+drizzle.config.ts
+  s_4a555bbf5ac77a::t_a3b1cbff20e620 1,3-5
+  s_4a555bbf5ac77a::t_454c3724eeff12 2,6-18
+.claude/launch.json
+  s_5955c21642d3da::t_869e8def2354c4 8-9
+  s_2dbdc440ae9102::t_79d216ff92dfc6 1-7,10-12
+src/client/auth/AuthBootstrap.tsx
+  s_9bac3c8581e9a1::t_1eaae0df07278d 28
+  s_9bac3c8581e9a1::t_40283b0a36d616 53-58
+  s_9bac3c8581e9a1::t_64b082ffc2f4b3 4,8-24
+  s_4a555bbf5ac77a::t_079277a97ff0e5 3,7,27,30,32-52,63
+  s_4a555bbf5ac77a::t_849d0c911ae9a6 1-2,5-6,25-26,29,31,59-62,64-74
+src/server/actions/startOnlineGame.ts
+  s_4a555bbf5ac77a::t_4b02fcba2adfef 1-35,37-47
+  s_4a555bbf5ac77a::t_2261156b5d15fc 36
+app/HomeClient.tsx
+  s_5955c21642d3da::t_db12f92e4b6251 94,147,151-166
+  s_5955c21642d3da::t_0a23d75c25b5af 19
+  s_4a555bbf5ac77a::t_0beeab3db6443d 2,6,14,101,110,114-115,167-168
+  s_5955c21642d3da::t_c649ff7535009f 100
+  s_5955c21642d3da::t_18a9b759233bf5 3,5,8-13,16,20-75,78-91,93,95-97,99,111,119
+  s_9bac3c8581e9a1::t_fcb9129a78e420 76-77,92,98,102-108,112-113,117,120-146,148-150
+src/ui/effects/CountUpNumber.tsx
+  s_5955c21642d3da::t_f79b66fe3b56c0 1-22
+app/play/[code]/OnlineRoomClient.tsx
+  s_9bac3c8581e9a1::t_f0e93da2c13338 427-446
+  s_5955c21642d3da::t_4bb8141ec7c762 150,155,161,171,174,179-181,185-202
+  s_4a555bbf5ac77a::t_7083d20e3741c3 32-34,37-38,40-41
+  s_9bac3c8581e9a1::t_b4a71e8ec9c689 297
+  s_4a555bbf5ac77a::t_c37be9ee7c4e5c 212-213,221-222,228,233-237
+  s_9bac3c8581e9a1::t_5cf580fc2af403 396
+  s_9bac3c8581e9a1::t_b15618958fc4c6 104,111
+  s_4a555bbf5ac77a::t_7cefc059b16f97 405,413
+  s_4a555bbf5ac77a::t_2a81d35bc2c196 5,7,44,53,55-62,64-95
+  s_9bac3c8581e9a1::t_24d4c54a6b3a5c 474
+  s_4a555bbf5ac77a::t_3d2bb3c0a27379 103,110
+  s_4a555bbf5ac77a::t_02323c1563bfc3 362
+  s_5955c21642d3da::t_8fb4241b9dec57 478-480
+  s_4a555bbf5ac77a::t_c0f2f94a5e0d46 380
+  s_2dbdc440ae9102::t_c63bffa30cb8d0 364
+  s_5955c21642d3da::t_6336555171d643 3,6,15-17
+  s_9bac3c8581e9a1::t_f5ec30915027d9 157
+  s_2dbdc440ae9102::t_6af7221b64d914 151-152
+  s_4a555bbf5ac77a::t_6079c206ebb1e6 153-154
+  s_4a555bbf5ac77a::t_dfc4bafc0d44cc 301-305,308,311-321,323-326,328-330,332-338,340
+  s_9bac3c8581e9a1::t_2875b1939778a1 267-294
+  s_9bac3c8581e9a1::t_2382d9daff86ce 10
+  s_9bac3c8581e9a1::t_e6e95e923989e7 117-120
+  s_4a555bbf5ac77a::t_63d032bef1c67b 1-2,4,8-9,11-13,21-31,42-43,54,96-102,105-109,112-116,121-149,158-160,172-173,175-178,182,184,203-211,215-220,224-227,238-242,244-247,300,306-307,309-310,341-343,372-373,385-387,389,391,393-395,397-401,403-404,406-409,411-412,414-420,449-467,469-473,476-477,481-484,508-509
+  s_5955c21642d3da::t_81283770f171bd 249-266
+  s_5955c21642d3da::t_a45df3f016f952 361
+  s_5955c21642d3da::t_7dae4d007c1c2d 344-349,352,354-360,365-371,374-375,390
+  s_2dbdc440ae9102::t_9e75b43306b1e5 14,18-20,156,162-170,183,230,243,248,295-296,298-299,327,350-351,353,363,379,388,392,421-426,447-448,468,475,488,490-491,504
+  h_dfece43287da50 35,322,331,339
+  s_9bac3c8581e9a1::t_715763477ab66d 36,39,45-52,63
+  s_9bac3c8581e9a1::t_d9b549e24ad99b 402,410
+  s_9bac3c8581e9a1::t_a2978da8734415 214,223,229,231-232
+  s_4a555bbf5ac77a::t_28493a9d56893d 376-378,381-384
+  s_4a555bbf5ac77a::t_bd34ffa8eb916c 485-487,489,492-503,505-507
+src/ui/pirate-modal/PirateModal.tsx
+  s_5955c21642d3da::t_48ffd0d5b2d6bb 42
+  s_9bac3c8581e9a1::t_1f8534651a71c9 47
+  s_4a555bbf5ac77a::t_9c1c7aab6846e8 1-41,43-46,48-52
+src/client/auth/useCurrentUser.ts
+  s_4a555bbf5ac77a::t_5928df9e10ccab 17-18,38-39,69-70,73-81,84-94,99,101-103,120-129
+  s_9bac3c8581e9a1::t_88420b67713923 50,52
+  s_4a555bbf5ac77a::t_730e7e605286d4 4
+  s_9bac3c8581e9a1::t_418687914d5339 100,105-114,118
+  s_4a555bbf5ac77a::t_c0c43d3aa89c02 1-3,5-16,19-23,34-37,40-49,51,53-68,71-72,82-83,95-98,104,115-117,119,130-132
+  s_9bac3c8581e9a1::t_b83c2282ff34cd 24-33
+src/client/auth/AuthErrorOverlay.tsx
+  s_9bac3c8581e9a1::t_d9b549e24ad99b 28
+  s_4a555bbf5ac77a::t_65a2de24d99182 1-15,17-22,25-27,29-34
+  s_9bac3c8581e9a1::t_62089b70822610 16,23-24
+.claude/docs/supabase-setup.md
+  s_4a555bbf5ac77a::t_0dd90bf333da02 3,20-31,34,42,44,48-58,60-77,79,81-95,98-100,102-104,106-107,120,128-130,140,143,154,165-171,179-180,182-183,185,187
+  s_4a555bbf5ac77a::t_d46b1fad0a1622 1-2,4-19,32-33,35-41,43,45-47,59,78,80,96-97,101,105,108-119,121-127,131-139,141-142,144-153,155-164,172-178,181,184,186
+src/ui/effects/AmbientSea.tsx
+  s_5955c21642d3da::t_4cd9675fd7f73a 1-54
+vitest.config.ts
+  s_4a555bbf5ac77a::t_1ce89895afd0fb 1-18
+app/play/[code]/page.tsx
+  s_2dbdc440ae9102::t_818009da3eabd5 27-38,40-43
+  s_9bac3c8581e9a1::t_5cf580fc2af403 39,66
+  s_4a555bbf5ac77a::t_a04a77ebb03453 1-26,44-55,71-83
+  s_2dbdc440ae9102::t_b5f14c8d5b592c 56-65,67-70
+app/choose-game/ChooseGameClient.tsx
+  s_5955c21642d3da::t_fcb76e76d977de 11
+  s_2dbdc440ae9102::t_993e457156f5cc 12-16,23-25,36-38,60-62,68-70,74-77,79-83,85-90,94,97-100,130-131,135-137,139-147
+  s_9bac3c8581e9a1::t_d9b549e24ad99b 28,42
+  s_9bac3c8581e9a1::t_5cf580fc2af403 45
+  s_5955c21642d3da::t_6bf4b7e1e869b1 101-128,132-134
+  s_4a555bbf5ac77a::t_35c6025a502cbb 35,41,43-44,46-47
+  s_4a555bbf5ac77a::t_fde1a5050a9286 3-5,7,17-22,26-27,29-34,39-40,49-59,63-67,71-73,78,91-93,95-96,148-149
+src/client/auth/AccountUpgrade.tsx
+  s_9bac3c8581e9a1::t_d9b549e24ad99b 170
+  s_4a555bbf5ac77a::t_3ec1b9891523e3 1-4,6-12,19-21,23-27,35-45,47-52,79-82,89-90,94-97,102,105,113-116,119,121,125-127,129-135,137-145,147-150,152-155,157-158,162-164,167-169,171-172,176,178,187-190
+  s_5955c21642d3da::t_a091734746a15b 13-18,22,28-34,46,53-78,83-88,91-93,103,106-112,117-118,122-124,156,159-160,173-175,177,179-186
+  s_5955c21642d3da::t_7d495a105fdc40 5
+  s_9bac3c8581e9a1::t_49d04a4dd84bc0 98-101,104,120,128,136,151,165-166
+  s_2dbdc440ae9102::t_6466e0c1fd7eeb 146,161
+app/profile/page.tsx
+  s_4a555bbf5ac77a::t_1701309f5fabbf 4,8,72-75,80,103-106,142,144-149,185-189,191-195,197,202,204
+  s_5955c21642d3da::t_fe6a6c43d5561b 109
+  s_9bac3c8581e9a1::t_12d0c0d7bc7601 107
+  s_5955c21642d3da::t_0f33b718be5bc2 11
+  s_5955c21642d3da::t_0df08e3d4769bb 7
+  s_5955c21642d3da::t_281e6878ea807d 49-52
+  s_9bac3c8581e9a1::t_23a1b645c22325 9-10,12
+  s_4a555bbf5ac77a::t_4d6d4c315cec97 1-3,5,13,29-40,71,76-79,81-102,108,117-118,122-124,126,132-138,169-178,198,206-223
+  s_4a555bbf5ac77a::t_027fd2918dc16e 6,129-131,139,141,151-153,155-156,158-160,162-164,166-168,205
+  s_5955c21642d3da::t_2f29e436941d38 48
+  s_9bac3c8581e9a1::t_abac8c1798a72c 14-28,41-47,53-70,111,114,125,128,143,150,154,157,161,165
+  s_9bac3c8581e9a1::t_b73716f846dcab 127,140,199
+  s_2dbdc440ae9102::t_43d41f927b7b7d 119-121
+  s_9bac3c8581e9a1::t_692f0d4e53edc1 110,112-113,115-116
+  s_2dbdc440ae9102::t_30db57e3029bec 179-184,190,196,200-201,203
+src/server/supabase/server.ts
+  s_4a555bbf5ac77a::t_89684c8436809f 1-27
+tsconfig.json
+  s_4a555bbf5ac77a::t_50df8c4359fad8 3,13,24-27,35
+  s_4a555bbf5ac77a::t_531312759d9635 8
+  s_4a555bbf5ac77a::t_17e427dfe93c2d 28
+src/server/actions/persistLocalGame.ts
+  s_4a555bbf5ac77a::t_3539750f225c05 1-2,4-5,7-8,10-79,97-105
+  s_4a555bbf5ac77a::t_080cda6fef2f7a 80-96
+  s_4a555bbf5ac77a::t_b07f7c76758ded 3,6,9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "82475bb57598e2c9e970d8e8c63f4acccc8037ba",
+  "prompts": {},
+  "humans": {
+    "h_dfece43287da50": {
+      "author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2dbdc440ae9102": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "357ddaf0-5b85-4a76-b3b7-32b948f85ed5",
+        "model": "claude-fable-5"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    },
+    "s_4a555bbf5ac77a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "143303ac-7ca3-41e6-9e99-79efdea158dc",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    },
+    "s_5955c21642d3da": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f5afd7b3-faab-4e8a-bb20-8f130a83a089",
+        "model": "claude-fable-5"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    },
+    "s_86aaa73ccbdf6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7317d4f6-1fcd-4b51-89f0-3e632870686e",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    },
+    "s_9bac3c8581e9a1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91c6a03e-98ae-478b-967d-0cc9e9cb66fe",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
