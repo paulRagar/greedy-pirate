@@ -1,0 +1,72 @@
+src/client/realtime/useGameRoom.ts
+  s_e293928ce99c14::t_c9bf4b9e37b309 212
+  s_e293928ce99c14::t_28c8c03569742c 144-146
+  s_e293928ce99c14::t_f07b2b6762dee8 5
+  s_e293928ce99c14::t_2b832ba8556065 21
+  s_e293928ce99c14::t_f2b3804f440a6e 41,44
+  s_e293928ce99c14::t_5afb1f1914d31d 69-71
+src/server/realtime/broadcast.ts
+  s_e293928ce99c14::t_fce1e1bab46716 13-17,20
+src/server/actions/spectatorActions.ts
+  s_e293928ce99c14::t_a323dd818f2466 1-104
+src/ui/game-room/ScoreRibbon.tsx
+  s_e293928ce99c14::t_2660ba82baec50 12
+  s_e293928ce99c14::t_49d8ce959db6d7 21
+  s_e293928ce99c14::t_d6d33bd92463bb 72-86,93-104
+supabase/migrations/20260612120000_spectators_rls.sql
+  s_e293928ce99c14::t_5de16f662a3d16 1-6
+src/server/db/migrations/0001_slimy_guardian.sql
+  s_e293928ce99c14::t_158c843c165929 1-12
+src/game/public.ts
+  s_e293928ce99c14::t_2c6bcf71bdceb1 26-33
+src/server/spectators.ts
+  s_e293928ce99c14::t_3bffb07c5adf29 1,3-43,46-53,55-59,61-62,77
+  s_e293928ce99c14::t_53298aab76fa66 2
+  s_e293928ce99c14::t_4d839261cb997b 44-45,54,60,63-76
+src/server/actions/restartRoom.ts
+  s_e293928ce99c14::t_63a9d468894bd6 216,219
+  s_e293928ce99c14::t_08fc591f7131cb 68,76-86,121-123,128
+  s_e293928ce99c14::t_4449f06b88720f 10,15
+src/server/db/migrations/meta/0001_snapshot.json
+  s_e293928ce99c14::t_158c843c165929 1-646
+src/server/db/schema.ts
+  s_e293928ce99c14::t_8854db699e05ed 82-100
+  s_e293928ce99c14::t_f27f3f15f11d69 138-139
+src/server/db/migrations/meta/_journal.json
+  s_e293928ce99c14::t_158c843c165929 11-17
+app/play/[code]/SpectateGate.tsx
+  s_e293928ce99c14::t_ee47fca5528a87 1-37,40-53
+  s_e293928ce99c14::t_9830ab87d46922 38-39
+app/play/[code]/OnlineRoomClient.tsx
+  s_e293928ce99c14::t_f7616e5f3eb6fa 116-117,125-126,132,138-142
+  s_e293928ce99c14::t_bbab73cc661510 433
+  s_e293928ce99c14::t_f03e4837a577e0 35,39-49,60-61,74
+  s_e293928ce99c14::t_2dbc189d298ec6 205-208,212-221,242-268
+  s_e293928ce99c14::t_5baac809dde0e3 7,11
+  s_e293928ce99c14::t_f43e1e20afae3f 280,290,297,301-305
+  s_e293928ce99c14::t_b88ed2e100d888 346,350-351
+  s_e293928ce99c14::t_3231ff330639bb 467-479
+  s_e293928ce99c14::t_af9cb31f0961ff 516-522,535-538
+src/server/game-room.ts
+  s_e293928ce99c14::t_62a9eb0ac05974 8
+  s_e293928ce99c14::t_8874b8e9f077fc 241
+  s_e293928ce99c14::t_6adb41f500fc38 209-210,217
+app/play/[code]/page.tsx
+  s_e293928ce99c14::t_5ba3cf1204f292 3-11,19,59-64,66,70,74,79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "6b153de13f03f9c5a41e35f96ed7fbff0e10817b",
+  "prompts": {},
+  "sessions": {
+    "s_e293928ce99c14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bdecd1c9-0feb-4b13-ba28-4a8e3f1a2ef4",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
