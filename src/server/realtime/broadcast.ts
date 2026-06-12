@@ -10,8 +10,14 @@ export function roomTopic(code: string): string {
 
 export const ROOM_BROADCAST_EVENT = BROADCAST_EVENT;
 
+export type RoomSpectator = {
+   readonly id: string;
+   readonly name: string;
+};
+
 type BroadcastPayload = {
    state: PublicGameState;
+   spectators: ReadonlyArray<RoomSpectator>;
    actorId: string | null;
    eventType: string;
 };

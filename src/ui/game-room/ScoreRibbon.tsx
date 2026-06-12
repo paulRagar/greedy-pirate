@@ -9,6 +9,7 @@ interface Props {
    /** Id (not index) of the player whose turn it is — robust to filtered lists. */
    currentPlayerId: string | undefined;
    youId?: string;
+   spectators?: ReadonlyArray<{ id: string; name: string }>;
 }
 
 /**
@@ -17,7 +18,7 @@ interface Props {
  * fades) when it doesn't, and auto-centers the active player on turn
  * change. Fixed height so the play screen never reflows.
  */
-export function ScoreRibbon({ players, currentPlayerId, youId }: Props) {
+export function ScoreRibbon({ players, currentPlayerId, youId, spectators = [] }: Props) {
    const scrollerRef = useRef<HTMLDivElement>(null);
    const activeRef = useRef<HTMLDivElement>(null);
 
@@ -68,9 +69,39 @@ export function ScoreRibbon({ players, currentPlayerId, youId }: Props) {
                      </div>
                   );
                })}
+               {spectators.map((sp) => (
+                  <div
+                     key={`sp-${sp.id}`}
+                     aria-label={`Spectator ${sp.name}`}
+                     className='flex min-h-[44px] shrink-0 snap-center items-center gap-1.5 rounded-full border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-abyss-900)]/40 px-3 text-sm opacity-70'
+                  >
+                     <EyeDot />
+                     <span className='max-w-[88px] truncate text-[color:var(--color-cream-200)]/85'>
+                        {sp.name}
+                     </span>
+                     {sp.id === youId && (
+                        <span className='text-[10px] text-[color:var(--color-cream-200)]/55'>you</span>
+                     )}
+                  </div>
+               ))}
             </div>
          </div>
       </div>
+   );
+}
+
+function EyeDot() {
+   return (
+      <svg viewBox='0 0 14 14' className='h-3.5 w-3.5 shrink-0' aria-hidden='true'>
+         <path
+            d='M1.5 7c1.5-2.7 3.5-4 5.5-4s4 1.3 5.5 4c-1.5 2.7-3.5 4-5.5 4s-4-1.3-5.5-4z'
+            fill='none'
+            stroke='var(--color-cream-200)'
+            strokeOpacity='0.55'
+            strokeWidth='1.1'
+         />
+         <circle cx='7' cy='7' r='1.6' fill='var(--color-cream-200)' fillOpacity='0.6' />
+      </svg>
    );
 }
 

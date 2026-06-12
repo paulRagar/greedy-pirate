@@ -23,7 +23,14 @@ export type RoomMetadata = {
    readonly hostId: string;
 };
 
-export type RoomState = PublicGameState & RoomMetadata;
+export type RoomSpectatorView = {
+   readonly id: string;
+   readonly name: string;
+};
+
+export type RoomState = PublicGameState & RoomMetadata & {
+   readonly spectators: ReadonlyArray<RoomSpectatorView>;
+};
 
 export function toPublic(state: GameState): PublicGameState {
    return {

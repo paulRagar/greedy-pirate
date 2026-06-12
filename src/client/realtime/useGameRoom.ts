@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowser } from '@/client/supabase/browser';
-import type { PublicGameState } from '@/game/public';
+import type { PublicGameState, RoomSpectatorView } from '@/game/public';
 
 const ROOM_BROADCAST_EVENT = 'state';
 
@@ -18,6 +18,7 @@ const ACTIVE_GRACE_MS = 10_000;
 
 type BroadcastBody = {
    state?: PublicGameState;
+   spectators?: ReadonlyArray<RoomSpectatorView>;
    actorId?: string | null;
    eventType?: string;
 };
@@ -37,8 +38,10 @@ export function useGameRoom(
    code: string,
    initial: PublicGameState,
    options: Options = {},
+   initialSpectators: ReadonlyArray<RoomSpectatorView> = [],
 ) {
    const [state, setState] = useState<PublicGameState>(initial);
+   const [spectators, setSpectators] = useState<ReadonlyArray<RoomSpectatorView>>(initialSpectators);
    const [status, setStatus] = useState<RealtimeStatus>('connecting');
    const [onlineIds, setOnlineIds] = useState<ReadonlySet<string>>(() => new Set());
    const optimisticVersion = useRef(0);
@@ -61,6 +64,10 @@ export function useGameRoom(
    useEffect(() => {
       setState(initial);
    }, [gameId, initial]);
+
+   useEffect(() => {
+      setSpectators(initialSpectators);
+   }, [gameId, initialSpectators]);
 
    useEffect(() => {
       const supabase = getSupabaseBrowser();
@@ -134,6 +141,9 @@ export function useGameRoom(
                   optimisticVersion.current += 1;
                   setState(payload.state);
                }
+               if (payload.spectators) {
+                  setSpectators(payload.spectators);
+               }
             },
          );
 
@@ -199,5 +209,5 @@ export function useGameRoom(
       [],
    );
 
-   return { state, status, applyOptimistic, onlineIds };
+   return { state, spectators, status, applyOptimistic, onlineIds };
 }

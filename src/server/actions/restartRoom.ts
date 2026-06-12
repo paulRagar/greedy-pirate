@@ -7,10 +7,12 @@ import { db } from '@/server/db/client';
 import { gameEvents, gamePlayers, games } from '@/server/db/schema';
 import {
    broadcastRoomState,
+   fetchSpectators,
    findCompletedOrActiveGame,
    loadRoomForUser,
    parseEngineState,
 } from '@/server/game-room';
+import { promoteSpectators } from '@/server/spectators';
 import { getSupabaseServer } from '@/server/supabase/server';
 import { initialState } from '@/game/engine';
 import { toPublic } from '@/game/public';
@@ -63,19 +65,24 @@ export async function restartRoom(input: z.input<typeof InputSchema>): Promise<R
       .filter((row) => row.userId !== null)
       .map((row) => ({ id: row.userId as string, name: row.displayName, coins: 0 }));
 
-   const next: GameState = {
-      ...initialState,
-      variant: prev.variant,
-      players: carriedPlayers,
-   };
-
-   await db.transaction(async (tx) => {
+   const { next, spectators } = await db.transaction(async (tx) => {
       // Wipe coins / winner flags on seated players so the lobby restart
       // shows everyone at zero.
       await tx
          .update(gamePlayers)
          .set({ coins: 0, isWinner: false, piratesEncountered: 0 })
          .where(eq(gamePlayers.gameId, game.id));
+
+      // Promote FIFO spectators into open seats before the lobby resets,
+      // so a late joiner from the previous round is already aboard when
+      // the host hoists the colors again.
+      const promotedPlayers = await promoteSpectators(tx, game.id, carriedPlayers);
+
+      const next: GameState = {
+         ...initialState,
+         variant: prev.variant,
+         players: [...promotedPlayers],
+      };
 
       await tx
          .update(games)
@@ -111,10 +118,14 @@ export async function restartRoom(input: z.input<typeof InputSchema>): Promise<R
          type: 'RESTART',
          payload: { state: toPublic(next), actorId: user.id },
       });
+
+      const remainingSpectators = await fetchSpectators(tx, game.id);
+      return { next, spectators: remainingSpectators };
    });
 
    await broadcastRoomState(parsed.data.code, {
       state: toPublic(next),
+      spectators,
       actorId: user.id,
       eventType: 'RESTART',
    });
@@ -202,8 +213,10 @@ export async function endGameByForfeit(input: z.input<typeof ForfeitSchema>): Pr
       });
    });
 
+   const spectators = await fetchSpectators(db, game.id);
    await broadcastRoomState(parsed.data.code, {
       state: toPublic(next),
+      spectators,
       actorId: user.id,
       eventType: 'FORFEIT_WIN',
    });

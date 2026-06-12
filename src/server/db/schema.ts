@@ -79,6 +79,25 @@ export const gamePlayers = pgTable(
    }),
 );
 
+export const gameSpectators = pgTable(
+   'game_spectators',
+   {
+      id: uuid('id').primaryKey().defaultRandom(),
+      gameId: uuid('game_id')
+         .notNull()
+         .references(() => games.id, { onDelete: 'cascade' }),
+      userId: uuid('user_id')
+         .notNull()
+         .references(() => users.id, { onDelete: 'cascade' }),
+      displayName: text('display_name').notNull(),
+      joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
+   },
+   (t) => ({
+      uniqueGameUser: unique('game_spectators_game_user_unique').on(t.gameId, t.userId),
+      gameIdx: index('game_spectators_game_idx').on(t.gameId),
+   }),
+);
+
 export const gameEvents = pgTable(
    'game_events',
    {
@@ -116,6 +135,8 @@ export type DbGame = typeof games.$inferSelect;
 export type DbGameInsert = typeof games.$inferInsert;
 export type DbGamePlayer = typeof gamePlayers.$inferSelect;
 export type DbGamePlayerInsert = typeof gamePlayers.$inferInsert;
+export type DbGameSpectator = typeof gameSpectators.$inferSelect;
+export type DbGameSpectatorInsert = typeof gameSpectators.$inferInsert;
 export type DbGameEvent = typeof gameEvents.$inferSelect;
 export type DbGameEventInsert = typeof gameEvents.$inferInsert;
 export type DbUserStats = typeof userStats.$inferSelect;
