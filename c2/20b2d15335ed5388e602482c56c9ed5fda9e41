@@ -1,0 +1,51 @@
+app/play/[code]/OnlineRoomClient.tsx
+  s_e293928ce99c14::t_a956be5ef81034 8-14
+  s_e293928ce99c14::t_9b1509b9bb8f9d 369-394
+  s_e293928ce99c14::t_307bd21decbf43 395-404
+src/game/engine.test.ts
+  s_e293928ce99c14::t_e1f55dc4130f34 209-249
+  s_e293928ce99c14::t_19b776a60f5f8b 174-208,250-251
+src/game/public.ts
+  s_e293928ce99c14::t_76a331d01cb6de 19
+  s_e293928ce99c14::t_134390455b200f 47
+src/game/engine.ts
+  s_e293928ce99c14::t_cc126e8cdfd703 27
+  s_e293928ce99c14::t_d5797da889fcee 44-45
+  s_e293928ce99c14::t_a9035d7c2f841c 46-47
+  s_e293928ce99c14::t_9bdb3a04a68d73 80
+  s_e293928ce99c14::t_caa811ad0c137d 131-141,151-152
+  s_e293928ce99c14::t_bffda1064ef752 142-150
+  s_e293928ce99c14::t_55a162efc6e71c 164-176
+src/game/types.ts
+  s_e293928ce99c14::t_6e7f685831caf4 40-41
+  s_e293928ce99c14::t_79262c921b364d 27-28
+  s_e293928ce99c14::t_0a2c7da77e9e58 39
+src/server/actions/gameTurnActions.ts
+  s_e293928ce99c14::t_312a07e41be6cb 3,6,15-16
+  s_e293928ce99c14::t_a364672e3a7efc 77-112
+src/server/game-room.ts
+  s_e293928ce99c14::t_d5031291eaccd5 49
+  s_e293928ce99c14::t_25b574460f82c3 60
+  s_e293928ce99c14::t_0e8e9bc2000194 145
+  s_e293928ce99c14::t_e9b2f0fb71380d 61
+src/server/actions/restartRoom.ts
+  s_e293928ce99c14::t_6753306f61191d 99,190
+src/server/actions/joinRoom.ts
+  s_e293928ce99c14::t_d6b0c0b480f342 37-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "c220b2d15335ed5388e602482c56c9ed5fda9e41",
+  "prompts": {},
+  "sessions": {
+    "s_e293928ce99c14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bdecd1c9-0feb-4b13-ba28-4a8e3f1a2ef4",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
