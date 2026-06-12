@@ -31,7 +31,25 @@ npm run dev
 npm run dev:lan
 ```
 
-`npm run supabase:start` prints the local URLs and keys. They are also in `.env.local` (committed for convenience — local Supabase keys are shared defaults across every install, not secret).
+`npm run supabase:start` prints the local URLs and keys. `.env.local` is gitignored — recreate it on a new machine by running `supabase status` and copying the printed values into a file with the shape shown in `.env.example`.
+
+### Slim local stack
+
+`supabase/config.toml` disables Storage, Edge Functions, and Logflare analytics because Greedy Pirate does not use them. The running stack is **8 containers** (auth, db, inbucket, kong, pg_meta, realtime, rest, studio) instead of the default 13. If you ever add file uploads or edge functions, flip the relevant `enabled = false` back on, then `supabase stop` + `supabase start`.
+
+### Fresh restart (wipe local data + images)
+
+```bash
+supabase stop --no-backup
+docker volume rm supabase_db_greedy-pirate supabase_storage_greedy-pirate 2>/dev/null
+mv supabase/migrations supabase/migrations.bak     # avoid RLS-before-tables chicken-egg
+supabase start
+mv supabase/migrations.bak supabase/migrations
+npm run db:migrate                                  # Drizzle creates tables first
+supabase db push --local                            # RLS, triggers, cleanup functions
+```
+
+The `mv` dance is required because Supabase auto-applies migrations during `start` on a fresh DB, and the RLS migration depends on `public.users` (a Drizzle-owned table). Order matters only on a truly fresh volume — daily `supabase start` against an existing volume is unaffected.
 
 | Service | URL |
 |---|---|
