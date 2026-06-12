@@ -171,6 +171,84 @@ describe('END_TURN', () => {
    });
 });
 
+describe('SKIP_TURN', () => {
+   it('advances turn and clears the streak mid-flight', () => {
+      let s = startGame(buildLobby(p('a'), p('b'), p('c')), 'gold-seed-1');
+      s = drawUntilGold(s);
+      s = reduce(s, { type: 'DRAW' });
+      const dropping = s.players[s.turnIndex]!;
+      const streakBefore = s.currentStreak.length;
+      expect(streakBefore).toBeGreaterThan(0);
+      s = reduce(s, { type: 'SKIP_TURN', playerId: dropping.id });
+      expect(s.currentStreak).toEqual([]);
+      expect(s.currentCard).toBeNull();
+      expect(s.players[s.turnIndex]!.id).not.toBe(dropping.id);
+   });
+
+   it('works after a pirate has been revealed', () => {
+      let s = startGame(buildLobby(p('a'), p('b')), 'pirate-seed');
+      while (s.deck.length > 0 && s.currentCard?.kind !== 'pirate') {
+         s = reduce(s, { type: 'DRAW' });
+      }
+      const dropping = s.players[s.turnIndex]!;
+      s = reduce(s, { type: 'SKIP_TURN', playerId: dropping.id });
+      expect(s.currentCard).toBeNull();
+      expect(s.players[s.turnIndex]!.id).not.toBe(dropping.id);
+   });
+
+   it('rejects when the named player no longer holds the helm', () => {
+      const s = startGame(buildLobby(p('a'), p('b')), 'any');
+      const wrongId = s.players[(s.turnIndex + 1) % s.players.length]!.id;
+      expect(() => reduce(s, { type: 'SKIP_TURN', playerId: wrongId })).toThrow(/already advanced/);
+   });
+
+   it('rejects when game not active', () => {
+      const s = buildLobby(p('a'), p('b'));
+      expect(() => reduce(s, { type: 'SKIP_TURN', playerId: 'a' })).toThrow(/not active/);
+   });
+
+   it('flags the skipped player absent so future advances bypass them', () => {
+      let s = startGame(buildLobby(p('a'), p('b'), p('c')), 'gold-seed-1');
+      const dropping = s.players[s.turnIndex]!;
+      s = reduce(s, { type: 'SKIP_TURN', playerId: dropping.id });
+      expect(s.absentIds).toContain(dropping.id);
+      // Cycle the table — a turn that would have landed on `dropping`
+      // should jump over them.
+      const seen: string[] = [];
+      let cursor = s;
+      for (let i = 0; i < s.players.length * 2; i++) {
+         const holder = cursor.players[cursor.turnIndex]!;
+         seen.push(holder.id);
+         cursor = drawUntilGold(cursor);
+         if (cursor.currentStreak.length > 0) {
+            cursor = reduce(cursor, { type: 'BANK' });
+         } else if (cursor.currentCard?.kind === 'pirate') {
+            cursor = reduce(cursor, { type: 'END_TURN' });
+         } else {
+            break;
+         }
+      }
+      expect(seen).not.toContain(dropping.id);
+   });
+});
+
+describe('MARK_PRESENT', () => {
+   it('removes a player from the absent list', () => {
+      let s = startGame(buildLobby(p('a'), p('b'), p('c')), 'gold-seed-1');
+      const dropping = s.players[s.turnIndex]!;
+      s = reduce(s, { type: 'SKIP_TURN', playerId: dropping.id });
+      expect(s.absentIds).toContain(dropping.id);
+      s = reduce(s, { type: 'MARK_PRESENT', playerId: dropping.id });
+      expect(s.absentIds).not.toContain(dropping.id);
+   });
+
+   it('is a no-op for someone never marked absent', () => {
+      const s = startGame(buildLobby(p('a'), p('b')), 'any');
+      const next = reduce(s, { type: 'MARK_PRESENT', playerId: 'a' });
+      expect(next).toBe(s);
+   });
+});
+
 describe('game completion', () => {
    it('last gold draw auto-banks and completes', () => {
       let s = startGame(buildLobby(p('a'), p('b')), 'finish-seed');

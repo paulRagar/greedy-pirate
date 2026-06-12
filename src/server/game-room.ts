@@ -5,6 +5,7 @@ import { gameEvents, gamePlayers, games } from './db/schema';
 import type { DbGame } from './db/schema';
 import { bumpUserStats } from './stats';
 import { broadcastRoomState } from './realtime/broadcast';
+import { fetchSpectators } from './spectators';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 import { initialState, reduce } from '@/game/engine';
@@ -45,6 +46,7 @@ export function parseEngineState(row: DbGame): GameState {
       pirateCount: raw.pirateCount ?? 0,
       variant: row.deckVariant as DeckVariant,
       winnerId: raw.winnerId ?? null,
+      absentIds: (raw.absentIds ?? []) as GameState['absentIds'],
    };
 }
 
@@ -55,6 +57,8 @@ export type EventType =
    | 'DRAW'
    | 'BANK'
    | 'END_TURN'
+   | 'SKIP_TURN'
+   | 'MARK_PRESENT'
    | 'GAME_ENDED';
 
 export type EventPayload = {
@@ -138,6 +142,7 @@ function serializeState(state: GameState): Record<string, unknown> {
       currentStreak: state.currentStreak,
       pirateCount: state.pirateCount,
       winnerId: state.winnerId,
+      absentIds: state.absentIds,
    };
 }
 
@@ -205,13 +210,15 @@ export async function applyAction(
 
       const event = inserted[0];
       if (!event) throw new Error('Failed to insert game event');
-      return { next, eventId: event.id, code: row.code as string | null };
+      const spectators = await fetchSpectators(tx, gameId);
+      return { next, eventId: event.id, code: row.code as string | null, spectators };
    });
 
    const code = options.code ?? result.code;
    if (code) {
       await broadcastRoomState(code, {
          state: toPublic(result.next),
+         spectators: result.spectators,
          actorId: options.actorId ?? null,
          eventType,
       });
@@ -235,3 +242,4 @@ export function isPlayerTurn(state: GameState, userId: string): boolean {
 }
 
 export { games, gamePlayers, gameEvents };
+export { fetchSpectators } from './spectators';

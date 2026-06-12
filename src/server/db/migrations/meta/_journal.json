@@ -8,6 +8,13 @@
       "when": 1781135180783,
       "tag": "0000_orange_khan",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781291377920,
+      "tag": "0001_slimy_guardian",
+      "breakpoints": true
     }
   ]
 }

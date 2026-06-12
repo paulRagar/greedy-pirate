@@ -34,7 +34,9 @@ export async function joinRoom(input: z.input<typeof InputSchema>): Promise<Join
       return { ok: true, code: parsed.data.code };
    }
 
-   if (game.status !== 'lobby') return { ok: false, error: 'Game already started' };
+   // Game already in flight — punt the user to the room page where the
+   // gate component will offer them the spectator path.
+   if (game.status !== 'lobby') return { ok: true, code: parsed.data.code };
 
    const state = parseEngineState(game);
    if (state.players.length >= MAX_PLAYERS) return { ok: false, error: 'Room is full' };

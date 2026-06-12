@@ -209,6 +209,23 @@ See `.claude/docs/roadmap.md`.
 
 See `.claude/docs/roadmap.md`.
 
+## Phase 4.6 — Production deployment ✅ SHIPPED (2026-06-12)
+
+**Shipped**
+- Production Supabase project provisioned (ref `fyuasgpjrphxrituofsm`, us-west-1). Anonymous sign-ins enabled. Site URL set to `https://www.greedypirate.com` with localhost/www/apex in Redirect URLs.
+- Preview Supabase project provisioned (ref `iosokzbammerxzyfuboc`, us-west-1) as an isolated DB for PR previews.
+- Both projects migrated: Drizzle schema (5 tables) + Supabase RLS/triggers/cleanup (4 SQL files).
+- 5 Vercel env vars set at production scope (CLI piping) and preview scope (dashboard — CLI fails interactive prompt under agent detection).
+- Vercel project Node.js bumped 18.x → 24.x (18 retired).
+- `.gitignore` updated: `.env*` and `.claude/settings.local.json`. `.env.local` is no longer committed (the doc's old claim that local Supabase keys are committed is obsolete — keys live in `.env.local` per dev machine, recoverable from `supabase status`).
+- Daily Vercel cron live at https://www.greedypirate.com/api/cron/cleanup. Verified 200 with `Authorization: Bearer $CRON_SECRET` (use `www` subdomain — curl drops auth on apex redirect).
+- Smoke pass: anonymous sign-in, name prompt, local game persist, profile stats, multiplayer room across desktop/phone, account upgrade flow.
+
+**Known caveats**
+- Email verification redirect previously pointed at `localhost:3000` until URL Configuration was set.
+- The Vercel CLI's `vercel env add ... preview --value '...' --yes` exits 1 in agent contexts because it interactively asks "all preview branches?" — use the dashboard for preview-scope vars.
+- `app/api/cron/cleanup` (via `src/server/db/client.ts:7`) throws at module-load if `DATABASE_URL` is unset, which fails local `npm run build` when `.env.local` was overwritten by `vercel env pull` without a re-paste of the Supabase keys. Restore from `supabase status` output.
+
 ## Phase 5 — Stretch goals ⏳
 
 See `.claude/docs/roadmap.md`.

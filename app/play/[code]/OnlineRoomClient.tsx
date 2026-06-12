@@ -4,10 +4,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGameRoom, type RealtimeStatus } from '@/client/realtime/useGameRoom';
 import { useGameJuice, type JuiceSnapshot } from '@/client/hooks/useGameJuice';
-import type { PublicGameState, RoomState } from '@/game/public';
-import { bankOnline, drawOnline, endTurnOnline } from '@/server/actions/gameTurnActions';
+import type { PublicGameState, RoomState, RoomSpectatorView } from '@/game/public';
+import {
+   bankOnline,
+   drawOnline,
+   endTurnOnline,
+   markPresentOnline,
+   skipAbsentTurn,
+} from '@/server/actions/gameTurnActions';
 import { startOnlineGame } from '@/server/actions/startOnlineGame';
 import { endGameByForfeit, restartRoom } from '@/server/actions/restartRoom';
+import { leaveSpectator } from '@/server/actions/spectatorActions';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PirateCard } from '@/ui/pirate-card/PirateCard';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
@@ -31,14 +38,21 @@ export default function OnlineRoomClient({ gameId, userId, initial }: Props) {
    const router = useRouter();
    const {
       state: live,
+      spectators,
       status,
       applyOptimistic,
       onlineIds,
-   } = useGameRoom(gameId, initial.code, initial, {
-      onResume: () => router.refresh(),
-      userId,
-   });
-   const state: RoomState = { ...live, code: initial.code, hostId: initial.hostId };
+   } = useGameRoom(
+      gameId,
+      initial.code,
+      initial,
+      { onResume: () => router.refresh(), userId },
+      initial.spectators,
+   );
+   const state: RoomState = { ...live, code: initial.code, hostId: initial.hostId, spectators };
+   const isHost = userId === initial.hostId;
+   const isSeated = state.players.some((p) => p.id === userId);
+   const isSpectator = !isHost && !isSeated;
 
    if (state.status === 'lobby') {
       return (
@@ -49,6 +63,8 @@ export default function OnlineRoomClient({ gameId, userId, initial }: Props) {
             hostId={initial.hostId}
             realtimeStatus={status}
             onlineIds={onlineIds}
+            isSpectator={isSpectator}
+            onLeave={() => router.push('/choose-game')}
          />
       );
    }
@@ -61,6 +77,7 @@ export default function OnlineRoomClient({ gameId, userId, initial }: Props) {
          realtimeStatus={status}
          applyOptimistic={applyOptimistic}
          onlineIds={onlineIds}
+         isSpectator={isSpectator}
          onLeave={() => router.push('/choose-game')}
       />
    );
@@ -102,6 +119,8 @@ function Lobby({
    hostId,
    realtimeStatus,
    onlineIds,
+   isSpectator,
+   onLeave,
 }: {
    state: RoomState;
    userId: string;
@@ -109,15 +128,24 @@ function Lobby({
    hostId: string;
    realtimeStatus: RealtimeStatus;
    onlineIds: ReadonlySet<string>;
+   isSpectator: boolean;
+   onLeave: () => void;
 }) {
    const isHost = userId === hostId;
    const [error, setError] = useState<string | null>(null);
    const [starting, setStarting] = useState(false);
    const [copied, setCopied] = useState(false);
+   const [leaving, setLeaving] = useState(false);
    // Visible player list filters anyone who isn't currently connected
    // (after the grace window) so the lobby reflects reality.
    const visiblePlayers = state.players.filter((p) => onlineIds.has(p.id) || p.id === userId);
    const canStart = isHost && visiblePlayers.length >= MIN_PLAYERS;
+
+   const handleLeaveSpectator = async () => {
+      setLeaving(true);
+      await leaveSpectator({ code });
+      onLeave();
+   };
 
    const start = async () => {
       setError(null);
@@ -180,10 +208,23 @@ function Lobby({
             <CrewGrid players={visiblePlayers} capacity={MAX_PLAYERS} hostId={hostId} youId={userId} />
          </div>
 
+         {state.spectators.length > 0 && (
+            <SpectatorRow spectators={state.spectators} youId={userId} />
+         )}
+
          {error && <p className='text-center text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
 
          <div className='mt-auto pt-2 safe-bottom'>
-            {isHost ? (
+            {isSpectator ? (
+               <div className='flex items-center justify-between gap-3 rounded-2xl border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-3 py-2 text-sm'>
+                  <span className='text-[color:var(--color-cream-200)]/75'>
+                     Spectating — seat opens next round.
+                  </span>
+                  <PirateButton variant='ghost' size='sm' onClick={handleLeaveSpectator} disabled={leaving}>
+                     {leaving ? '…' : 'Leave'}
+                  </PirateButton>
+               </div>
+            ) : isHost ? (
                <>
                   <PirateButton variant='primary' size='lg' fullWidth onClick={start} disabled={!canStart || starting}>
                      {starting ? 'Setting sail…' : 'Hoist the Colors!'}
@@ -204,6 +245,36 @@ function Lobby({
    );
 }
 
+function SpectatorRow({
+   spectators,
+   youId,
+}: {
+   spectators: ReadonlyArray<RoomSpectatorView>;
+   youId: string;
+}) {
+   return (
+      <div className='-mx-5 px-5'>
+         <div className='flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-cream-200)]/55'>
+            <span>Spectators</span>
+            <span className='h-px flex-1 bg-[color:var(--color-surface-border)]' />
+         </div>
+         <div className='scrollbar-none mt-1 flex gap-1.5 overflow-x-auto py-1'>
+            {spectators.map((sp) => (
+               <span
+                  key={sp.id}
+                  className='inline-flex shrink-0 items-center gap-1 rounded-full border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-abyss-900)]/40 px-2.5 py-1 text-xs text-[color:var(--color-cream-200)]/80'
+               >
+                  {sp.name}
+                  {sp.id === youId && (
+                     <span className='text-[10px] text-[color:var(--color-cream-200)]/55'>you</span>
+                  )}
+               </span>
+            ))}
+         </div>
+      </div>
+   );
+}
+
 function Play({
    state,
    userId,
@@ -212,6 +283,7 @@ function Play({
    realtimeStatus,
    applyOptimistic,
    onlineIds,
+   isSpectator,
    onLeave,
 }: {
    state: RoomState;
@@ -221,15 +293,22 @@ function Play({
    realtimeStatus: RealtimeStatus;
    applyOptimistic: (mutator: (prev: PublicGameState) => PublicGameState) => void;
    onlineIds: ReadonlySet<string>;
+   isSpectator: boolean;
    onLeave: () => void;
 }) {
    const [pending, setPending] = useState<null | 'draw' | 'bank' | 'end'>(null);
    const [error, setError] = useState<string | null>(null);
    const [drawingCard, setDrawingCard] = useState(false);
    const [restarting, setRestarting] = useState(false);
+   const [leavingSpectate, setLeavingSpectate] = useState(false);
    const { toastElement, showToast } = useGameToast();
 
    const isHost = userId === hostId;
+   const handleLeaveSpectator = async () => {
+      setLeavingSpectate(true);
+      await leaveSpectator({ code });
+      onLeave();
+   };
 
    // Clear the draw-pending flag whenever the broadcast lands with a new card.
    useEffect(() => {
@@ -270,10 +349,12 @@ function Play({
    // 15s grace window, so this only fires after the timeout completes.
    const seatedOnline = state.players.filter((p) => onlineIds.has(p.id));
    const aloneInActiveGame =
+      !isSpectator &&
       state.status === 'active' &&
       onlineIds.has(userId) &&
       seatedOnline.length === 1 &&
-      state.players.length > 1;
+      state.players.length > 1 &&
+      state.players.some((p) => p.id === userId);
    useEffect(() => {
       if (!aloneInActiveGame) return;
       let cancelled = false;
@@ -284,6 +365,42 @@ function Play({
          cancelled = true;
       };
    }, [aloneInActiveGame, code]);
+
+   // Skip the helm forward when the current turn player has dropped off
+   // presence and the rest of the table is still waiting. Only one client
+   // dispatches per round (the lowest-seat seated player who is online)
+   // and the server is idempotent on stale skip attempts, so the race is
+   // harmless.
+   const turnHolderId = currentPlayer?.id ?? null;
+   const turnHolderOffline =
+      !isSpectator &&
+      state.status === 'active' &&
+      !isComplete &&
+      turnHolderId !== null &&
+      turnHolderId !== userId &&
+      !onlineIds.has(turnHolderId) &&
+      seatedOnline.length >= 2;
+   const skipLeaderId = seatedOnline[0]?.id ?? null;
+   const iAmSkipLeader = skipLeaderId === userId;
+   useEffect(() => {
+      if (!turnHolderOffline || !iAmSkipLeader || !turnHolderId) return;
+      const handle = setTimeout(() => {
+         void skipAbsentTurn({ code, expectedTurnPlayerId: turnHolderId }).catch((err) => {
+            console.error('skipAbsentTurn failed', err);
+         });
+      }, 1500);
+      return () => clearTimeout(handle);
+   }, [turnHolderOffline, iAmSkipLeader, turnHolderId, code]);
+
+   // I just reconnected after being skipped — clear my absent flag so
+   // the table stops jumping over my seat.
+   const iAmAbsent = !isSpectator && state.absentIds.includes(userId);
+   useEffect(() => {
+      if (!iAmAbsent || state.status !== 'active') return;
+      void markPresentOnline({ code }).catch((err) => {
+         console.error('markPresentOnline failed', err);
+      });
+   }, [iAmAbsent, state.status, code]);
 
    const handlePlayAgain = async () => {
       setRestarting(true);
@@ -355,6 +472,7 @@ function Play({
             players={state.players.filter((p) => onlineIds.has(p.id) || p.id === userId)}
             currentPlayerId={currentPlayer?.id}
             youId={userId}
+            spectators={state.spectators}
          />
 
          <div className='relative z-10 text-center'>
@@ -388,7 +506,19 @@ function Play({
          {error && <p className='text-center text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
 
          <div className='z-20 mt-auto pt-2 safe-bottom'>
-            {isComplete ? null : !isCurrent ? (
+            {isComplete ? null : isSpectator ? (
+               <div className='flex items-center justify-between gap-3 rounded-2xl border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-3 py-2 text-sm'>
+                  <span className='text-[color:var(--color-cream-200)]/75'>Spectating the voyage</span>
+                  <PirateButton
+                     variant='ghost'
+                     size='sm'
+                     onClick={handleLeaveSpectator}
+                     disabled={leavingSpectate}
+                  >
+                     {leavingSpectate ? '…' : 'Leave room'}
+                  </PirateButton>
+               </div>
+            ) : !isCurrent ? (
                <p className='animate-pulse text-center text-sm text-[color:var(--color-cream-200)]/70'>
                   Waiting on {currentPlayer?.name ?? 'the helm'}…
                </p>
@@ -425,7 +555,13 @@ function Play({
             youId={userId}
             actions={
                <>
-                  <PirateButton variant='tertiary' size='md' fullWidth onClick={onLeave}>
+                  <PirateButton
+                     variant='tertiary'
+                     size='md'
+                     fullWidth
+                     onClick={isSpectator ? handleLeaveSpectator : onLeave}
+                     disabled={isSpectator && leavingSpectate}
+                  >
                      To port
                   </PirateButton>
                   {isHost ? (
@@ -438,6 +574,10 @@ function Play({
                      >
                         {restarting ? 'Resetting…' : 'Play again'}
                      </PirateButton>
+                  ) : isSpectator ? (
+                     <span className='inline-flex w-full items-center justify-center rounded-xl border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-4 py-3 text-center text-sm text-[color:var(--color-cream-200)]/70'>
+                        Stay aboard — you&apos;ll be seated next round.
+                     </span>
                   ) : (
                      <span className='inline-flex w-full items-center justify-center rounded-xl border border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-4 py-3 text-center text-sm text-[color:var(--color-cream-200)]/70'>
                         Captain be choosing…
