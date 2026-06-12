@@ -1,0 +1,25 @@
+.claude/docs/progress.md
+  s_86aaa73ccbdf6f::t_ab1d464b14efc9 212-228
+.claude/docs/supabase-setup.md
+  s_86aaa73ccbdf6f::t_6a3afe1ddb7aa0 184-199
+  s_86aaa73ccbdf6f::t_a4bd985920b9d5 146-156
+  s_86aaa73ccbdf6f::t_9cd8e6776124e9 133
+  s_86aaa73ccbdf6f::t_fa19671b10d543 118,120-124
+  s_86aaa73ccbdf6f::t_973fcf1e4b9053 216-221
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "79e8ec11bc711003a7897e9f7fb7a3574969643a",
+  "prompts": {},
+  "sessions": {
+    "s_86aaa73ccbdf6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7317d4f6-1fcd-4b51-89f0-3e632870686e",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
