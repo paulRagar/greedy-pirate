@@ -115,10 +115,13 @@ Vercel Hobby tier caps cron at once per day. Upgrade to Pro if you want more fre
 2. Create a new project. Pick a region close to your users (e.g. `us-east-1`). Set a strong DB password — store it in a password manager.
 3. Wait for provisioning (~2 minutes).
 
-### Step 2 — Enable anonymous sign-ins
+### Step 2 — Enable anonymous sign-ins + URL config
 
-1. Dashboard → **Authentication** → **Providers** → scroll to **Anonymous**.
-2. Toggle on. Save.
+1. Dashboard → **Authentication** → **Providers** → scroll to **Anonymous Sign-ins** → toggle ON → **Save**. Confirm the page refreshes with the toggle still ON — it occasionally fails to persist on first save.
+2. **Authentication** → **URL Configuration**:
+   - **Site URL** = production domain (e.g. `https://www.greedypirate.com`).
+   - **Redirect URLs** = add `https://www.greedypirate.com/**`, `https://greedypirate.com/**`, and `http://localhost:3000/**` (for local dev).
+   - Without this, email-verify links default to `localhost:3000`.
 
 ### Step 3 — Grab the keys
 
@@ -127,7 +130,7 @@ From the project dashboard:
 2. **Project API keys** → copy:
    - `anon` / publishable key (safe to expose to browser).
    - `service_role` / secret key (server-only — NEVER expose to browser).
-3. **Database** → **Connection string** → copy the pooled connection string (looks like `postgresql://postgres.abc:password@aws-...pooler.supabase.com:6543/postgres`).
+3. **Connect** button (top-right header) → **Transaction pooler** tab → copy URI (port `6543`, IPv4-compatible). Replace `[YOUR-PASSWORD]` with the DB password. URL-encode special chars in the password (`$` → `%24`, `&` → `%26`, `*` → `%2A`) — Vercel and Drizzle both parse the URL strictly.
 
 ### Step 4 — Set environment variables
 
@@ -140,7 +143,17 @@ DATABASE_URL=postgresql://postgres.abc:password@aws-...pooler.supabase.com:6543/
 CRON_SECRET=<a long random string>
 ```
 
-**On Vercel**: Project Settings → Environment Variables → add the five variables above. Apply to "Production" (and "Preview" if you want preview deployments to hit prod DB; recommend a separate Supabase project for preview).
+**On Vercel** — two paths:
+
+*CLI (fast, production scope works):*
+```bash
+printf 'VALUE' | vercel env add NAME production
+```
+Repeat for each of the 5 vars. Production scope accepts piped stdin without prompting.
+
+*Dashboard (required for preview scope):* Project Settings → Environment Variables → Add New → set the 5 vars at **Preview** scope. The CLI prompts an interactive "all preview branches?" confirmation that auto-detected agent contexts cannot satisfy, so the dashboard is the path of least resistance for preview.
+
+Also confirm **Project Settings → General → Node.js Version** is `24.x` (or current LTS). Vercel disabled 18.x; an old project locked to 18 will fail builds with `Found invalid or discontinued Node.js Version`.
 
 ### Step 5 — Push migrations to production
 
@@ -168,7 +181,22 @@ supabase db push
    ```
    All three should be listed.
 3. Trigger an anonymous sign-in from the app and confirm a row lands in `public.users`.
-4. Hit `/api/cron/cleanup` with the prod Bearer secret to confirm it returns `200`.
+4. Hit `/api/cron/cleanup` with the prod Bearer secret. Use the `www` subdomain — the apex 301-redirects and `curl` strips the `Authorization` header on redirect.
+   ```bash
+   curl -H "Authorization: Bearer $CRON_SECRET" https://www.greedypirate.com/api/cron/cleanup
+   # → {"ok":true,"abandonedLobbies":0,"abandonedActive":0,"prunedEvents":0,...}
+   ```
+
+---
+
+## Preview environment (separate Supabase project)
+
+Run Steps 1–6 again for a second project (e.g. `greedy-pirate-preview`) so PR previews never touch prod data. Differences:
+
+- Vercel env vars go on **Preview** scope only (use dashboard — see Step 4 note).
+- `CRON_SECRET` on preview is unused (Vercel only schedules cron on production) but must be set or builds fail.
+- `Site URL` in the preview project's Auth → URL Configuration can be left blank; add `https://*.vercel.app/**` and the project's auto-generated preview domain pattern to **Redirect URLs**.
+- After both `drizzle-kit migrate` and `supabase db push`, re-link the CLI back to prod (`supabase link --project-ref <prod-ref>`) for any subsequent prod work.
 
 ---
 
@@ -185,3 +213,9 @@ supabase db push
 | `/api/cron/cleanup` returns 401 locally | Missing or wrong `CRON_SECRET`. Local default is `dev-cron-secret`. Send `Authorization: Bearer dev-cron-secret`. |
 | Profile page is empty after first game | Check the `on_auth_user_created` trigger fired (Studio → Database → Triggers). If not, re-run `supabase db push --local`. |
 | Dev server feels sluggish after days | Next.js HMR memory grows over time. Restart `npm run dev`. Not a code issue. |
+| `Found invalid or discontinued Node.js Version: "18.x"` on Vercel build | Vercel disabled 18.x. Project Settings → General → Node.js Version → `24.x`. Redeploy. |
+| `/api/cron/cleanup` returns 401 in prod despite Bearer header | You hit the apex domain. Apex 301-redirects to www and curl drops `Authorization` on redirect. Use `https://www.greedypirate.com` directly. |
+| Drizzle migrate / Postgres connection rejects password | Password contains `$`, `&`, `*`, or `#` and was not URL-encoded. Encode and retry. |
+| Docker Desktop UI unresponsive after days | Electron shell desyncs from the daemon. Quit Docker, `pkill -f com.docker.backend`, `pkill -f com.docker.virtualization`, `pkill -f com.docker.build`, then `open -a Docker`. Daemon helper `com.docker.vmnetd` (root-owned) stays — that is fine. |
+| Anonymous sign-in returns "Anonymous sign-ins are disabled" in prod after toggling on | The toggle silently failed to persist. Reload the Auth → Providers page and re-toggle + Save. |
+| Vercel preview deploys fail to build | Preview-scope env vars missing. Confirm 5 vars at `preview` scope in Project Settings → Environment Variables. |
