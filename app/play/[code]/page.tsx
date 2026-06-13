@@ -7,6 +7,7 @@ import {
    isUserInGame,
    parseEngineState,
 } from '@/server/game-room';
+import { fetchContinuation } from '@/server/continuation';
 import { db } from '@/server/db/client';
 import { gameSpectators } from '@/server/db/schema';
 import { toPublic } from '@/game/public';
@@ -65,13 +66,16 @@ export default async function PlayRoomPage({ params }: { params: Promise<{ code:
 
    if (!isHost && !isMember && !isSpectator) {
       if (game.status === 'lobby') {
-         return <JoinGate code={upper} />;
+         return <JoinGate code={upper} isPublic={game.isPublic} />;
       }
-      return <SpectateGate code={upper} />;
+      return <SpectateGate code={upper} isPublic={game.isPublic} />;
    }
 
    const engineState = parseEngineState(game);
-   const spectators = await fetchSpectators(db, game.id);
+   const [spectators, continuation] = await Promise.all([
+      fetchSpectators(db, game.id),
+      fetchContinuation(db, game.id),
+   ]);
    const room: RoomState = {
       ...toPublic(engineState),
       code: upper,
@@ -79,5 +83,21 @@ export default async function PlayRoomPage({ params }: { params: Promise<{ code:
       spectators,
    };
 
-   return <OnlineRoomClient gameId={game.id} userId={user.id} initial={room} />;
+   return (
+      <OnlineRoomClient
+         gameId={game.id}
+         userId={user.id}
+         initial={room}
+         isPublic={game.isPublic}
+         initialContinuation={
+            continuation
+               ? {
+                    deadlineAt: continuation.deadlineAt,
+                    continuedIds: continuation.continuedIds,
+                    seatedIds: continuation.seatedIds,
+                 }
+               : null
+         }
+      />
+   );
 }

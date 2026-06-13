@@ -1,8 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useGameRoom, type RealtimeStatus } from '@/client/realtime/useGameRoom';
+import {
+   useGameRoom,
+   type ContinuationContext,
+   type RealtimeStatus,
+   type KnockRequestedEvent,
+} from '@/client/realtime/useGameRoom';
 import { useGameJuice, type JuiceSnapshot } from '@/client/hooks/useGameJuice';
 import type { PublicGameState, RoomState, RoomSpectatorView } from '@/game/public';
 import {
@@ -13,10 +18,19 @@ import {
    skipAbsentTurn,
 } from '@/server/actions/gameTurnActions';
 import { startOnlineGame } from '@/server/actions/startOnlineGame';
-import { endGameByForfeit, restartRoom } from '@/server/actions/restartRoom';
+import { endGameByForfeit } from '@/server/actions/restartRoom';
 import { leaveSpectator } from '@/server/actions/spectatorActions';
+import { leaveRoom } from '@/server/actions/joinRoom';
+import { listPendingKnocks } from '@/server/actions/listPendingKnocks';
+import { setRoomVisibility } from '@/server/actions/setRoomVisibility';
+import { leaveAsHost } from '@/server/actions/leaveAsHost';
+import { claimWheelIfOrphaned } from '@/server/actions/claimWheelIfOrphaned';
+import { continueIntoNextRound } from '@/server/actions/continueIntoNextRound';
+import { jumpShip } from '@/server/actions/jumpShip';
+import { finalizeContinuation } from '@/server/actions/finalizeContinuation';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PirateCard } from '@/ui/pirate-card/PirateCard';
+import { PirateModal } from '@/ui/pirate-modal/PirateModal';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { BustVignette } from '@/ui/effects/BustVignette';
 import { ChestBurst } from '@/ui/effects/ChestBurst';
@@ -27,59 +41,510 @@ import { VictoryModal } from '@/ui/game-room/VictoryModal';
 import { useGameToast } from '@/ui/toast/PirateToast';
 import { MAX_PLAYERS, MIN_PLAYERS } from '@/game/rules';
 import { cn } from '@/lib/cn';
+import KnockInbox, { type KnockEntry } from './KnockInbox';
+import HostLeaveModal, { type Candidate } from './HostLeaveModal';
+import CaptainMenu from './CaptainMenu';
 
 interface Props {
    gameId: string;
    userId: string;
    initial: RoomState;
+   isPublic: boolean;
+   initialContinuation: ContinuationContext;
 }
 
-export default function OnlineRoomClient({ gameId, userId, initial }: Props) {
+export default function OnlineRoomClient({
+   gameId,
+   userId,
+   initial,
+   isPublic,
+   initialContinuation,
+}: Props) {
    const router = useRouter();
+   const wasMember = useRef(initial.players.some((p) => p.id === userId));
+   const [knocks, setKnocks] = useState<KnockEntry[]>([]);
+   const [hostLeaveCandidates, setHostLeaveCandidates] = useState<Candidate[] | null>(null);
+   const [plankedReason, setPlankedReason] = useState<'kicked' | 'hesitated' | null>(null);
+   const [captainPromoted, setCaptainPromoted] = useState(false);
+   const { showToast, toastElement: globalToast } = useGameToast();
+
+   const removeKnock = useCallback((requestId: string) => {
+      setKnocks((prev) => prev.filter((k) => k.requestId !== requestId));
+   }, []);
+
+   const onKnockRequested = useCallback((e: KnockRequestedEvent) => {
+      setKnocks((prev) => {
+         if (prev.some((k) => k.requestId === e.requestId)) return prev;
+         return [...prev, e];
+      });
+   }, []);
+
    const {
       state: live,
       spectators,
       status,
       applyOptimistic,
       onlineIds,
+      continuation,
    } = useGameRoom(
       gameId,
       initial.code,
       initial,
-      { onResume: () => router.refresh(), userId },
+      {
+         onResume: () => router.refresh(),
+         userId,
+         onKnockRequested,
+         onKnockCancelled: (e) => removeKnock(e.requestId),
+         onKnockResolved: (e) => removeKnock(e.requestId),
+         onEvent: (eventType, body) => {
+            // Apply hostId straight from the broadcast so the new captain
+            // gets their notice immediately — no router.refresh roundtrip.
+            const broadcastHostId = (body as { hostId?: string } | undefined)?.hostId;
+            if (broadcastHostId) {
+               setHostId((prev) => {
+                  if (prev !== broadcastHostId) {
+                     if (broadcastHostId === userId && prev !== userId) {
+                        setCaptainPromoted(true);
+                     }
+                     prevHostId.current = broadcastHostId;
+                  }
+                  return broadcastHostId;
+               });
+            } else if (eventType === 'HOST_CHANGED') {
+               // Fallback for legacy broadcasts without hostId.
+               router.refresh();
+            }
+            if (eventType === 'ROOM_ABANDONED') router.push('/play/lobby');
+         },
+      },
       initial.spectators,
+      initialContinuation,
    );
-   const state: RoomState = { ...live, code: initial.code, hostId: initial.hostId, spectators };
-   const isHost = userId === initial.hostId;
+
+   const [hostId, setHostId] = useState<string>(initial.hostId);
+   const prevHostId = useRef<string>(initial.hostId);
+   useEffect(() => {
+      if (initial.hostId !== prevHostId.current) {
+         if (initial.hostId === userId && prevHostId.current !== userId) {
+            setCaptainPromoted(true);
+         }
+         prevHostId.current = initial.hostId;
+      }
+      setHostId(initial.hostId);
+   }, [initial.hostId, userId]);
+
+   const didContinueRef = useRef(false);
+   const lastStatusRef = useRef<PublicGameState['status']>(initial.status);
+
+   const state: RoomState = { ...live, code: initial.code, hostId, spectators };
+   const isHost = userId === hostId;
    const isSeated = state.players.some((p) => p.id === userId);
    const isSpectator = !isHost && !isSeated;
 
+   // Detect "I'm no longer aboard." Categorize so the right modal opens:
+   //   - Game was 'complete' + I never clicked Continue → hesitation plank
+   //   - Otherwise → kicked / forced out
+   //
+   // Read lastStatusRef BEFORE updating it so transitioning out of
+   // 'complete' is still observable. Combining both responsibilities into
+   // a single effect avoids the React effect-ordering hazard where a
+   // separate status-tracker would overwrite the ref before this runs.
+   const navigatingOutRef = useRef(false);
+   useEffect(() => {
+      const prevStatus = lastStatusRef.current;
+      const nextStatus = live.status;
+
+      if (prevStatus !== 'complete' && nextStatus === 'complete') {
+         didContinueRef.current = false;
+      }
+
+      if (wasMember.current && !navigatingOutRef.current) {
+         const stillSeated = continuation
+            ? continuation.seatedIds.includes(userId)
+            : state.players.some((p) => p.id === userId);
+
+         if (!stillSeated) {
+            const hesitated = prevStatus === 'complete' && !didContinueRef.current;
+            // Outside of a hesitation context, the host can't be removed
+            // from their own room — suppress false positives.
+            if (hesitated || userId !== hostId) {
+               navigatingOutRef.current = true;
+               setPlankedReason(hesitated ? 'hesitated' : 'kicked');
+            }
+         }
+      }
+
+      lastStatusRef.current = nextStatus;
+   }, [state.players, userId, hostId, continuation, live.status]);
+
+   // Hydrate the host's knock inbox on mount + whenever host changes.
+   useEffect(() => {
+      if (!isHost) {
+         setKnocks([]);
+         return;
+      }
+      let cancelled = false;
+      listPendingKnocks({ code: initial.code })
+         .then((res) => {
+            if (cancelled) return;
+            if (res.ok) setKnocks(res.knocks);
+         })
+         .catch((err) => console.error('listPendingKnocks failed', err));
+      return () => {
+         cancelled = true;
+      };
+   }, [initial.code, isHost]);
+
+   // Best-effort cleanup on tab close / page hide. Do NOT fire on the
+   // effect cleanup — React StrictMode (Next dev) runs cleanup between
+   // double-invoked mounts, which would beacon-leave the host as soon as
+   // they land on the room page. SPA navigation-away without an explicit
+   // leave button is handled by the cron safety net.
+   useEffect(() => {
+      const fire = () => {
+         if (typeof navigator === 'undefined' || !navigator.sendBeacon) return;
+         try {
+            const blob = new Blob([JSON.stringify({ code: initial.code })], {
+               type: 'application/json',
+            });
+            navigator.sendBeacon('/api/room/leave', blob);
+         } catch {
+            // Beacons can't surface errors.
+         }
+      };
+      window.addEventListener('beforeunload', fire);
+      window.addEventListener('pagehide', fire);
+      return () => {
+         window.removeEventListener('beforeunload', fire);
+         window.removeEventListener('pagehide', fire);
+      };
+   }, [initial.code]);
+
+   // Detect host disconnect via presence + presence-driven host claim.
+   const earliestNonHost = useMemo(() => {
+      const sorted = state.players
+         .filter((p) => p.id !== hostId)
+         .map((p) => p.id);
+      return sorted[0] ?? null;
+   }, [state.players, hostId]);
+   const hostOffline = !onlineIds.has(hostId);
+   const iAmSuccessor = earliestNonHost === userId;
+   useEffect(() => {
+      if (!hostOffline || !iAmSuccessor || isHost) return;
+      const t = setTimeout(() => {
+         void claimWheelIfOrphaned({ code: initial.code })
+            .then((res) => {
+               if (res.ok && res.claimed) {
+                  setHostId(userId);
+                  router.refresh();
+               }
+            })
+            .catch((err) => console.error('claimWheelIfOrphaned failed', err));
+      }, 30_000);
+      return () => clearTimeout(t);
+   }, [hostOffline, iAmSuccessor, isHost, initial.code, userId, router]);
+
+   // Continuation handlers
+   const iHaveContinued = !!continuation && continuation.continuedIds.includes(userId);
+   const handleContinue = async () => {
+      const res = await continueIntoNextRound({ code: initial.code });
+      if (res.ok) didContinueRef.current = true;
+      else showToast(res.error, 'blood');
+   };
+   const handleJumpShip = async () => {
+      // Mark intent so the planked-by-hesitation detector doesn't fire.
+      didContinueRef.current = true;
+      const res = await jumpShip({ code: initial.code });
+      if (!res.ok) showToast(res.error, 'blood');
+      router.push('/play/lobby');
+   };
+
+   // Any client whose local timer hits zero calls finalize. The server
+   // claim is atomic — losers no-op. If the call reports 'Window still
+   // open' (local clock ahead of server), we retry on a 1s loop until
+   // the broadcast lands and continuation flips to null. Local clock
+   // can also lag the server, in which case the first call succeeds.
+   useEffect(() => {
+      if (!continuation) return;
+      if (live.status !== 'complete') return;
+      let cancelled = false;
+      let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+      const fire = async () => {
+         if (cancelled) return;
+         try {
+            const res = await finalizeContinuation({ code: initial.code });
+            if (cancelled) return;
+            if (res.ok) {
+               // Trust the broadcast. router.refresh here would unmount us
+               // BEFORE the plank-detection effect can fire — landing the
+               // booted user on a freshly-rendered JoinGate instead of the
+               // "you hesitated" modal.
+               return;
+            }
+            if (res.error === 'Window still open') {
+               retryTimer = setTimeout(fire, 1000);
+            } else {
+               console.warn('finalizeContinuation:', res.error);
+               retryTimer = setTimeout(fire, 2000);
+            }
+         } catch (err) {
+            console.error('finalizeContinuation threw', err);
+            retryTimer = setTimeout(fire, 2000);
+         }
+      };
+
+      const deadline = new Date(continuation.deadlineAt).getTime();
+      const wait = Math.max(0, deadline - Date.now());
+      const initialTimer = setTimeout(fire, wait);
+
+      return () => {
+         cancelled = true;
+         clearTimeout(initialTimer);
+         if (retryTimer) clearTimeout(retryTimer);
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [continuation, live.status]);
+
+   const handleLeaveHost = async () => {
+      const res = await leaveAsHost({ code: initial.code });
+      if (res.ok) {
+         router.push('/play/lobby');
+         return;
+      }
+      if ('mustNominate' in res) {
+         setHostLeaveCandidates(res.candidates);
+         return;
+      }
+      showToast(res.error, 'blood');
+   };
+
+   const seatedIdSet = useMemo(
+      () => (continuation ? new Set(continuation.seatedIds) : undefined),
+      [continuation],
+   );
+   const pendingIds = useMemo(() => {
+      if (!continuation) return undefined;
+      const continued = new Set(continuation.continuedIds);
+      return new Set(continuation.seatedIds.filter((id) => !continued.has(id)));
+   }, [continuation]);
+
+   const sharedModals = (
+      <>
+         <HostLeaveModal
+            code={initial.code}
+            open={hostLeaveCandidates !== null}
+            candidates={hostLeaveCandidates ?? []}
+            onClose={() => setHostLeaveCandidates(null)}
+            onLeft={() => {
+               setHostLeaveCandidates(null);
+               router.push('/play/lobby');
+            }}
+         />
+         <PirateModal
+            open={plankedReason === 'hesitated'}
+            dismissible={false}
+            title='Forced to walk the plank'
+         >
+            <div className='flex flex-col items-center gap-3 text-center'>
+               <span className='text-5xl' aria-hidden>
+                  ☠️
+               </span>
+               <p className='text-sm text-[color:var(--color-cream-200)]/85'>
+                  Ye hesitated too long! The captain&apos;s patience ran out and the crew shoved
+                  ye into the brine.
+               </p>
+               <PirateButton
+                  variant='primary'
+                  size='lg'
+                  fullWidth
+                  onClick={() => router.push('/play/lobby')}
+               >
+                  Return to docks
+               </PirateButton>
+            </div>
+         </PirateModal>
+         <PirateModal
+            open={plankedReason === 'kicked'}
+            dismissible={false}
+            title='Walked the plank'
+         >
+            <div className='flex flex-col items-center gap-3 text-center'>
+               <span className='text-5xl' aria-hidden>
+                  🚫
+               </span>
+               <p className='text-sm text-[color:var(--color-cream-200)]/85'>
+                  The captain&apos;s booted ye from the crew. Find another ship.
+               </p>
+               <PirateButton
+                  variant='primary'
+                  size='lg'
+                  fullWidth
+                  onClick={() => router.push('/play/lobby')}
+               >
+                  Return to docks
+               </PirateButton>
+            </div>
+         </PirateModal>
+         <PirateModal
+            open={captainPromoted}
+            onClose={() => setCaptainPromoted(false)}
+            title='Captain!'
+         >
+            <div className='flex flex-col items-center gap-3 text-center'>
+               <span className='text-5xl' aria-hidden>
+                  🧭
+               </span>
+               <p className='text-sm text-[color:var(--color-cream-200)]/85'>
+                  The wheel is yours. Hoist the colors when the crew is ready.
+               </p>
+               <PirateButton
+                  variant='primary'
+                  size='lg'
+                  fullWidth
+                  onClick={() => setCaptainPromoted(false)}
+               >
+                  Aye aye
+               </PirateButton>
+            </div>
+         </PirateModal>
+      </>
+   );
+
    if (state.status === 'lobby') {
       return (
-         <Lobby
+         <>
+            {globalToast}
+            <KnockInbox knocks={isHost ? knocks : []} onRemove={removeKnock} />
+            <Lobby
+               state={state}
+               userId={userId}
+               code={initial.code}
+               hostId={hostId}
+               realtimeStatus={status}
+               onlineIds={onlineIds}
+               isSpectator={isSpectator}
+               isPublic={isPublic}
+               onLeave={() => router.push('/play/lobby')}
+               onLeaveAsHost={handleLeaveHost}
+            />
+            {sharedModals}
+         </>
+      );
+   }
+
+   if (state.status === 'complete' && iHaveContinued) {
+      return (
+         <>
+            {globalToast}
+            <KnockInbox knocks={isHost ? knocks : []} onRemove={removeKnock} />
+            <Lobby
+               state={state}
+               userId={userId}
+               code={initial.code}
+               hostId={hostId}
+               realtimeStatus={status}
+               onlineIds={onlineIds}
+               isSpectator={isSpectator}
+               isPublic={isPublic}
+               onLeave={() => router.push('/play/lobby')}
+               onLeaveAsHost={handleLeaveHost}
+               continuationDeadline={continuation?.deadlineAt}
+               pendingIds={pendingIds}
+               seatedIds={seatedIdSet}
+            />
+            {sharedModals}
+         </>
+      );
+   }
+
+   return (
+      <>
+         {globalToast}
+         <KnockInbox knocks={isHost ? knocks : []} onRemove={removeKnock} />
+         <Play
             state={state}
             userId={userId}
             code={initial.code}
-            hostId={initial.hostId}
+            hostId={hostId}
             realtimeStatus={status}
+            applyOptimistic={applyOptimistic}
             onlineIds={onlineIds}
             isSpectator={isSpectator}
-            onLeave={() => router.push('/choose-game')}
+            onLeave={() => router.push('/play/lobby')}
+            continuationDeadline={continuation?.deadlineAt ?? null}
+            onContinue={handleContinue}
+            onJumpShip={handleJumpShip}
          />
-      );
-   }
+         {sharedModals}
+      </>
+   );
+}
+
+function ContinueButton({
+   deadlineAt,
+   onContinue,
+}: {
+   deadlineAt: string | null;
+   onContinue: () => void | Promise<void>;
+}) {
+   const [secs, setSecs] = useState(() => deriveSecs(deadlineAt));
+   const [submitting, setSubmitting] = useState(false);
+   useEffect(() => {
+      if (!deadlineAt) return;
+      const id = setInterval(() => setSecs(deriveSecs(deadlineAt)), 500);
+      return () => clearInterval(id);
+   }, [deadlineAt]);
+   const display = formatMSS(secs);
+   const click = async () => {
+      setSubmitting(true);
+      await onContinue();
+   };
    return (
-      <Play
-         state={state}
-         userId={userId}
-         code={initial.code}
-         hostId={initial.hostId}
-         realtimeStatus={status}
-         applyOptimistic={applyOptimistic}
-         onlineIds={onlineIds}
-         isSpectator={isSpectator}
-         onLeave={() => router.push('/choose-game')}
-      />
+      <PirateButton
+         variant='treasure'
+         size='md'
+         fullWidth
+         onClick={click}
+         disabled={submitting || secs <= 0}
+      >
+         <span className='inline-flex items-center gap-2'>
+            Continue
+            <span className='font-mono font-bold tabular-nums inline-block w-[2ch] text-right'>
+               {display}
+            </span>
+         </span>
+      </PirateButton>
+   );
+}
+
+function deriveSecs(deadlineAt: string | null): number {
+   if (!deadlineAt) return 0;
+   return Math.max(0, Math.ceil((new Date(deadlineAt).getTime() - Date.now()) / 1000));
+}
+
+function formatMSS(secs: number): string {
+   // Show plain seconds — the window is short enough to never need minutes.
+   // Pad to 2 chars so layout doesn't reflow as the number ticks down.
+   return secs.toString().padStart(2, '0');
+}
+
+function ContinuationWaitingButton({ deadlineAt }: { deadlineAt: string }) {
+   const [secs, setSecs] = useState(() => deriveSecs(deadlineAt));
+   useEffect(() => {
+      const id = setInterval(() => setSecs(deriveSecs(deadlineAt)), 500);
+      return () => clearInterval(id);
+   }, [deadlineAt]);
+   const display = formatMSS(secs);
+   return (
+      <PirateButton variant='secondary' size='lg' fullWidth disabled>
+         <span className='inline-flex items-center gap-2'>
+            Waitin&apos; for crew
+            <span className='font-mono font-bold tabular-nums inline-block w-[2ch] text-right'>
+               {display}
+            </span>
+         </span>
+      </PirateButton>
    );
 }
 
@@ -120,7 +585,12 @@ function Lobby({
    realtimeStatus,
    onlineIds,
    isSpectator,
+   isPublic,
    onLeave,
+   onLeaveAsHost,
+   continuationDeadline,
+   pendingIds,
+   seatedIds,
 }: {
    state: RoomState;
    userId: string;
@@ -129,16 +599,42 @@ function Lobby({
    realtimeStatus: RealtimeStatus;
    onlineIds: ReadonlySet<string>;
    isSpectator: boolean;
+   isPublic: boolean;
    onLeave: () => void;
+   onLeaveAsHost: () => void;
+   continuationDeadline?: string;
+   pendingIds?: ReadonlySet<string>;
+   seatedIds?: ReadonlySet<string>;
 }) {
    const isHost = userId === hostId;
    const [error, setError] = useState<string | null>(null);
    const [starting, setStarting] = useState(false);
    const [copied, setCopied] = useState(false);
    const [leaving, setLeaving] = useState(false);
+   const [togglingVis, setTogglingVis] = useState(false);
+   const [publicState, setPublicState] = useState(isPublic);
+   useEffect(() => setPublicState(isPublic), [isPublic]);
+   const toggleVisibility = async () => {
+      setTogglingVis(true);
+      const next = !publicState;
+      setPublicState(next);
+      const res = await setRoomVisibility({ code, isPublic: next });
+      setTogglingVis(false);
+      if (!res.ok) {
+         setPublicState(!next);
+         setError(res.error);
+      }
+   };
    // Visible player list filters anyone who isn't currently connected
-   // (after the grace window) so the lobby reflects reality.
-   const visiblePlayers = state.players.filter((p) => onlineIds.has(p.id) || p.id === userId);
+   // (after the grace window) so the lobby reflects reality. During the
+   // continuation window we additionally hide jumpers (engine snapshot
+   // stays frozen for the VictoryModal but the lobby view shouldn't show
+   // people who already bailed).
+   const visiblePlayers = state.players.filter(
+      (p) =>
+         (seatedIds ? seatedIds.has(p.id) : true) &&
+         (onlineIds.has(p.id) || p.id === userId),
+   );
    const canStart = isHost && visiblePlayers.length >= MIN_PLAYERS;
 
    const handleLeaveSpectator = async () => {
@@ -157,20 +653,35 @@ function Lobby({
 
    const share = async () => {
       const url = typeof window !== 'undefined' ? `${window.location.origin}/play/${code}` : '';
+      const announceCopied = () => {
+         setCopied(true);
+         setTimeout(() => setCopied(false), 1800);
+      };
+      // Prefer the modern clipboard API (HTTPS / localhost). Fall back to
+      // the legacy execCommand path so plain-HTTP LAN testing still works.
       try {
-         if (navigator.share) {
-            await navigator.share({ title: 'Greedy Pirate', text: `Join my room: ${code}`, url });
+         if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(url);
+            announceCopied();
             return;
          }
       } catch {
-         // user cancelled — fall through to clipboard
+         // Permission denied or transient — fall through to legacy path.
       }
       try {
-         await navigator.clipboard.writeText(url);
-         setCopied(true);
-         setTimeout(() => setCopied(false), 1800);
+         const ta = document.createElement('textarea');
+         ta.value = url;
+         ta.setAttribute('readonly', '');
+         ta.style.position = 'fixed';
+         ta.style.opacity = '0';
+         document.body.appendChild(ta);
+         ta.select();
+         const ok = document.execCommand('copy');
+         document.body.removeChild(ta);
+         if (ok) announceCopied();
       } catch {
-         // clipboard blocked; ignore
+         // Last resort: nothing we can do silently. Could prompt() the URL
+         // but that's uglier than just shrugging.
       }
    };
 
@@ -196,16 +707,59 @@ function Lobby({
                aria-hidden
             />
             <span className='text-xs uppercase tracking-[0.3em] text-[color:var(--color-teal-400)]'>Room code</span>
-            <span className='wordmark-gold pirate-display text-5xl tracking-[0.45em] sm:text-7xl [text-indent:0.45em]'>
+            <span className='wordmark-gold-mono text-5xl tracking-[0.45em] sm:text-7xl [text-indent:0.45em]'>
                {code}
             </span>
             <PirateButton variant='secondary' size='sm' fullWidth onClick={share}>
-               {copied ? 'Copied!' : 'Share invite'}
+               {copied ? 'Copied!' : 'Copy invite link'}
             </PirateButton>
+            {isHost && (
+               <button
+                  type='button'
+                  onClick={toggleVisibility}
+                  disabled={togglingVis}
+                  className='mt-1 inline-flex items-center gap-2 rounded-full border border-[color:var(--color-surface-border)] bg-[color:var(--color-abyss-900)]/60 px-3 py-1 text-xs text-[color:var(--color-cream-200)]/85 hover:border-[color:var(--color-gold-500)]/60 disabled:opacity-60'
+                  title={
+                     publicState
+                        ? "Open voyage — anyone can board. Tap to make private."
+                        : 'Sealed hold — captain approves boarders. Tap to make public.'
+                  }
+               >
+                  <span
+                     className={
+                        publicState
+                           ? 'h-2 w-2 rounded-full bg-[color:var(--color-teal-400)]'
+                           : 'h-2 w-2 rounded-full bg-[color:var(--color-coral-500)]'
+                     }
+                     aria-hidden
+                  />
+                  {publicState ? 'Open voyage' : 'Sealed hold'}
+                  <span className='text-[color:var(--color-cream-200)]/55'>· tap to flip</span>
+               </button>
+            )}
          </PiratePanel>
 
          <div className='scrollbar-none min-h-0 flex-1 overflow-y-auto'>
-            <CrewGrid players={visiblePlayers} capacity={MAX_PLAYERS} hostId={hostId} youId={userId} />
+            <CrewGrid
+               players={visiblePlayers}
+               capacity={MAX_PLAYERS}
+               hostId={hostId}
+               youId={userId}
+               pendingIds={pendingIds}
+               renderRowAction={
+                  isHost && !continuationDeadline
+                     ? (player) =>
+                          player.id === hostId ? null : (
+                             <CaptainMenu
+                                code={code}
+                                targetUserId={player.id}
+                                targetName={player.name}
+                                roomStatus='lobby'
+                             />
+                          )
+                     : undefined
+               }
+            />
          </div>
 
          {state.spectators.length > 0 && (
@@ -224,21 +778,41 @@ function Lobby({
                      {leaving ? '…' : 'Leave'}
                   </PirateButton>
                </div>
+            ) : continuationDeadline ? (
+               <ContinuationWaitingButton deadlineAt={continuationDeadline} />
             ) : isHost ? (
-               <>
+               <div className='flex flex-col gap-2'>
                   <PirateButton variant='primary' size='lg' fullWidth onClick={start} disabled={!canStart || starting}>
                      {starting ? 'Setting sail…' : 'Hoist the Colors!'}
                   </PirateButton>
                   {!canStart && (
-                     <p className='mt-2 text-center text-xs text-[color:var(--color-cream-200)]/60'>
+                     <p className='text-center text-xs text-[color:var(--color-cream-200)]/60'>
                         Need at least {MIN_PLAYERS} crewmates.
                      </p>
                   )}
-               </>
+                  <PirateButton variant='ghost' size='sm' fullWidth onClick={onLeaveAsHost}>
+                     Abandon ship
+                  </PirateButton>
+               </div>
             ) : (
-               <p className='animate-pulse text-center text-sm text-[color:var(--color-cream-200)]/60'>
-                  Waiting for the captain to hoist the colors…
-               </p>
+               <div className='flex flex-col gap-2'>
+                  <p className='animate-pulse text-center text-sm text-[color:var(--color-cream-200)]/60'>
+                     Waiting for the captain to hoist the colors…
+                  </p>
+                  <PirateButton
+                     variant='ghost'
+                     size='sm'
+                     fullWidth
+                     onClick={async () => {
+                        setLeaving(true);
+                        await leaveRoom(code);
+                        onLeave();
+                     }}
+                     disabled={leaving}
+                  >
+                     {leaving ? '…' : 'Disembark'}
+                  </PirateButton>
+               </div>
             )}
          </div>
       </main>
@@ -285,6 +859,9 @@ function Play({
    onlineIds,
    isSpectator,
    onLeave,
+   continuationDeadline,
+   onContinue,
+   onJumpShip,
 }: {
    state: RoomState;
    userId: string;
@@ -295,11 +872,13 @@ function Play({
    onlineIds: ReadonlySet<string>;
    isSpectator: boolean;
    onLeave: () => void;
+   continuationDeadline: string | null;
+   onContinue: () => void | Promise<void>;
+   onJumpShip: () => void | Promise<void>;
 }) {
    const [pending, setPending] = useState<null | 'draw' | 'bank' | 'end'>(null);
    const [error, setError] = useState<string | null>(null);
    const [drawingCard, setDrawingCard] = useState(false);
-   const [restarting, setRestarting] = useState(false);
    const [leavingSpectate, setLeavingSpectate] = useState(false);
    const { toastElement, showToast } = useGameToast();
 
@@ -402,13 +981,6 @@ function Play({
       });
    }, [iAmAbsent, state.status, code]);
 
-   const handlePlayAgain = async () => {
-      setRestarting(true);
-      const res = await restartRoom({ code });
-      setRestarting(false);
-      if (!res.ok) setError(res.error);
-   };
-
    // Pirate reveal — toast for everyone watching, once per reveal.
    useEffect(() => {
       if (isPirate && !isComplete) showToast('Robbed!', 'blood');
@@ -478,7 +1050,7 @@ function Play({
          <div className='relative z-10 text-center'>
             <span className='chip-pirate min-h-6 px-2.5 text-[10px]'>
                <ConnectionDot status={realtimeStatus} compact />
-               <span className='pirate-display tracking-widest text-[color:var(--color-gold-300)]'>{code}</span>
+               <span className='font-mono font-bold tracking-widest text-[color:var(--color-gold-300)]'>{code}</span>
             </span>
             <StatusBanner
                isComplete={isComplete}
@@ -554,36 +1126,37 @@ function Play({
             ranked={ranked}
             youId={userId}
             actions={
-               <>
-                  <PirateButton
-                     variant='tertiary'
-                     size='md'
-                     fullWidth
-                     onClick={isSpectator ? handleLeaveSpectator : onLeave}
-                     disabled={isSpectator && leavingSpectate}
-                  >
-                     To port
-                  </PirateButton>
-                  {isHost ? (
+               isSpectator ? (
+                  <>
                      <PirateButton
-                        variant='treasure'
+                        variant='tertiary'
                         size='md'
                         fullWidth
-                        onClick={handlePlayAgain}
-                        disabled={restarting}
+                        onClick={handleLeaveSpectator}
+                        disabled={leavingSpectate}
                      >
-                        {restarting ? 'Resetting…' : 'Play again'}
+                        To port
                      </PirateButton>
-                  ) : isSpectator ? (
                      <span className='inline-flex w-full items-center justify-center rounded-xl border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-4 py-3 text-center text-sm text-[color:var(--color-cream-200)]/70'>
-                        Stay aboard — you&apos;ll be seated next round.
+                        Stay aboard — ye&apos;ll be seated next round.
                      </span>
-                  ) : (
-                     <span className='inline-flex w-full items-center justify-center rounded-xl border border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-4 py-3 text-center text-sm text-[color:var(--color-cream-200)]/70'>
-                        Captain be choosing…
-                     </span>
-                  )}
-               </>
+                  </>
+               ) : (
+                  <>
+                     <PirateButton
+                        variant='tertiary'
+                        size='md'
+                        fullWidth
+                        onClick={onJumpShip}
+                     >
+                        Jump ship
+                     </PirateButton>
+                     <ContinueButton
+                        deadlineAt={continuationDeadline}
+                        onContinue={onContinue}
+                     />
+                  </>
+               )
             }
          />
       </main>

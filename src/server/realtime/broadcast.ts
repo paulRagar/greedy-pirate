@@ -1,30 +1,82 @@
 import 'server-only';
+import { revalidatePath } from 'next/cache';
 import type { PublicGameState } from '@/game/public';
 
 const TOPIC_PREFIX = 'room';
+const LOBBY_TOPIC = 'lobby:public';
 const BROADCAST_EVENT = 'state';
+const KNOCK_REQUESTED_EVENT = 'knock:requested';
+const KNOCK_CANCELLED_EVENT = 'knock:cancelled';
+const KNOCK_RESOLVED_EVENT = 'knock:resolved';
 
 export function roomTopic(code: string): string {
    return `${TOPIC_PREFIX}:${code.toUpperCase()}`;
 }
 
 export const ROOM_BROADCAST_EVENT = BROADCAST_EVENT;
+export const LOBBY_BROADCAST_TOPIC = LOBBY_TOPIC;
+export const ROOM_KNOCK_REQUESTED_EVENT = KNOCK_REQUESTED_EVENT;
+export const ROOM_KNOCK_CANCELLED_EVENT = KNOCK_CANCELLED_EVENT;
+export const ROOM_KNOCK_RESOLVED_EVENT = KNOCK_RESOLVED_EVENT;
 
 export type RoomSpectator = {
    readonly id: string;
    readonly name: string;
 };
 
-type BroadcastPayload = {
+export type ContinuationState = {
+   deadlineAt: string;
+   continuedIds: ReadonlyArray<string>;
+   seatedIds: ReadonlyArray<string>;
+} | null;
+
+type StatePayload = {
    state: PublicGameState;
    spectators: ReadonlyArray<RoomSpectator>;
    actorId: string | null;
    eventType: string;
+   continuation?: ContinuationState;
+   hostId?: string;
 };
 
-export async function broadcastRoomState(
-   code: string,
-   payload: BroadcastPayload,
+export type KnockRequestedPayload = {
+   requestId: string;
+   requesterId: string;
+   displayName: string;
+   kind: 'player' | 'spectator';
+   expiresAt: string;
+};
+
+export type KnockCancelledPayload = {
+   requestId: string;
+   requesterId: string;
+};
+
+export type KnockResolvedPayload = {
+   requestId: string;
+   requesterId: string;
+   outcome: 'approved' | 'denied' | 'expired' | 'cancelled';
+};
+
+export type LobbyRoomSummary = {
+   code: string;
+   hostDisplayName: string;
+   playerCount: number;
+   maxPlayers: number;
+   status: 'lobby' | 'active';
+   deckVariant: string;
+   createdAt: string;
+};
+
+export type LobbyEvent =
+   | { type: 'room_created'; room: LobbyRoomSummary }
+   | { type: 'room_updated'; code: string; playerCount: number; status: 'lobby' | 'active' }
+   | { type: 'room_removed'; code: string };
+
+async function postBroadcast(
+   topic: string,
+   event: string,
+   payload: unknown,
 ): Promise<void> {
    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -46,8 +98,8 @@ export async function broadcastRoomState(
          body: JSON.stringify({
             messages: [
                {
-                  topic: roomTopic(code),
-                  event: BROADCAST_EVENT,
+                  topic,
+                  event,
                   payload,
                   private: false,
                },
@@ -57,11 +109,47 @@ export async function broadcastRoomState(
       });
       if (!response.ok) {
          const body = await response.text();
-         console.error(`[broadcast] failed (${response.status}): ${body}`);
+         console.error(`[broadcast] failed ${topic}/${event} (${response.status}): ${body}`);
       }
    } catch (err) {
-      console.error('[broadcast] threw', err);
+      console.error(`[broadcast] threw on ${topic}/${event}`, err);
    } finally {
       clearTimeout(timer);
    }
+}
+
+export async function broadcastRoomState(
+   code: string,
+   payload: StatePayload,
+): Promise<void> {
+   await postBroadcast(roomTopic(code), BROADCAST_EVENT, payload);
+}
+
+export async function broadcastKnockRequested(
+   code: string,
+   payload: KnockRequestedPayload,
+): Promise<void> {
+   await postBroadcast(roomTopic(code), KNOCK_REQUESTED_EVENT, payload);
+}
+
+export async function broadcastKnockCancelled(
+   code: string,
+   payload: KnockCancelledPayload,
+): Promise<void> {
+   await postBroadcast(roomTopic(code), KNOCK_CANCELLED_EVENT, payload);
+}
+
+export async function broadcastKnockResolved(
+   code: string,
+   payload: KnockResolvedPayload,
+): Promise<void> {
+   await postBroadcast(roomTopic(code), KNOCK_RESOLVED_EVENT, payload);
+}
+
+export async function broadcastLobbyEvent(event: LobbyEvent): Promise<void> {
+   // Invalidate the cached /play/lobby RSC payload so the next visitor sees
+   // fresh counts/status. Realtime broadcasts handle live viewers; this
+   // covers the "navigated away then back" case.
+   revalidatePath('/play/lobby');
+   await postBroadcast(LOBBY_TOPIC, event.type, event);
 }

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
-import { joinRoom } from '@/server/actions/joinRoom';
 import { DEFAULT_DISPLAY_NAME, useCurrentUser } from '@/client/auth/useCurrentUser';
 
 export default function JoinClient() {
@@ -27,7 +26,7 @@ export default function JoinClient() {
       );
    }
 
-   const submit = async (e: React.FormEvent) => {
+   const submit = (e: React.FormEvent) => {
       e.preventDefault();
       const trimmed = code.trim().toUpperCase();
       if (trimmed.length !== 4) {
@@ -36,13 +35,10 @@ export default function JoinClient() {
       }
       setError(null);
       setSubmitting(true);
-      const result = await joinRoom({ code: trimmed });
-      setSubmitting(false);
-      if (result.ok) {
-         router.push(`/play/${result.code}`);
-      } else {
-         setError(result.error);
-      }
+      // Don't try to join here — route to the room page and let JoinGate /
+      // SpectateGate decide between direct-board (public) and knock (private).
+      // The page handles not-found and visibility-gated paths.
+      router.push(`/play/${trimmed}`);
    };
 
    return (
@@ -70,7 +66,7 @@ export default function JoinClient() {
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder='ABCD'
-                  className='input-pirate pirate-display min-h-[68px] text-center text-4xl tracking-[0.5em] !text-[color:var(--color-gold-300)] [text-indent:0.5em]'
+                  className='input-pirate min-h-[68px] text-center text-4xl font-mono font-bold tracking-[0.5em] !text-[color:var(--color-gold-300)] [text-indent:0.5em]'
                />
                {error && <p className='text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
                <PirateButton
