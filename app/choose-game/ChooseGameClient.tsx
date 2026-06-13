@@ -40,10 +40,10 @@ export default function ChooseGameClient() {
                action={
                   <div className='flex flex-col gap-2'>
                      <PirateButton variant='secondary' size='lg' fullWidth onClick={() => router.push('/play/new')}>
-                        Open a Room
+                        Charter Ship
                      </PirateButton>
-                     <PirateButton variant='tertiary' size='md' fullWidth onClick={() => router.push('/play/join')}>
-                        Join with Code
+                     <PirateButton variant='tertiary' size='md' fullWidth onClick={() => router.push('/play/lobby')}>
+                        Find Crew
                      </PirateButton>
                   </div>
                }

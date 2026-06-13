@@ -42,8 +42,12 @@ export const games = pgTable(
          enum: ['greedy', 'even_greedier', 'super_greedy'],
       }).notNull(),
       status: text('status', { enum: ['lobby', 'active', 'complete', 'abandoned'] }).notNull(),
+      isPublic: boolean('is_public').notNull().default(false),
       state: jsonb('state').notNull().default(sql`'{}'::jsonb`),
       currentPlayerId: uuid('current_player_id'),
+      hostLeftAt: timestamp('host_left_at', { withTimezone: true }),
+      continuationDeadline: timestamp('continuation_deadline', { withTimezone: true }),
+      continuationFinalized: boolean('continuation_finalized').notNull().default(false),
       startedAt: timestamp('started_at', { withTimezone: true }),
       completedAt: timestamp('completed_at', { withTimezone: true }),
       createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -53,6 +57,9 @@ export const games = pgTable(
          .on(t.code)
          .where(sql`status in ('lobby', 'active') and code is not null`),
       hostIdx: index('games_host_idx').on(t.hostId),
+      publicOpenIdx: index('games_public_open_idx')
+         .on(t.createdAt)
+         .where(sql`is_public and status in ('lobby', 'active')`),
    }),
 );
 
@@ -71,6 +78,7 @@ export const gamePlayers = pgTable(
       isWinner: boolean('is_winner').notNull().default(false),
       joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
       leftAt: timestamp('left_at', { withTimezone: true }),
+      continuedAt: timestamp('continued_at', { withTimezone: true }),
    },
    (t) => ({
       uniqueGameSeat: unique('game_players_game_seat_unique').on(t.gameId, t.seat),
@@ -95,6 +103,40 @@ export const gameSpectators = pgTable(
    (t) => ({
       uniqueGameUser: unique('game_spectators_game_user_unique').on(t.gameId, t.userId),
       gameIdx: index('game_spectators_game_idx').on(t.gameId),
+   }),
+);
+
+export const gameJoinRequests = pgTable(
+   'game_join_requests',
+   {
+      id: uuid('id').primaryKey().defaultRandom(),
+      gameId: uuid('game_id')
+         .notNull()
+         .references(() => games.id, { onDelete: 'cascade' }),
+      userId: uuid('user_id')
+         .notNull()
+         .references(() => users.id, { onDelete: 'cascade' }),
+      displayName: text('display_name').notNull(),
+      kind: text('kind', { enum: ['player', 'spectator'] }).notNull(),
+      status: text('status', {
+         enum: ['pending', 'approved', 'denied', 'cancelled', 'expired'],
+      })
+         .notNull()
+         .default('pending'),
+      createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+      expiresAt: timestamp('expires_at', { withTimezone: true })
+         .notNull()
+         .default(sql`now() + interval '30 seconds'`),
+      resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+   },
+   (t) => ({
+      onePendingPerUser: uniqueIndex('game_join_requests_one_open_idx')
+         .on(t.gameId, t.userId)
+         .where(sql`status = 'pending'`),
+      gameStatusIdx: index('game_join_requests_game_status_idx').on(t.gameId, t.status),
+      expiresIdx: index('game_join_requests_expires_idx')
+         .on(t.expiresAt)
+         .where(sql`status = 'pending'`),
    }),
 );
 
@@ -137,6 +179,8 @@ export type DbGamePlayer = typeof gamePlayers.$inferSelect;
 export type DbGamePlayerInsert = typeof gamePlayers.$inferInsert;
 export type DbGameSpectator = typeof gameSpectators.$inferSelect;
 export type DbGameSpectatorInsert = typeof gameSpectators.$inferInsert;
+export type DbGameJoinRequest = typeof gameJoinRequests.$inferSelect;
+export type DbGameJoinRequestInsert = typeof gameJoinRequests.$inferInsert;
 export type DbGameEvent = typeof gameEvents.$inferSelect;
 export type DbGameEventInsert = typeof gameEvents.$inferInsert;
 export type DbUserStats = typeof userStats.$inferSelect;

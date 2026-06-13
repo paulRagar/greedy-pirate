@@ -210,6 +210,20 @@
       filter: drop-shadow(0 4px 8px rgb(255 59 138 / 0.25));
    }
 
+   /* Gold wordmark in a clean monospace — for room codes and other strings
+      players need to read/type. Decorative font confuses O/0, I/1/l, S/5. */
+   .wordmark-gold-mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+      font-weight: 700;
+      background: linear-gradient(180deg, var(--color-gold-200) 0%, var(--color-gold-400) 50%, var(--color-gold-600) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow:
+         0 0 18px rgb(255 217 102 / 0.3),
+         0 2px 0 rgb(138 77 5 / 0.35);
+   }
+
    /* Card felt — used on play tables, gives that ornate-board feel */
    .felt-bg {
       background-color: var(--color-deep-800);

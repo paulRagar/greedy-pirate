@@ -59,6 +59,27 @@ describe('PLAYER_JOIN', () => {
    });
 });
 
+describe('PLAYER_LEAVE', () => {
+   it('removes the player from the lobby roster', () => {
+      const s = buildLobby(p('a'), p('b'), p('c'));
+      const next = reduce(s, { type: 'PLAYER_LEAVE', playerId: 'b' });
+      expect(next.players.map((pl) => pl.id)).toEqual(['a', 'c']);
+   });
+
+   it('is a no-op when the player was never aboard', () => {
+      const s = buildLobby(p('a'));
+      const next = reduce(s, { type: 'PLAYER_LEAVE', playerId: 'ghost' });
+      expect(next.players).toEqual(s.players);
+   });
+
+   it('rejects after the game has started — kicks during active games unsupported', () => {
+      const started = startGame(buildLobby(p('a'), p('b')));
+      expect(() => reduce(started, { type: 'PLAYER_LEAVE', playerId: 'b' })).toThrow(
+         /after game start/,
+      );
+   });
+});
+
 describe('START_GAME', () => {
    it('requires minimum players', () => {
       const solo = buildLobby(p('a'));

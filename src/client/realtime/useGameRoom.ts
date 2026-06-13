@@ -5,6 +5,9 @@ import { getSupabaseBrowser } from '@/client/supabase/browser';
 import type { PublicGameState, RoomSpectatorView } from '@/game/public';
 
 const ROOM_BROADCAST_EVENT = 'state';
+const KNOCK_REQUESTED_EVENT = 'knock:requested';
+const KNOCK_CANCELLED_EVENT = 'knock:cancelled';
+const KNOCK_RESOLVED_EVENT = 'knock:resolved';
 
 /**
  * How long a player can vanish from the presence channel before we
@@ -16,11 +19,38 @@ const ROOM_BROADCAST_EVENT = 'state';
 const LOBBY_GRACE_MS = 2_500;
 const ACTIVE_GRACE_MS = 10_000;
 
+export type ContinuationContext = {
+   deadlineAt: string;
+   continuedIds: ReadonlyArray<string>;
+   seatedIds: ReadonlyArray<string>;
+} | null;
+
 type BroadcastBody = {
    state?: PublicGameState;
    spectators?: ReadonlyArray<RoomSpectatorView>;
    actorId?: string | null;
    eventType?: string;
+   continuation?: ContinuationContext;
+   hostId?: string;
+};
+
+export type KnockRequestedEvent = {
+   requestId: string;
+   requesterId: string;
+   displayName: string;
+   kind: 'player' | 'spectator';
+   expiresAt: string;
+};
+
+export type KnockCancelledEvent = {
+   requestId: string;
+   requesterId: string;
+};
+
+export type KnockResolvedEvent = {
+   requestId: string;
+   requesterId: string;
+   outcome: 'approved' | 'denied' | 'expired' | 'cancelled';
 };
 
 export type RealtimeStatus = 'connecting' | 'connected' | 'reconnecting' | 'paused' | 'error';
@@ -29,6 +59,10 @@ type Options = {
    onResume?: () => void;
    /** Local user id — needed to track our own presence on the channel. */
    userId?: string;
+   onKnockRequested?: (event: KnockRequestedEvent) => void;
+   onKnockCancelled?: (event: KnockCancelledEvent) => void;
+   onKnockResolved?: (event: KnockResolvedEvent) => void;
+   onEvent?: (eventType: string, body: BroadcastBody) => void;
 };
 
 type PresenceMeta = { user_id: string; online_at: string };
@@ -39,27 +73,40 @@ export function useGameRoom(
    initial: PublicGameState,
    options: Options = {},
    initialSpectators: ReadonlyArray<RoomSpectatorView> = [],
+   initialContinuation: ContinuationContext = null,
 ) {
    const [state, setState] = useState<PublicGameState>(initial);
    const [spectators, setSpectators] = useState<ReadonlyArray<RoomSpectatorView>>(initialSpectators);
    const [status, setStatus] = useState<RealtimeStatus>('connecting');
    const [onlineIds, setOnlineIds] = useState<ReadonlySet<string>>(() => new Set());
+   const [continuation, setContinuation] = useState<ContinuationContext>(initialContinuation);
    const optimisticVersion = useRef(0);
    const onResumeRef = useRef(options.onResume);
    const userIdRef = useRef(options.userId);
-   // Read latest game status inside presence timers so each grace window
-   // uses the right duration at the moment it starts.
+   const onKnockRequestedRef = useRef(options.onKnockRequested);
+   const onKnockCancelledRef = useRef(options.onKnockCancelled);
+   const onKnockResolvedRef = useRef(options.onKnockResolved);
+   const onEventRef = useRef(options.onEvent);
    const statusRef = useRef<PublicGameState['status']>(initial.status);
    statusRef.current = state.status;
 
-   // Track ids that left + the timer that will mark them offline after the
-   // grace window expires. If they rejoin during the grace, we cancel.
    const graceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
    useEffect(() => {
       onResumeRef.current = options.onResume;
       userIdRef.current = options.userId;
-   }, [options.onResume, options.userId]);
+      onKnockRequestedRef.current = options.onKnockRequested;
+      onKnockCancelledRef.current = options.onKnockCancelled;
+      onKnockResolvedRef.current = options.onKnockResolved;
+      onEventRef.current = options.onEvent;
+   }, [
+      options.onResume,
+      options.userId,
+      options.onKnockRequested,
+      options.onKnockCancelled,
+      options.onKnockResolved,
+      options.onEvent,
+   ]);
 
    useEffect(() => {
       setState(initial);
@@ -68,6 +115,10 @@ export function useGameRoom(
    useEffect(() => {
       setSpectators(initialSpectators);
    }, [gameId, initialSpectators]);
+
+   useEffect(() => {
+      setContinuation(initialContinuation);
+   }, [gameId, initialContinuation]);
 
    useEffect(() => {
       const supabase = getSupabaseBrowser();
@@ -107,13 +158,11 @@ export function useGameRoom(
             }
          }
          setOnlineIds((prev) => {
-            // Anyone newly live: clear any pending grace timer + add.
             const next = new Set(prev);
             for (const uid of liveIds) {
                clearGraceTimer(uid);
                next.add(uid);
             }
-            // Anyone in prev but not live: start grace timer (don't remove yet).
             for (const uid of prev) {
                if (!liveIds.has(uid)) {
                   startGraceTimer(uid);
@@ -144,6 +193,36 @@ export function useGameRoom(
                if (payload.spectators) {
                   setSpectators(payload.spectators);
                }
+               // continuation explicitly null means the window closed.
+               // undefined means the sender didn't address it — keep current.
+               if (payload.continuation !== undefined) {
+                  setContinuation(payload.continuation);
+               }
+               if (payload.eventType) {
+                  onEventRef.current?.(payload.eventType, payload);
+               }
+            },
+         );
+
+         channel.on(
+            'broadcast',
+            { event: KNOCK_REQUESTED_EVENT },
+            (message: { payload?: KnockRequestedEvent }) => {
+               if (message.payload) onKnockRequestedRef.current?.(message.payload);
+            },
+         );
+         channel.on(
+            'broadcast',
+            { event: KNOCK_CANCELLED_EVENT },
+            (message: { payload?: KnockCancelledEvent }) => {
+               if (message.payload) onKnockCancelledRef.current?.(message.payload);
+            },
+         );
+         channel.on(
+            'broadcast',
+            { event: KNOCK_RESOLVED_EVENT },
+            (message: { payload?: KnockResolvedEvent }) => {
+               if (message.payload) onKnockResolvedRef.current?.(message.payload);
             },
          );
 
@@ -154,7 +233,6 @@ export function useGameRoom(
          channel.subscribe(async (subStatus: string, err?: Error) => {
             if (subStatus === 'SUBSCRIBED') {
                setStatus('connected');
-               // Announce ourselves on the presence channel.
                if (userIdRef.current && channel) {
                   await channel.track({
                      user_id: userIdRef.current,
@@ -209,5 +287,5 @@ export function useGameRoom(
       [],
    );
 
-   return { state, spectators, status, applyOptimistic, onlineIds };
+   return { state, spectators, status, applyOptimistic, onlineIds, continuation };
 }

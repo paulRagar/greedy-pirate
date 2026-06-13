@@ -1,11 +1,13 @@
 import 'server-only';
 import { and, eq, sql } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
 import { db } from './db/client';
 import { gameEvents, gamePlayers, games } from './db/schema';
 import type { DbGame } from './db/schema';
 import { bumpUserStats } from './stats';
-import { broadcastRoomState } from './realtime/broadcast';
-import { fetchSpectators } from './spectators';
+import { broadcastLobbyEvent, broadcastRoomState } from './realtime/broadcast';
+import { fetchSpectators, promoteSpectators } from './spectators';
+import { CONTINUATION_WINDOW_MS, fetchContinuation } from './continuation';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 import { initialState, reduce } from '@/game/engine';
@@ -100,6 +102,7 @@ export async function loadRoomForUser(code: string, userId: string) {
 export async function createRoom(params: {
    hostId: string;
    variant: DeckVariant;
+   isPublic?: boolean;
 }): Promise<DbGame> {
    for (let attempt = 0; attempt < 6; attempt++) {
       const code = generateRoomCode();
@@ -112,6 +115,7 @@ export async function createRoom(params: {
                mode: 'online',
                deckVariant: params.variant,
                status: 'lobby',
+               isPublic: params.isPublic ?? false,
                state: serializeState({ ...initialState, variant: params.variant }),
             })
             .returning();
@@ -162,8 +166,9 @@ export async function applyAction(
       const row = await tx.query.games.findFirst({ where: eq(games.id, gameId) });
       if (!row) throw new RoomError('NOT_FOUND', 'Game not found');
       const current = parseEngineState(row);
-      const next = reduce(current, action);
+      let next = reduce(current, action);
 
+      const justCompleted = row.status !== 'complete' && next.status === 'complete';
       await tx
          .update(games)
          .set({
@@ -171,6 +176,10 @@ export async function applyAction(
             status: next.status,
             startedAt: next.status === 'active' && !row.startedAt ? new Date() : row.startedAt,
             completedAt: next.status === 'complete' ? new Date() : row.completedAt,
+            continuationDeadline: justCompleted
+               ? new Date(Date.now() + CONTINUATION_WINDOW_MS)
+               : row.continuationDeadline,
+            continuationFinalized: justCompleted ? false : row.continuationFinalized,
             currentPlayerId:
                next.status === 'active'
                   ? (next.players[next.turnIndex]?.id ?? null)
@@ -181,7 +190,9 @@ export async function applyAction(
       if (options.onPlayers) await options.onPlayers(tx, gameId, next);
 
       // Bump user_stats when the game just transitioned to complete.
-      if (row.status !== 'complete' && next.status === 'complete') {
+      // Compute these BEFORE promoting spectators so freshly seated folks
+      // don't get a games_played++ for a round they didn't play.
+      if (justCompleted) {
          const contributions = next.players.map((p) => ({
             userId: p.id,
             coins: p.coins,
@@ -189,6 +200,18 @@ export async function applyAction(
          }));
          if (contributions.length > 0) {
             await bumpUserStats(tx, contributions);
+         }
+
+         // Promote FIFO spectators into open seats so they get a chance to
+         // opt into the continuation window. Promoted players need to
+         // click Continue too — their continued_at starts null.
+         const promoted = await promoteSpectators(tx, gameId, next.players);
+         if (promoted.length !== next.players.length) {
+            next = { ...next, players: [...promoted] };
+            await tx
+               .update(games)
+               .set({ state: serializeState(next) })
+               .where(eq(games.id, gameId));
          }
       }
 
@@ -211,7 +234,16 @@ export async function applyAction(
       const event = inserted[0];
       if (!event) throw new Error('Failed to insert game event');
       const spectators = await fetchSpectators(tx, gameId);
-      return { next, eventId: event.id, code: row.code as string | null, spectators };
+      const continuation = await fetchContinuation(tx, gameId);
+      return {
+         next,
+         eventId: event.id,
+         code: row.code as string | null,
+         isPublic: row.isPublic,
+         prevStatus: row.status,
+         spectators,
+         continuation,
+      };
    });
 
    const code = options.code ?? result.code;
@@ -221,7 +253,23 @@ export async function applyAction(
          spectators: result.spectators,
          actorId: options.actorId ?? null,
          eventType,
+         continuation: result.continuation,
       });
+      if (result.isPublic) {
+         revalidatePath('/play/lobby');
+         const stillListable =
+            result.next.status === 'lobby' || result.next.status === 'active';
+         if (stillListable) {
+            await broadcastLobbyEvent({
+               type: 'room_updated',
+               code,
+               playerCount: result.next.players.length,
+               status: result.next.status as 'lobby' | 'active',
+            });
+         } else if (result.prevStatus === 'lobby' || result.prevStatus === 'active') {
+            await broadcastLobbyEvent({ type: 'room_removed', code });
+         }
+      }
    }
 
    return { next: result.next, eventId: result.eventId };
