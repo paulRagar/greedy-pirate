@@ -1,0 +1,226 @@
+src/server/actions/joinRoom.ts
+  s_4b0f2fda1857b8::t_b1ffbf2b4567c4 6,16-18,20-24,47-49,51-53
+  s_4b0f2fda1857b8::t_98748f9fe4bcab 85-100
+  s_4b0f2fda1857b8::t_e88e622aea58b6 8-9
+src/server/actions/requestJoin.ts
+  s_4b0f2fda1857b8::t_1dad48ca8a3679 1-189
+app/api/cron/cleanup/route.ts
+  s_4b0f2fda1857b8::t_8a3e37fb8c3a32 2,4,12
+  s_4b0f2fda1857b8::t_236eb48ceed437 81-95,103
+  s_4b0f2fda1857b8::t_5ba4d47776ea4c 5-11,13,19-20,46-80,101-102
+app/play/new/page.tsx
+  s_4b0f2fda1857b8::t_01ec21575ab51f 1,3,6
+src/server/db/schema.ts
+  s_4b0f2fda1857b8::t_18eda5967324ad 45,48,60-62
+  s_4b0f2fda1857b8::t_42d71cebbdab9f 182-183
+  s_4b0f2fda1857b8::t_f456aff5fbaaba 81
+  s_4b0f2fda1857b8::t_2bb48462329ebb 49-50
+  s_4b0f2fda1857b8::t_11778f0d756d8c 109-142
+src/server/actions/setRoomVisibility.ts
+  s_4b0f2fda1857b8::t_d18f99cb3b2e6d 1-91
+app/api/room/leave/route.ts
+  s_4b0f2fda1857b8::t_93cdbb7cf55a02 1-130
+src/client/realtime/useKnockRequest.ts
+  s_4b0f2fda1857b8::t_5a1b463b258377 1-107
+src/server/actions/cancelJoinRequest.ts
+  s_4b0f2fda1857b8::t_62c59f99f704f1 1-54
+app/play/[code]/OnlineRoomClient.tsx
+  s_4b0f2fda1857b8::t_2df2b193f97ed0 299,303
+  s_4b0f2fda1857b8::t_65d9280092fe1f 533,535,538
+  s_4b0f2fda1857b8::t_d624b3e8056249 23
+  s_4b0f2fda1857b8::t_1631b7df9bc207 322-325,329-330
+  s_4b0f2fda1857b8::t_ed3c7d8519a707 99-116
+  s_4b0f2fda1857b8::t_012a54c3895f29 656-661,663-665,669,672-681,683-684
+  s_4b0f2fda1857b8::t_4b3f293e24eb72 714
+  s_4b0f2fda1857b8::t_a70829b54fa86e 21
+  s_4b0f2fda1857b8::t_b50ed5f3f9d6c7 263-266,270-278,284-294,296,298,300-302,304-307
+  s_4b0f2fda1857b8::t_88a8f4e970c6c3 295
+  s_4b0f2fda1857b8::t_0c01ab0149ac08 484-502,504-512,514-526,530-531
+  s_4b0f2fda1857b8::t_6c3b51da39d5c2 532,534,536-537,539-542,544-547
+  s_4b0f2fda1857b8::t_eb52658870fb25 588,590,602,604,614-627
+  s_4b0f2fda1857b8::t_09edb97e774ea3 629-637
+  s_4b0f2fda1857b8::t_ac74d2cf528b79 88,117,121
+  s_4b0f2fda1857b8::t_b02bd0cefbaa63 1129-1130,1132,1135-1136,1138,1141,1143-1159
+  s_4b0f2fda1857b8::t_cdaa4a5336c5bf 118
+  s_4b0f2fda1857b8::t_e64467e2e04940 710
+  s_4b0f2fda1857b8::t_9719c3881bc460 326-328,331-413,431-443,445-453,456,460,475-477,479
+  s_4b0f2fda1857b8::t_723bfa4719a1bf 781-782
+  s_4b0f2fda1857b8::t_11eb506003dcb9 748,750
+  s_4b0f2fda1857b8::t_eb13158ed89c22 798-815
+  s_4b0f2fda1857b8::t_af8fd6b59cc009 53,56-62,67-68
+  s_4b0f2fda1857b8::t_fa1f4e8d266e63 7
+  s_4b0f2fda1857b8::t_4475de74fec40e 33
+  s_4b0f2fda1857b8::t_05e70b5be4c3f2 125,127-132,134-137
+  s_4b0f2fda1857b8::t_12e57aa7641d97 144-146,152
+  s_4b0f2fda1857b8::t_1bb390e8a75807 28-30
+  s_4b0f2fda1857b8::t_380c4b3ce05ac6 716-739
+  s_4b0f2fda1857b8::t_27ff3c93ee878f 743-747,749,751-762
+  s_4b0f2fda1857b8::t_05cf296f7a0185 784,789,793-796
+  s_4b0f2fda1857b8::t_8babbdeecab86b 3,5-6,8-10,24-27,44-45,52,64-66,69-81,93-98,119,123-124,126,133,138-140,153,179-197,223-245,309-321,416-430,444,455,457-459,461-465,469,471,474,480
+  s_4b0f2fda1857b8::t_ca9d11ec797b76 454
+  s_4b0f2fda1857b8::t_1df5a0eb065da9 862-864,875-877
+  s_4b0f2fda1857b8::t_f9cfb56b86b5be 527-529
+  s_4b0f2fda1857b8::t_67091c39697d1c 591-592,605-606
+  s_4b0f2fda1857b8::t_100c7e43f24c11 198-202,212
+  s_4b0f2fda1857b8::t_8a196e3ebc9d6f 247-262,267-269,297,308
+  s_4b0f2fda1857b8::t_75121fdae7738a 593,607
+  s_4b0f2fda1857b8::t_e5487a496a36f7 147-151,154-178
+  s_4b0f2fda1857b8::t_ef883956356661 513,543
+  s_4b0f2fda1857b8::t_e05bd87e22edb2 46
+  s_4b0f2fda1857b8::t_12dd5d744f4158 279-283
+  s_4b0f2fda1857b8::t_d360fb313541c7 1053
+  s_4b0f2fda1857b8::t_40dd8cff7fa8a7 203-211,213-222
+app/play/lobby/FindCrewClient.tsx
+  s_4b0f2fda1857b8::t_b79d1bed60b092 1-118,120-167
+  s_4b0f2fda1857b8::t_7f4a4e94a9abbe 119
+src/server/realtime/broadcast.ts
+  s_4b0f2fda1857b8::t_49c65445f1e65e 2
+  s_4b0f2fda1857b8::t_a12a779c10c3fb 30,39
+  s_4b0f2fda1857b8::t_b7f3453224ca29 6,8-10,17-20,33,42-79,101-102,112,115,120-149,154
+  s_4b0f2fda1857b8::t_a08af6750e01a8 150-153
+  s_4b0f2fda1857b8::t_7389f8bbf92a1d 27-29,31-32,38
+app/globals.css
+  s_4b0f2fda1857b8::t_9d1e82f5343a4c 213-226
+src/server/actions/createRoom.ts
+  s_4b0f2fda1857b8::t_663c8a3ae82cd4 3,7
+  s_4b0f2fda1857b8::t_f642cc4b99a2a9 8-9,15,35,62,90-102
+  s_4b0f2fda1857b8::t_574cb174cae8ac 36-61
+supabase/migrations/20260613010000_aggressive_lobby_cleanup.sql
+  s_4b0f2fda1857b8::t_1806faa016f5ed 1-40
+src/ui/game-room/CrewGrid.tsx
+  s_4b0f2fda1857b8::t_63db6b700c1fc3 22-30,34-36,39-44
+  s_4b0f2fda1857b8::t_53f2c14cbd32fc 74-82,85-86
+  s_4b0f2fda1857b8::t_290fdb73e7c98e 1,11-12
+  s_4b0f2fda1857b8::t_efad623ea7b277 13-15
+  s_4b0f2fda1857b8::t_b2a1a55889e013 83
+src/server/joinFlow.ts
+  s_4b0f2fda1857b8::t_9604bccfb98acc 2,6
+  s_4b0f2fda1857b8::t_362413fe1ff0dc 33-47
+  s_4b0f2fda1857b8::t_8eb959ed10ff9c 1,3-5,7-32,48-65
+src/server/actions/listPendingKnocks.ts
+  s_4b0f2fda1857b8::t_260748897e399d 1-65
+app/choose-game/ChooseGameClient.tsx
+  s_4b0f2fda1857b8::t_6fd24bbd0ea99b 43,45-46
+src/server/actions/restartRoom.ts
+  s_4b0f2fda1857b8::t_7687cd4f07ee7d 104-105
+  s_4b0f2fda1857b8::t_224f94c815b050 70-71,74
+src/server/actions/kickPlayer.ts
+  s_4b0f2fda1857b8::t_e94b75106e4008 8
+  s_4b0f2fda1857b8::t_e3c9c4b6612f45 1-7,9-55,58-70
+  s_4b0f2fda1857b8::t_789920783fef1f 56-57
+src/server/actions/claimWheelIfOrphaned.ts
+  s_4b0f2fda1857b8::t_3c14f046bbddc2 1-81,83-86
+  s_4b0f2fda1857b8::t_8c4eaa298a3d0c 82
+app/play/[code]/JoinGate.tsx
+  s_4b0f2fda1857b8::t_132b5456bf8f11 7
+  s_4b0f2fda1857b8::t_10516b556ee8f9 63
+  s_4b0f2fda1857b8::t_9edd96591581f6 3,20,38-48,52,68-83,85,102-103
+  s_4b0f2fda1857b8::t_a23445d028cedb 99,107-126
+  s_4b0f2fda1857b8::t_6ec9d4d17004f0 101
+  s_4b0f2fda1857b8::t_596e871855f5fd 5,9-10,12-14,18,22,25,27,29-33,35,49-51,53,56-59,66,84,86-87,89-98,100,104-106
+  s_4b0f2fda1857b8::t_f42ad20bc622e7 19
+app/play/[code]/SpectateGate.tsx
+  s_4b0f2fda1857b8::t_9526883053740b 9-10,12-20,24,31,33,35-39,41,53-55,57,60-66,73,96-105,107-111
+  s_4b0f2fda1857b8::t_c68bd4bd549462 3,26,44-52,56,75-89
+  s_4b0f2fda1857b8::t_babf37720ddd6c 25
+  s_4b0f2fda1857b8::t_1d55a6efad774f 70
+  s_4b0f2fda1857b8::t_a3ae824b3884c2 7
+  s_4b0f2fda1857b8::t_851435ec91a84c 106,112-131
+src/server/actions/finalizeContinuation.ts
+  s_4b0f2fda1857b8::t_f4ae6c211c71a3 1-46,62-66,68-178,180,182-201,206,208,211-215,218-220,222-223,225-228
+  s_4b0f2fda1857b8::t_e508c1044771d2 47-49,52-57,59-60
+  s_4b0f2fda1857b8::t_7c9c6acdccebc2 221
+  s_4b0f2fda1857b8::t_69224e0af64807 50-51
+  s_4b0f2fda1857b8::t_7e29a8608daed9 181
+  s_4b0f2fda1857b8::t_b1a892254b03b0 179,209
+  s_4b0f2fda1857b8::t_fe19a57975bfc7 216-217,224
+  s_4b0f2fda1857b8::t_a39af10610afa4 202-205,207,210
+  s_4b0f2fda1857b8::t_122aa3e839859e 58,61
+  s_4b0f2fda1857b8::t_8e16b9fceb5088 67
+supabase/migrations/20260613030000_continuation_expiry.sql
+  s_4b0f2fda1857b8::t_6fcf7bcdb4683f 9-11,19-20
+  s_4b0f2fda1857b8::t_2f5799a738169c 1-8,12-18,21
+src/server/actions/continueIntoNextRound.ts
+  s_4b0f2fda1857b8::t_0752a72da11b0f 7
+  s_4b0f2fda1857b8::t_86dd4178cfed5f 1-6,8-73
+app/play/join/JoinClient.tsx
+  s_4b0f2fda1857b8::t_02956dcafecf3b 29,38-41
+  s_4b0f2fda1857b8::t_eb51b517a468a8 69
+app/play/[code]/page.tsx
+  s_4b0f2fda1857b8::t_0d6522b25316fd 10
+  s_4b0f2fda1857b8::t_41f24874e37752 97
+  s_4b0f2fda1857b8::t_2adc00984d5169 69,71,86-91,101-102
+  s_4b0f2fda1857b8::t_028aa309e14199 75-78,92-96,98-100
+app/play/[code]/KnockWaitingModal.tsx
+  s_4b0f2fda1857b8::t_effa7099bc0332 40
+  s_4b0f2fda1857b8::t_e0d0b07c27af90 1-39,41-49
+app/play/[code]/KnockInbox.tsx
+  s_4b0f2fda1857b8::t_1b7fcfcbd3a5dc 1-6,8-15,18-19,21-22,24,30,33,36-40,42-53,55-103
+  s_4b0f2fda1857b8::t_4d03b5497a9dba 7,16-17,20,23,25-29,31-32,34-35,41,54
+src/client/realtime/usePublicLobby.ts
+  s_4b0f2fda1857b8::t_53e8550c896870 1-79
+src/client/realtime/useGameRoom.ts
+  s_4b0f2fda1857b8::t_3015054baeb733 25,34
+  s_4b0f2fda1857b8::t_ff9cd522a06ae7 290
+  s_4b0f2fda1857b8::t_40bbd6974bc121 76,82
+  s_4b0f2fda1857b8::t_fadcbb0a4b4f39 22-24,26-27,33
+  s_4b0f2fda1857b8::t_4f1af9ecda383f 8-10,37-53,62-65,86-89,98-109,201-225
+  s_4b0f2fda1857b8::t_6f068d5dbf4409 120-122
+  s_4b0f2fda1857b8::t_716b15a5f75273 196-200
+src/server/actions/leaveAsHost.ts
+  s_4b0f2fda1857b8::t_c2b92e41b8f2b6 1-53,56-85
+  s_4b0f2fda1857b8::t_0e898d76d68881 54-55
+app/play/lobby/page.tsx
+  s_4b0f2fda1857b8::t_482da7d10f4ae3 1-46
+supabase/migrations/20260613020000_continuation_window.sql
+  s_4b0f2fda1857b8::t_be28f30ad29e6d 1-11
+src/server/continuation.ts
+  s_4b0f2fda1857b8::t_0fc740f65f0a18 1-26,31-32,34-36,43-45,47-48
+  s_4b0f2fda1857b8::t_def0ff278cb8aa 27-30,33,37-42,46
+src/server/actions/passTheWheel.ts
+  s_4b0f2fda1857b8::t_565cd4a4780a19 1-71,73-94
+  s_4b0f2fda1857b8::t_7c34034efae309 72
+src/game/engine.test.ts
+  s_4b0f2fda1857b8::t_18ad34105867c2 62-82
+app/play/[code]/CaptainMenu.tsx
+  s_4b0f2fda1857b8::t_8cdf11b282ca5b 1-187
+src/server/actions/respondToJoinRequest.ts
+  s_4b0f2fda1857b8::t_4e435c55082ffd 1-6,8-137
+  s_4b0f2fda1857b8::t_31e9c8a5375e31 7
+supabase/migrations/20260613000000_room_revamp.sql
+  s_4b0f2fda1857b8::t_34044f82e92c7b 1-168
+src/server/actions/jumpShip.ts
+  s_4b0f2fda1857b8::t_c0df032e761e9c 13-16,28-32,56,64-67,73,81-97,100,110,113-114,117-119,121,131,136
+  s_4b0f2fda1857b8::t_4f23b358722732 1-12,17-27,33-55,57-63,68-72,74-80,98-99,101-109,111-112,115-116,120,122-130,132-135,137-140
+src/server/game-room.ts
+  s_4b0f2fda1857b8::t_952b0cd6f141c0 3
+  s_4b0f2fda1857b8::t_333f2c05858061 8
+  s_4b0f2fda1857b8::t_e25e1c79537e6f 171,179-182
+  s_4b0f2fda1857b8::t_8eaadbefbb4bdb 237,245,256
+  s_4b0f2fda1857b8::t_abea4bb8a2092e 259
+  s_4b0f2fda1857b8::t_e70d8735b2ce68 105,118
+  s_4b0f2fda1857b8::t_a0e97fdd6b57da 169,193-195,204-214
+  s_4b0f2fda1857b8::t_7ef6995161229c 9
+  s_4b0f2fda1857b8::t_c7705fa0af343a 238-244,246,258,260-272
+  s_4b0f2fda1857b8::t_8cf77adfc8a724 10
+app/play/[code]/HostLeaveModal.tsx
+  s_4b0f2fda1857b8::t_889ad0d0bd06c4 1-90
+app/play/new/NewRoomClient.tsx
+  s_4b0f2fda1857b8::t_f31ef8e59b31ed 1-136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "51ce267910b38966244f1ed7879642d57c567ec6",
+  "prompts": {},
+  "sessions": {
+    "s_4b0f2fda1857b8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d666c3d9-7728-437f-a1ba-00be1f66c5a1",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
