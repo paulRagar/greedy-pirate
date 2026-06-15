@@ -1,0 +1,19 @@
+README.md
+  s_eb96c4a3c0d22e::t_4e3f7729807684 179,181-185
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "dfe5aed727d1e9514309eda04d8768693dbb7ef7",
+  "prompts": {},
+  "sessions": {
+    "s_eb96c4a3c0d22e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "80878781-b6e6-4d7a-8104-a199732d4bec",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
