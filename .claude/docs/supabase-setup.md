@@ -175,16 +175,34 @@ Also confirm **Project Settings → General → Node.js Version** is `24.x` (or 
 
 ### Step 5 — Push migrations to production
 
+Migrations run automatically on every Vercel build via the `vercel-build` script (`scripts/ci-migrate.mjs`). Push to `main` → prod build runs Drizzle + Supabase migrations against the prod DB → Next builds → deploy. Push any other branch → same flow against the preview DB.
+
+**Required Vercel env vars (per scope — Preview + Production):**
+
+| Var | Value | Notes |
+|---|---|---|
+| `SUPABASE_DB_PASSWORD` | raw DB password | script URL-encodes for you — paste it raw |
+| `SUPABASE_DB_HOST` | e.g. `aws-0-us-west-1.pooler.supabase.com` | session-pooler host (port 5432) |
+| `SUPABASE_PROJECT_REF` | e.g. `fyuasgpjrphxrituofsm` | the project ref slug |
+
+Add via dashboard or CLI:
+
 ```bash
-# One-time: link your local CLI to the cloud project
-supabase link --project-ref <your-project-ref>
+printf 'RAW_PASSWORD' | vercel env add SUPABASE_DB_PASSWORD production
+printf 'aws-0-us-west-1.pooler.supabase.com' | vercel env add SUPABASE_DB_HOST production
+printf 'fyuasgpjrphxrituofsm' | vercel env add SUPABASE_PROJECT_REF production
+# repeat for preview scope (dashboard for preview — CLI prompts non-interactively)
+```
 
-# Push Drizzle-generated schema migrations
-DATABASE_URL=<prod-pooler-url> npx drizzle-kit migrate
+**Manual override / fallback** — if you ever need to push migrations by hand (e.g. CI is down or you want to dry-run):
 
-# Push Supabase migrations (RLS + triggers + cleanup functions)
+```bash
+supabase link --project-ref <ref>
+DATABASE_URL=<prod-session-pooler-url> npx drizzle-kit migrate
 supabase db push
 ```
+
+**Skip migrations for a deploy** — set `SKIP_MIGRATIONS=1` in Vercel env, redeploy. Useful for infra-only changes when the script itself is broken.
 
 ### Step 6 — Verify
 
