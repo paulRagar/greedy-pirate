@@ -1,0 +1,24 @@
+.claude/docs/supabase-setup.md
+  s_eb96c4a3c0d22e::t_67e3c781a1e23a 178-189,191-195,197,199-201,205
+package.json
+  s_eb96c4a3c0d22e::t_bb3d7138c8fd5c 49
+  s_eb96c4a3c0d22e::t_d8a655b78961ea 9
+scripts/ci-migrate.mjs
+  s_eb96c4a3c0d22e::t_b9e8021026ca5e 1-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "317d2313d849c84d2d4c4db5cc3eeaa9019b4a3a",
+  "prompts": {},
+  "sessions": {
+    "s_eb96c4a3c0d22e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "80878781-b6e6-4d7a-8104-a199732d4bec",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
