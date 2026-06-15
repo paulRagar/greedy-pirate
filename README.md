@@ -176,9 +176,13 @@ Many sub-directories have their own `CLAUDE.md` with scoped context (see `src/ga
 
 ## Deployment
 
-Push to `main` → Vercel auto-deploys to <https://greedypirate.com>. Preview deployments are auto-created for every PR.
+Push to `main` → Vercel builds → `scripts/ci-migrate.mjs` runs Drizzle + Supabase migrations against prod → Next builds → deploy to <https://greedypirate.com>. Push any other branch → same flow against the preview Supabase project. No manual `drizzle-kit migrate` or `supabase db push` needed.
 
-Env vars to set in Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `CRON_SECRET`. See `.claude/docs/supabase-setup.md` for full details.
+Env vars to set in Vercel (per scope — Preview + Production):
+- Runtime: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `CRON_SECRET`.
+- Build-time migrations: `SUPABASE_DB_PASSWORD` (raw — script URL-encodes), `SUPABASE_DB_HOST` (session pooler host, port 5432), `SUPABASE_PROJECT_REF`.
+
+See `.claude/docs/supabase-setup.md` for full walkthrough. Escape hatch: set `SKIP_MIGRATIONS=1` in Vercel env to bypass the migration step on a deploy.
 
 A daily Vercel cron job hits `/api/cron/cleanup` to abandon stale rooms and prune old events. The schedule lives in `vercel.json`; Vercel auto-injects the `CRON_SECRET` Bearer header.
 
