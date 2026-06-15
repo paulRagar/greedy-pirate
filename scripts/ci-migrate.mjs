@@ -48,7 +48,8 @@ const safeUrl = migrationUrl.replace(encodedPassword, '***');
 console.log(`[ci-migrate] migration target: ${safeUrl}`);
 
 function run(label, cmd, args, extraEnv = {}) {
-   console.log(`\n[ci-migrate] ▶ ${label}: ${cmd} ${args.join(' ')}`);
+   const printable = args.map((a) => (a === migrationUrl ? '<redacted-url>' : a));
+   console.log(`\n[ci-migrate] ▶ ${label}: ${cmd} ${printable.join(' ')}`);
    const result = spawnSync(cmd, args, {
       stdio: 'inherit',
       env: { ...process.env, ...extraEnv },
