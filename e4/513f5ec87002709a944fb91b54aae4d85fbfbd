@@ -1,0 +1,20 @@
+app/play/[code]/RenameNudge.tsx
+  s_283d261a447c79::t_f887c1a5891dcf 52,56,63,67-68
+  s_283d261a447c79::t_02f4a5e5c38615 24-32,34-35,41,49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "e4513f5ec87002709a944fb91b54aae4d85fbfbd",
+  "prompts": {},
+  "sessions": {
+    "s_283d261a447c79": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9646652f-1f9e-437f-ac13-bf2f684ed6ea",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
