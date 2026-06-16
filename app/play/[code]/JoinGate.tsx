@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
+import { PirateLinkButton } from '@/ui/pirate-button/PirateLinkButton';
 import { PirateModal } from '@/ui/pirate-modal/PirateModal';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { requestJoin } from '@/server/actions/requestJoin';
@@ -15,6 +15,7 @@ export default function JoinGate({ code, isPublic }: { code: string; isPublic: b
    const router = useRouter();
    const [error, setError] = useState<string | null>(null);
    const [submitting, setSubmitting] = useState(false);
+   const [exiting, startExit] = useTransition();
    const [pending, setPending] = useState<Pending>(null);
    const [deniedOpen, setDeniedOpen] = useState(false);
    const [boarding, setBoarding] = useState(false);
@@ -47,7 +48,7 @@ export default function JoinGate({ code, isPublic }: { code: string; isPublic: b
       // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [isPublic]);
 
-   const exitToPort = () => router.push('/choose-game');
+   const exitToPort = () => startExit(() => router.push('/choose-game'));
 
    // Private path — render the modal only. The auto-knock fires on
    // mount; until the server returns a pending row, show a "hailing"
@@ -91,7 +92,7 @@ export default function JoinGate({ code, isPublic }: { code: string; isPublic: b
                   <p className='text-sm text-[color:var(--color-cream-200)]/85'>
                      The captain has turned ye away from this voyage. Find another ship to plunder with.
                   </p>
-                  <PirateButton variant='primary' size='lg' fullWidth onClick={exitToPort}>
+                  <PirateButton variant='primary' size='lg' fullWidth loading={exiting} onClick={exitToPort}>
                      Return to docks
                   </PirateButton>
                </div>
@@ -100,7 +101,7 @@ export default function JoinGate({ code, isPublic }: { code: string; isPublic: b
                <PirateModal open dismissible={false} title="Couldn't hail">
                   <div className='flex flex-col items-center gap-3 text-center'>
                      <p className='text-sm text-[color:var(--color-coral-500)]'>{error}</p>
-                     <PirateButton variant='primary' size='md' fullWidth onClick={exitToPort}>
+                     <PirateButton variant='primary' size='md' fullWidth loading={exiting} onClick={exitToPort}>
                         Back to port
                      </PirateButton>
                   </div>
@@ -120,14 +121,12 @@ export default function JoinGate({ code, isPublic }: { code: string; isPublic: b
             <span className='wordmark-gold-mono text-5xl tracking-[0.45em] [text-indent:0.45em]'>{code}</span>
             <p className='text-sm text-[color:var(--color-cream-200)]/80'>Ready to board this voyage?</p>
             {error && <p className='text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
-            <PirateButton variant='primary' size='lg' fullWidth onClick={board} disabled={submitting}>
-               {submitting ? 'Boarding…' : 'Board the ship'}
+            <PirateButton variant='primary' size='lg' fullWidth onClick={board} loading={submitting}>
+               Board the ship
             </PirateButton>
-            <Link href='/choose-game' className='w-full'>
-               <PirateButton variant='tertiary' size='md' fullWidth>
-                  Back to port
-               </PirateButton>
-            </Link>
+            <PirateLinkButton href='/choose-game' variant='tertiary' size='md' fullWidth>
+               Back to port
+            </PirateLinkButton>
          </PiratePanel>
       </main>
    );

@@ -1,10 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { PirateButton } from '@/ui/pirate-button/PirateButton';
+import { PirateLinkButton } from '@/ui/pirate-button/PirateLinkButton';
 
 export default function NotFound() {
-   const router = useRouter();
    return (
       <main className='scrollbar-none flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-y-auto px-5 py-10 text-center safe-bottom'>
          <div className='pirate-display text-7xl text-[color:var(--color-treasure-400)]'>404</div>
@@ -14,9 +12,9 @@ export default function NotFound() {
          <p className='max-w-md text-sm text-[color:var(--color-cream-200)]/75'>
             This page be buried deep, or it never existed. Navigate yerself back to safer waters.
          </p>
-         <PirateButton variant='primary' size='md' onClick={() => router.push('/')}>
+         <PirateLinkButton href='/' variant='primary' size='md'>
             Sail Home
-         </PirateButton>
+         </PirateLinkButton>
       </main>
    );
 }

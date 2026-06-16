@@ -1,9 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useParallax } from '@/client/hooks/useParallax';
-import { PirateButton } from '@/ui/pirate-button/PirateButton';
+import { PirateLinkButton } from '@/ui/pirate-button/PirateLinkButton';
 
 /**
  * Landing hero — full-bleed key art (night cove, public/hero/home-cove.webp)
@@ -12,7 +11,6 @@ import { PirateButton } from '@/ui/pirate-button/PirateButton';
  * pointer/device tilt; the title counter-shifts to sell the depth.
  */
 export default function HomeClient() {
-   const router = useRouter();
    const parallaxRef = useParallax();
 
    return (
@@ -99,15 +97,15 @@ export default function HomeClient() {
                <span className='block text-[color:var(--color-coral-400)]'>Bank what ye dare.</span>
                <span className='block text-[color:var(--color-orchid-400)]'>Beware of pirates — or lose it all.</span>
             </p>
-            <PirateButton
+            <PirateLinkButton
+               href='/choose-game'
                variant='primary'
                size='lg'
                fullWidth
-               onClick={() => router.push('/choose-game')}
                className='text-2xl sm:text-3xl'
             >
                Set Sail
-            </PirateButton>
+            </PirateLinkButton>
             <span className='text-sm uppercase tracking-[0.35em] text-[color:var(--color-cream-200)]/55 [text-shadow:0_1px_8px_rgb(2_6_15/0.9)]'>
                Press to play
             </span>

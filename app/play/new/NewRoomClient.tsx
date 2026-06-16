@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { createRoom } from '@/server/actions/createRoom';
 import { useCurrentUser } from '@/client/auth/useCurrentUser';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
+import { PirateLinkButton } from '@/ui/pirate-button/PirateLinkButton';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { cn } from '@/lib/cn';
 
@@ -16,6 +16,7 @@ export default function NewRoomClient() {
    const { ready } = useCurrentUser();
    const [visibility, setVisibility] = useState<Visibility>('private');
    const [submitting, setSubmitting] = useState(false);
+   const [navigating, startNavigation] = useTransition();
    const [error, setError] = useState<string | null>(null);
 
    if (!ready) {
@@ -33,7 +34,7 @@ export default function NewRoomClient() {
       setError(null);
       const res = await createRoom({ isPublic: visibility === 'public' });
       if (res.ok) {
-         router.push(`/play/${res.code}`);
+         startNavigation(() => router.push(`/play/${res.code}`));
       } else {
          setSubmitting(false);
          setError(res.error);
@@ -73,14 +74,19 @@ export default function NewRoomClient() {
          {error && <p className='text-center text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
 
          <div className='mt-auto flex flex-col gap-2 pt-2 safe-bottom'>
-            <PirateButton variant='primary' size='lg' fullWidth onClick={charter} disabled={submitting}>
-               {submitting ? 'Hoisting…' : 'Set Sail'}
+            <PirateButton
+               variant='primary'
+               size='lg'
+               fullWidth
+               onClick={charter}
+               disabled={submitting || navigating}
+               loading={submitting || navigating}
+            >
+               Set Sail
             </PirateButton>
-            <Link href='/choose-game' className='w-full'>
-               <PirateButton variant='tertiary' size='md' fullWidth>
-                  Back to port
-               </PirateButton>
-            </Link>
+            <PirateLinkButton href='/choose-game' variant='tertiary' size='md' fullWidth>
+               Back to port
+            </PirateLinkButton>
          </div>
       </main>
    );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
@@ -15,6 +15,7 @@ interface Player {
 export default function SetupClient() {
    const router = useRouter();
    const inputRef = useRef<HTMLInputElement>(null);
+   const [starting, startTransition] = useTransition();
 
    const [playerName, setPlayerName] = useState('');
    const [players, setPlayers] = useState<Player[]>([]);
@@ -43,7 +44,9 @@ export default function SetupClient() {
 
    const startGame = () => {
       localStorage.setItem('players', JSON.stringify(players));
-      router.push('/play-local');
+      startTransition(() => {
+         router.push('/play-local');
+      });
    };
 
    const canStart = players.length >= MIN_PLAYERS && players.length <= MAX_PLAYERS;
@@ -97,7 +100,14 @@ export default function SetupClient() {
          </div>
 
          <div className='mt-auto pt-2 safe-bottom'>
-            <PirateButton variant='primary' size='lg' fullWidth onClick={startGame} disabled={!canStart}>
+            <PirateButton
+               variant='primary'
+               size='lg'
+               fullWidth
+               onClick={startGame}
+               disabled={!canStart}
+               loading={starting}
+            >
                Hoist the Colors!
             </PirateButton>
             {!canStart && players.length < MIN_PLAYERS && (

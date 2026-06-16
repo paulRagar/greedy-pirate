@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
    useGameRoom,
@@ -64,6 +64,10 @@ export default function OnlineRoomClient({
    initialContinuation,
 }: Props) {
    const router = useRouter();
+   const [leaving, startLeave] = useTransition();
+   const goToLobby = useCallback(() => {
+      startLeave(() => router.push('/play/lobby'));
+   }, [router]);
    const wasMember = useRef(initial.players.some((p) => p.id === userId));
    const [knocks, setKnocks] = useState<KnockEntry[]>([]);
    const [hostLeaveCandidates, setHostLeaveCandidates] = useState<Candidate[] | null>(null);
@@ -380,7 +384,8 @@ export default function OnlineRoomClient({
                   variant='primary'
                   size='lg'
                   fullWidth
-                  onClick={() => router.push('/play/lobby')}
+                  loading={leaving}
+                  onClick={goToLobby}
                >
                   Return to docks
                </PirateButton>
@@ -402,7 +407,8 @@ export default function OnlineRoomClient({
                   variant='primary'
                   size='lg'
                   fullWidth
-                  onClick={() => router.push('/play/lobby')}
+                  loading={leaving}
+                  onClick={goToLobby}
                >
                   Return to docks
                </PirateButton>
@@ -447,7 +453,8 @@ export default function OnlineRoomClient({
                onlineIds={onlineIds}
                isSpectator={isSpectator}
                isPublic={isPublic}
-               onLeave={() => router.push('/play/lobby')}
+               onLeave={goToLobby}
+               navLeaving={leaving}
                onLeaveAsHost={handleLeaveHost}
             />
             {sharedModals}
@@ -469,7 +476,8 @@ export default function OnlineRoomClient({
                onlineIds={onlineIds}
                isSpectator={isSpectator}
                isPublic={isPublic}
-               onLeave={() => router.push('/play/lobby')}
+               onLeave={goToLobby}
+               navLeaving={leaving}
                onLeaveAsHost={handleLeaveHost}
                continuationDeadline={continuation?.deadlineAt}
                pendingIds={pendingIds}
@@ -493,7 +501,8 @@ export default function OnlineRoomClient({
             applyOptimistic={applyOptimistic}
             onlineIds={onlineIds}
             isSpectator={isSpectator}
-            onLeave={() => router.push('/play/lobby')}
+            onLeave={goToLobby}
+               navLeaving={leaving}
             continuationDeadline={continuation?.deadlineAt ?? null}
             onContinue={handleContinue}
             onJumpShip={handleJumpShip}
@@ -528,7 +537,8 @@ function ContinueButton({
          size='md'
          fullWidth
          onClick={click}
-         disabled={submitting || secs <= 0}
+         loading={submitting}
+         disabled={secs <= 0}
       >
          <span className='inline-flex items-center gap-2'>
             Continue
@@ -609,6 +619,7 @@ function Lobby({
    isSpectator,
    isPublic,
    onLeave,
+   navLeaving,
    onLeaveAsHost,
    continuationDeadline,
    pendingIds,
@@ -623,6 +634,7 @@ function Lobby({
    isSpectator: boolean;
    isPublic: boolean;
    onLeave: () => void;
+   navLeaving: boolean;
    onLeaveAsHost: () => void;
    continuationDeadline?: string;
    pendingIds?: ReadonlySet<string>;
@@ -806,16 +818,28 @@ function Lobby({
                   <span className='text-[color:var(--color-cream-200)]/75'>
                      Spectating — seat opens next round.
                   </span>
-                  <PirateButton variant='ghost' size='sm' onClick={handleLeaveSpectator} disabled={leaving}>
-                     {leaving ? '…' : 'Leave'}
+                  <PirateButton
+                     variant='ghost'
+                     size='sm'
+                     onClick={handleLeaveSpectator}
+                     loading={leaving || navLeaving}
+                  >
+                     Leave
                   </PirateButton>
                </div>
             ) : continuationDeadline ? (
                <ContinuationWaitingButton deadlineAt={continuationDeadline} />
             ) : isHost ? (
                <div className='flex flex-col gap-2'>
-                  <PirateButton variant='primary' size='lg' fullWidth onClick={start} disabled={!canStart || starting}>
-                     {starting ? 'Setting sail…' : 'Hoist the Colors!'}
+                  <PirateButton
+                     variant='primary'
+                     size='lg'
+                     fullWidth
+                     onClick={start}
+                     disabled={!canStart}
+                     loading={starting}
+                  >
+                     Hoist the Colors!
                   </PirateButton>
                   {!canStart && (
                      <p className='text-center text-xs text-[color:var(--color-cream-200)]/60'>
@@ -840,9 +864,9 @@ function Lobby({
                         await leaveRoom(code);
                         onLeave();
                      }}
-                     disabled={leaving}
+                     loading={leaving || navLeaving}
                   >
-                     {leaving ? '…' : 'Disembark'}
+                     Disembark
                   </PirateButton>
                </div>
             )}
@@ -892,6 +916,7 @@ function Play({
    onlineIds,
    isSpectator,
    onLeave,
+   navLeaving,
    continuationDeadline,
    onContinue,
    onJumpShip,
@@ -905,6 +930,7 @@ function Play({
    onlineIds: ReadonlySet<string>;
    isSpectator: boolean;
    onLeave: () => void;
+   navLeaving: boolean;
    continuationDeadline: string | null;
    onContinue: () => void | Promise<void>;
    onJumpShip: () => void | Promise<void>;
@@ -1118,9 +1144,9 @@ function Play({
                      variant='ghost'
                      size='sm'
                      onClick={handleLeaveSpectator}
-                     disabled={leavingSpectate}
+                     loading={leavingSpectate || navLeaving}
                   >
-                     {leavingSpectate ? '…' : 'Leave room'}
+                     Leave room
                   </PirateButton>
                </div>
             ) : !isCurrent ? (
@@ -1128,8 +1154,15 @@ function Play({
                   Waiting on {currentPlayer?.name ?? 'the helm'}…
                </p>
             ) : isPirate ? (
-               <PirateButton variant='tertiary' size='lg' fullWidth disabled={pending !== null} onClick={handleEndTurn}>
-                  {pending === 'end' ? '…' : 'Pass the Helm'}
+               <PirateButton
+                  variant='tertiary'
+                  size='lg'
+                  fullWidth
+                  loading={pending === 'end'}
+                  disabled={pending !== null}
+                  onClick={handleEndTurn}
+               >
+                  Pass the Helm
                </PirateButton>
             ) : (
                <div className='flex gap-3'>
@@ -1138,16 +1171,20 @@ function Play({
                      size='lg'
                      fullWidth
                      onClick={handleDraw}
-                     disabled={!canDraw || pending !== null}>
-                     {pending === 'draw' ? '…' : 'Plunder'}
+                     loading={pending === 'draw'}
+                     disabled={!canDraw || pending !== null}
+                  >
+                     Plunder
                   </PirateButton>
                   <PirateButton
                      variant='secondary'
                      size='lg'
                      fullWidth
                      onClick={handleBank}
-                     disabled={!canBank || pending !== null}>
-                     {pending === 'bank' ? '…' : 'Bury It'}
+                     loading={pending === 'bank'}
+                     disabled={!canBank || pending !== null}
+                  >
+                     Bury It
                   </PirateButton>
                </div>
             )}
@@ -1166,7 +1203,7 @@ function Play({
                         size='md'
                         fullWidth
                         onClick={handleLeaveSpectator}
-                        disabled={leavingSpectate}
+                        loading={leavingSpectate || navLeaving}
                      >
                         To port
                      </PirateButton>

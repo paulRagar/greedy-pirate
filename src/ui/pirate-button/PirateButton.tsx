@@ -73,20 +73,37 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
    variant?: Variant;
    size?: Size;
    fullWidth?: boolean;
+   loading?: boolean;
 }
 
 export const PirateButton = forwardRef<HTMLButtonElement, Props>(function PirateButton(
-   { variant = 'primary', size = 'md', fullWidth, className, type = 'button', children, ...rest },
+   {
+      variant = 'primary',
+      size = 'md',
+      fullWidth,
+      loading = false,
+      className,
+      type = 'button',
+      disabled,
+      children,
+      onClick,
+      ...rest
+   },
    ref,
 ) {
+   const isDisabled = disabled || loading;
    return (
       <button
          ref={ref}
          type={type}
+         aria-busy={loading || undefined}
+         disabled={isDisabled}
+         onClick={loading ? undefined : onClick}
          className={cn(
-            'inline-flex items-center justify-center rounded-xl font-display tracking-wider uppercase',
+            'relative inline-flex items-center justify-center rounded-xl font-display tracking-wider uppercase',
             'transition-all duration-100 ease-out',
             'disabled:opacity-45 disabled:cursor-not-allowed',
+            loading && 'cursor-wait disabled:opacity-100',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-coral-400)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-abyss-950)]',
             fullWidth && 'w-full',
             SIZE[size],
@@ -95,7 +112,35 @@ export const PirateButton = forwardRef<HTMLButtonElement, Props>(function Pirate
          )}
          {...rest}
       >
-         {children}
+         <span className={cn('inline-flex items-center justify-center gap-2', loading && 'invisible')}>
+            {children}
+         </span>
+         {loading && (
+            <span className='absolute inset-0 flex items-center justify-center' aria-hidden>
+               <Spinner size={size} />
+            </span>
+         )}
       </button>
    );
 });
+
+function Spinner({ size }: { size: Size }) {
+   const dim = size === 'lg' ? 'h-7 w-7' : size === 'md' ? 'h-6 w-6' : 'h-5 w-5';
+   return (
+      <svg
+         className={cn('animate-spin', dim)}
+         viewBox='0 0 24 24'
+         fill='none'
+         role='status'
+         aria-label='Loading'
+      >
+         <circle cx='12' cy='12' r='9' stroke='currentColor' strokeOpacity='0.25' strokeWidth='3' />
+         <path
+            d='M21 12a9 9 0 0 1-9 9'
+            stroke='currentColor'
+            strokeWidth='3'
+            strokeLinecap='round'
+         />
+      </svg>
+   );
+}
