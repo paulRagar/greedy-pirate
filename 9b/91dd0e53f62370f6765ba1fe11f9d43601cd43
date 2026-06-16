@@ -1,0 +1,27 @@
+app/play/[code]/JoinGate.tsx
+  s_283d261a447c79::t_48d13bcec014a4 38-40,49,51-104,107,111-112,114-116
+app/play/[code]/KnockWaitingModal.tsx
+  s_283d261a447c79::t_d4dc0f14758fc1 13-18,21-27,40-41,44-53,61-63,66,68
+app/play/[code]/loading.tsx
+  s_283d261a447c79::t_f8e65a493081b4 1-6,8
+tests/e2e/auth/anon-paste-link.spec.ts
+  s_283d261a447c79::t_6003d28b5c9e51 34-39,41
+app/play/[code]/AnonBootstrapGate.tsx
+  s_283d261a447c79::t_35b7532150c1af 18-22,24,63-96,98-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "9b91dd0e53f62370f6765ba1fe11f9d43601cd43",
+  "prompts": {},
+  "sessions": {
+    "s_283d261a447c79": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9646652f-1f9e-437f-ac13-bf2f684ed6ea",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
