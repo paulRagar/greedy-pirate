@@ -1,0 +1,19 @@
+.github/workflows/test.yml
+  s_283d261a447c79::t_c6d5612cc96269 59-69,73,76-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "61b258be5c9e2588decdfda57d9bf18987538a62",
+  "prompts": {},
+  "sessions": {
+    "s_283d261a447c79": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9646652f-1f9e-437f-ac13-bf2f684ed6ea",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
