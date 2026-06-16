@@ -1,0 +1,87 @@
+app/play/[code]/SpectateGate.tsx
+  s_3f5c75a715482f::t_b0417827391883 24
+  s_3f5c75a715482f::t_af015e840cdaa6 82,84
+  s_3f5c75a715482f::t_6638136878f0e3 3,6
+  s_3f5c75a715482f::t_b46047f64d72eb 125-126
+  s_3f5c75a715482f::t_9f351caaec25e4 91-93
+app/play/[code]/JoinGate.tsx
+  s_3f5c75a715482f::t_be84b97873e042 104
+  s_3f5c75a715482f::t_436c4e8de0ad8e 95
+  s_3f5c75a715482f::t_048cd54ebca2b5 3,6
+  s_3f5c75a715482f::t_810627876961c0 51
+  s_3f5c75a715482f::t_7a39a3acf16c15 18
+  s_3f5c75a715482f::t_03f074324df160 124-125,127-129
+app/choose-game/ChooseGameClient.tsx
+  s_3f5c75a715482f::t_8d008ba4063636 3
+  s_3f5c75a715482f::t_b3cb482ddbe128 39,41-42,44
+  s_3f5c75a715482f::t_8ac28f38ee3e54 25,27
+app/HomeClient.tsx
+  s_3f5c75a715482f::t_e6fe7d6692fc27 100-101,108
+  s_3f5c75a715482f::t_012a7b4c1c964d 5
+src/ui/pirate-button/PirateButton.tsx
+  s_3f5c75a715482f::t_59900d567c9af7 76,80-91,94,99-101,103,106,115-122,126-146
+app/play/lobby/FindCrewClient.tsx
+  s_3f5c75a715482f::t_2f9b4f1480ac2e 3,6
+  s_3f5c75a715482f::t_a98764e2c002ba 18,26,30
+  s_3f5c75a715482f::t_ab52673748fbb1 88-90
+  s_3f5c75a715482f::t_b27eb637eea2de 146-147,150,158-159,162
+  s_3f5c75a715482f::t_02794a6cd45c45 63-65
+  s_3f5c75a715482f::t_19a249c019cc26 101,107
+  s_3f5c75a715482f::t_a9ccc0e2378dfe 80
+  s_3f5c75a715482f::t_1c128bb08d3bd6 43-45
+src/ui/pirate-button/PirateLinkButton.tsx
+  s_3f5c75a715482f::t_536f98828c40c6 1-63
+app/play/new/NewRoomClient.tsx
+  s_3f5c75a715482f::t_2068674139c80c 37
+  s_3f5c75a715482f::t_fbb0d499459cc6 3,8
+  s_3f5c75a715482f::t_abc8b1add2bec3 19
+  s_3f5c75a715482f::t_c203f7816d977d 77-85,87-89
+app/play/join/JoinClient.tsx
+  s_3f5c75a715482f::t_539c6f350ebe8e 14
+  s_3f5c75a715482f::t_b91cb0d360134f 3
+  s_3f5c75a715482f::t_63f958a686f64f 37
+  s_3f5c75a715482f::t_e805e38c6d6e6f 73-74,76
+app/not-found.tsx
+  s_3f5c75a715482f::t_eda83b23d0389d 3,15,17
+app/setup/SetupClient.tsx
+  s_3f5c75a715482f::t_22286171a26758 3
+  s_3f5c75a715482f::t_fc42b596d59fb3 18
+  s_3f5c75a715482f::t_e965135d5c993d 47-49
+  s_3f5c75a715482f::t_0065c18a0e36b5 103-110
+app/play/[code]/OnlineRoomClient.tsx
+  s_3f5c75a715482f::t_302d0e19cd1547 410-411
+  s_3f5c75a715482f::t_1acae519a76f90 456,479,504
+  s_3f5c75a715482f::t_cf6b7044735654 387-388
+  s_3f5c75a715482f::t_461a7dab48ec29 457,480,505
+  s_3f5c75a715482f::t_1c2e5ed4ff6ea1 867,869
+  s_3f5c75a715482f::t_b142a65c7b547e 3
+  s_3f5c75a715482f::t_5fec4cc36a23ee 919,933
+  s_3f5c75a715482f::t_a4af81fe3e200a 540-541
+  s_3f5c75a715482f::t_c40edf67b645c6 1147,1149
+  s_3f5c75a715482f::t_0ea33a0653631c 622,637
+  s_3f5c75a715482f::t_ec3b7716e56620 821-827
+  s_3f5c75a715482f::t_7e21be10966313 834-842
+  s_3f5c75a715482f::t_a02ea43d856a22 1157-1165,1174-1177,1184-1187
+  s_3f5c75a715482f::t_e209616c64e23a 67-70
+  s_3f5c75a715482f::t_3c8a4168fc3ea8 1206
+app/play-local/PlayLocalClient.tsx
+  s_3f5c75a715482f::t_ef244f9daa6453 3
+  s_3f5c75a715482f::t_3710651655b1cf 30
+  s_3f5c75a715482f::t_95858ea7c5c9e5 182-188
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "e64487c71685a1b416927a803f8eed94787b51b1",
+  "prompts": {},
+  "sessions": {
+    "s_3f5c75a715482f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a52248ac-52ba-4410-aa6e-f3e03ac269e3",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
