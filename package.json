@@ -11,6 +11,8 @@
       "lint": "next lint",
       "test": "vitest",
       "test:run": "vitest run",
+      "test:e2e": "playwright test",
+      "test:e2e:ui": "PLAYWRIGHT_SKIP_DEV=1 playwright test --ui",
       "typecheck": "tsc --noEmit",
       "db:generate": "drizzle-kit generate",
       "db:migrate": "drizzle-kit migrate",
@@ -18,7 +20,9 @@
       "db:studio": "drizzle-kit studio",
       "supabase:start": "supabase start",
       "supabase:stop": "supabase stop",
-      "supabase:reset": "supabase db reset"
+      "supabase:reset": "supabase db reset",
+      "supabase:push": "supabase db push --local",
+      "db:migrate:all": "drizzle-kit migrate && supabase db push --local"
    },
    "dependencies": {
       "@supabase/ssr": "^0.12.0",
@@ -27,7 +31,7 @@
       "clsx": "^2.1.1",
       "drizzle-orm": "^0.45.2",
       "next": "^15.0.0",
-      "postgres": "^3.4.9",
+      "obscenity": "^0.4.6",
       "react": "^19.0.0",
       "react-dom": "^19.0.0",
       "tailwind-merge": "^2.5.4",
@@ -35,6 +39,7 @@
       "zustand": "^5.0.14"
    },
    "devDependencies": {
+      "@playwright/test": "^1.61.0",
       "@tailwindcss/postcss": "^4.0.0",
       "@types/node": "^22.9.0",
       "@types/react": "^19.0.0",
@@ -45,6 +50,7 @@
       "eslint": "^9.14.0",
       "eslint-config-next": "^15.0.0",
       "postcss": "^8.4.49",
+      "postgres": "^3.4.9",
       "server-only": "^0.0.1",
       "supabase": "^2.106.0",
       "tailwindcss": "^4.0.0",

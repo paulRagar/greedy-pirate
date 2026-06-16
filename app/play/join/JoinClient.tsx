@@ -4,19 +4,16 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
-import { DEFAULT_DISPLAY_NAME, useCurrentUser } from '@/client/auth/useCurrentUser';
+import { useCurrentUser } from '@/client/auth/useCurrentUser';
 
 export default function JoinClient() {
    const router = useRouter();
-   const { ready, profile } = useCurrentUser();
+   const { ready } = useCurrentUser();
    const [code, setCode] = useState('');
    const [error, setError] = useState<string | null>(null);
    const [submitting, setSubmitting] = useState(false);
 
-   // Wait until the user has a real display name. AuthBootstrap shows
-   // NamePromptModal on this path; once they submit, the form renders.
-   const needsName = !ready || !profile || profile.displayName === DEFAULT_DISPLAY_NAME;
-   if (needsName) {
+   if (!ready) {
       return (
          <main className='flex flex-1 flex-col items-center justify-center gap-3 px-5 py-10 text-center'>
             <p className='pirate-display animate-pulse text-2xl text-[color:var(--color-gold-300)]'>

@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { eq, and } from 'drizzle-orm';
 import {
    fetchSpectators,
@@ -18,6 +17,7 @@ import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import OnlineRoomClient from './OnlineRoomClient';
 import JoinGate from './JoinGate';
 import SpectateGate from './SpectateGate';
+import { AnonBootstrapGate } from './AnonBootstrapGate';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +29,11 @@ export default async function PlayRoomPage({ params }: { params: Promise<{ code:
    const {
       data: { user },
    } = await supabase.auth.getUser();
-   if (!user) redirect('/');
+   // No session yet — typical when an invite link is pasted into a fresh
+   // incognito window. Hand off to a client bootstrap that signs in
+   // anonymously and reloads, so the user lands on the room they asked
+   // for instead of being bounced home.
+   if (!user) return <AnonBootstrapGate code={upper} />;
 
    const game = await findCompletedOrActiveGame(upper);
    if (!game) {

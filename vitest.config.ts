@@ -9,6 +9,9 @@ export default defineConfig({
          '@/client': path.resolve(__dirname, './src/client'),
          '@/ui': path.resolve(__dirname, './src/ui'),
          '@/lib': path.resolve(__dirname, './src/lib'),
+         // Stub `server-only` so server-only modules can be unit-tested
+         // in node. The guard exists for the Next bundler, not for us.
+         'server-only': path.resolve(__dirname, './tests/stubs/server-only.ts'),
       },
    },
    test: {

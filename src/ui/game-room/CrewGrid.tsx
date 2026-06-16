@@ -36,6 +36,8 @@ export function CrewGrid({
             return (
             <li
                key={player.id}
+               data-testid='crew-row'
+               data-name={player.name}
                className={cn(
                   'flex min-h-[44px] items-center gap-2 rounded-xl border px-2.5',
                   pending

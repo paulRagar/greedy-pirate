@@ -4,7 +4,7 @@ import 'server-only';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/server/db/client';
-import { gameJoinRequests, gameSpectators, games } from '@/server/db/schema';
+import { gameJoinRequests, gameSpectators, games, users } from '@/server/db/schema';
 import { parseEngineState } from '@/server/game-room';
 import { seatPlayerInRoom } from '@/server/joinFlow';
 import {
@@ -65,6 +65,16 @@ export async function respondToJoinRequest(
       return { ok: true };
    }
 
+   // Look up the requester's current display name. The knock row carries
+   // a snapshot from knock time, but the user may have renamed since
+   // (e.g., via the post-admission rename prompt). Always seat with the
+   // latest name to avoid stale labels in the lobby.
+   const requester = await db.query.users.findFirst({
+      where: eq(users.id, request.userId),
+      columns: { displayName: true },
+   });
+   const currentDisplayName = requester?.displayName ?? request.displayName;
+
    // Approve path. Re-verify the seat / spectator constraints inside the
    // same tx that flips the request to 'approved' so a slow click can't
    // double-seat or over-fill.
@@ -85,7 +95,7 @@ export async function respondToJoinRequest(
       }
       const seatResult = await seatPlayerInRoom(game, {
          id: request.userId,
-         displayName: request.displayName,
+         displayName: currentDisplayName,
       });
       if (!seatResult.ok) {
          return {
@@ -111,7 +121,7 @@ export async function respondToJoinRequest(
       .values({
          gameId: game.id,
          userId: request.userId,
-         displayName: request.displayName,
+         displayName: currentDisplayName,
       })
       .onConflictDoNothing();
    await db

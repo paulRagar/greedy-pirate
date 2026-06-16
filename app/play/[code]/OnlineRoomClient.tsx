@@ -44,6 +44,9 @@ import { cn } from '@/lib/cn';
 import KnockInbox, { type KnockEntry } from './KnockInbox';
 import HostLeaveModal, { type Candidate } from './HostLeaveModal';
 import CaptainMenu from './CaptainMenu';
+import { LobbyRenameButton } from './LobbyRenameButton';
+import { RenameNudge } from './RenameNudge';
+import { SKIP_LEAVE_BEACON_KEY } from '@/lib/leaveBeacon';
 
 interface Props {
    gameId: string;
@@ -201,8 +204,27 @@ export default function OnlineRoomClient({
    // they land on the room page. SPA navigation-away without an explicit
    // leave button is handled by the cron safety net.
    useEffect(() => {
+      // Clear any leftover skip-flag from a prior tab's reload now that
+      // we're freshly mounted and presence is valid again.
+      try {
+         sessionStorage.removeItem(SKIP_LEAVE_BEACON_KEY);
+      } catch {
+         // private mode — nothing to do
+      }
+
       const fire = () => {
          if (typeof navigator === 'undefined' || !navigator.sendBeacon) return;
+         // Some flows (signin seat-transfer reload) intentionally reload
+         // the page and want to come back as a still-seated member. Skip
+         // the beacon when that flag is set so we don't yank our own
+         // seat as the reload tears down the room page. Both
+         // beforeunload AND pagehide fire on a reload — leave the flag
+         // in place so both handlers honor it; the next mount clears it.
+         try {
+            if (sessionStorage.getItem(SKIP_LEAVE_BEACON_KEY) === '1') return;
+         } catch {
+            // private mode: fall through to the beacon
+         }
          try {
             const blob = new Blob([JSON.stringify({ code: initial.code })], {
                type: 'application/json',
@@ -707,7 +729,10 @@ function Lobby({
                aria-hidden
             />
             <span className='text-xs uppercase tracking-[0.3em] text-[color:var(--color-teal-400)]'>Room code</span>
-            <span className='wordmark-gold-mono text-5xl tracking-[0.45em] sm:text-7xl [text-indent:0.45em]'>
+            <span
+               data-testid='room-code'
+               className='wordmark-gold-mono text-5xl tracking-[0.45em] sm:text-7xl [text-indent:0.45em]'
+            >
                {code}
             </span>
             <PirateButton variant='secondary' size='sm' fullWidth onClick={share}>
@@ -747,17 +772,24 @@ function Lobby({
                youId={userId}
                pendingIds={pendingIds}
                renderRowAction={
-                  isHost && !continuationDeadline
-                     ? (player) =>
-                          player.id === hostId ? null : (
-                             <CaptainMenu
-                                code={code}
-                                targetUserId={player.id}
-                                targetName={player.name}
-                                roomStatus='lobby'
-                             />
-                          )
-                     : undefined
+                  continuationDeadline
+                     ? undefined
+                     : (player) => {
+                          if (player.id === userId) {
+                             return <LobbyRenameButton currentName={player.name} />;
+                          }
+                          if (isHost && player.id !== hostId) {
+                             return (
+                                <CaptainMenu
+                                   code={code}
+                                   targetUserId={player.id}
+                                   targetName={player.name}
+                                   roomStatus='lobby'
+                                />
+                             );
+                          }
+                          return null;
+                       }
                }
             />
          </div>
@@ -815,6 +847,7 @@ function Lobby({
                </div>
             )}
          </div>
+         <RenameNudge isSeated={state.players.some((p) => p.id === userId)} />
       </main>
    );
 }

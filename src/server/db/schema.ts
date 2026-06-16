@@ -79,11 +79,20 @@ export const gamePlayers = pgTable(
       joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
       leftAt: timestamp('left_at', { withTimezone: true }),
       continuedAt: timestamp('continued_at', { withTimezone: true }),
+      // One-time token a seated player generates right before they sign
+      // in or sign up. The next authenticated request can redeem it to
+      // rewrite this seat's userId, letting the player keep their seat
+      // across the auth switch instead of being kicked back to a knock.
+      transferToken: text('transfer_token'),
+      transferExpiresAt: timestamp('transfer_expires_at', { withTimezone: true }),
    },
    (t) => ({
       uniqueGameSeat: unique('game_players_game_seat_unique').on(t.gameId, t.seat),
       gameIdx: index('game_players_game_idx').on(t.gameId),
       userIdx: index('game_players_user_idx').on(t.userId),
+      transferTokenIdx: uniqueIndex('game_players_transfer_token_idx')
+         .on(t.transferToken)
+         .where(sql`transfer_token is not null`),
    }),
 );
 

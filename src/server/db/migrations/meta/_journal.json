@@ -15,6 +15,13 @@
       "when": 1781291377920,
       "tag": "0001_slimy_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781579630900,
+      "tag": "0002_hesitant_killraven",
+      "breakpoints": true
     }
   ]
 }
