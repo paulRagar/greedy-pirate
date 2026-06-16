@@ -1,0 +1,22 @@
+app/play/[code]/KnockWaitingModal.tsx
+  s_283d261a447c79::t_3fb18e92b569e9 19-25,34,49-51,65,68-72,74-83
+app/play/[code]/JoinGate.tsx
+  s_283d261a447c79::t_fd359c8ca43df0 63-64,67-72,74-77
+  s_283d261a447c79::t_9580098b69f255 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "18995e87a7856fa825b4419737b70efc19ca7c7f",
+  "prompts": {},
+  "sessions": {
+    "s_283d261a447c79": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9646652f-1f9e-437f-ac13-bf2f684ed6ea",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
