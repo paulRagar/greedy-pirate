@@ -31,11 +31,13 @@ test('pasting an invite link in a fresh context lands in the room flow, not home
    // Wait through the AnonBootstrapGate reload then settle.
    await pageB.waitForLoadState('networkidle');
 
-   // JoinGate renders the room code prominently (the boarding pass).
-   // The home page does not. So checking for the code on screen is a
-   // reliable proxy that we're not on /.
-   await expect(pageB.locator('body')).toContainText(code);
+   // The join flow renders the "Hailin' the Captain" modal for
+   // private rooms. The home page never shows it — so finding it
+   // proves we landed on the room URL, not /.
+   await expect(pageB.getByRole('dialog', { name: /hailin' the captain/i })).toBeVisible({
+      timeout: 10_000,
+   });
 
-   // And ensure we are actually on /play/[code], not redirected away.
+   // And confirm the URL really is /play/[code].
    await expect(pageB).toHaveURL(new RegExp(`/play/${code}$`));
 });

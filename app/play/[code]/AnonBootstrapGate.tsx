@@ -5,11 +5,6 @@ import { getSupabaseBrowser } from '@/client/supabase/browser';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 
-interface Props {
-   /** Display-only — shown so the user sees they're boarding the right ship. */
-   code: string;
-}
-
 const MAX_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 300;
 
@@ -20,15 +15,14 @@ function isTransientNetworkError(err: unknown): boolean {
 }
 
 /**
- * Bridges fresh visitors (no Supabase cookie) onto a private room link.
- * Without this, the RSC sees no user and historically redirected home —
- * dumping anyone who pasted an invite into incognito straight off the
- * landing path. Here we sign them in anonymously and reload, which lets
- * the RSC rerun with a valid session.
+ * Bridges fresh visitors (no Supabase cookie) onto a private room
+ * link. Renders a single tight loading state — no big card, no
+ * boarding-pass chrome — so the page flows straight into the join
+ * flow once the reload lands. Only swaps to a visible card when the
+ * sign-in genuinely fails and the user needs to retry.
  */
-export function AnonBootstrapGate({ code }: Props) {
+export function AnonBootstrapGate({ code }: { code: string }) {
    const [error, setError] = useState<string | null>(null);
-   const [attempts, setAttempts] = useState(0);
    const tries = useRef(0);
 
    useEffect(() => {
@@ -39,7 +33,6 @@ export function AnonBootstrapGate({ code }: Props) {
          setError(null);
          while (tries.current < MAX_ATTEMPTS && !cancelled) {
             tries.current += 1;
-            setAttempts(tries.current);
             try {
                const existing = await supabase.auth.getUser();
                if (existing.data.user) {
@@ -67,53 +60,42 @@ export function AnonBootstrapGate({ code }: Props) {
       };
    }, []);
 
-   const retry = () => {
-      tries.current = 0;
-      setAttempts(0);
-      setError(null);
-      // Re-run the effect by toggling a state read inside it would be
-      // cleaner, but a full reload is the most reliable way to get a
-      // fresh Supabase client + cookies handshake.
-      window.location.reload();
-   };
+   if (error) {
+      return (
+         <main className='flex flex-1 flex-col items-center justify-center px-5 py-10'>
+            <PiratePanel
+               variant='deep'
+               className='flex w-full max-w-sm flex-col items-center gap-3 text-center'
+            >
+               <span className='text-4xl' aria-hidden>
+                  ⛵
+               </span>
+               <h1 className='pirate-display text-2xl text-[color:var(--color-gold-300)]'>
+                  Boarding the {code}
+               </h1>
+               <p className='text-sm text-[color:var(--color-cream-200)]/80'>
+                  Couldn&apos;t sign ye in anonymously.
+               </p>
+               <pre className='whitespace-pre-wrap break-words rounded-lg bg-black/40 p-3 text-xs text-[color:var(--color-coral-400)]'>
+                  {error}
+               </pre>
+               <PirateButton
+                  variant='primary'
+                  size='md'
+                  fullWidth
+                  onClick={() => {
+                     tries.current = 0;
+                     window.location.reload();
+                  }}
+               >
+                  Try again
+               </PirateButton>
+            </PiratePanel>
+         </main>
+      );
+   }
 
-   return (
-      <main className='flex flex-1 flex-col items-center justify-center px-5 py-10'>
-         <PiratePanel
-            variant='deep'
-            className='flex w-full max-w-sm flex-col items-center gap-3 text-center'
-         >
-            <span className='text-4xl' aria-hidden>
-               ⛵
-            </span>
-            <h1 className='pirate-display text-2xl text-[color:var(--color-gold-300)]'>
-               Boarding the {code}
-            </h1>
-            {error ? (
-               <>
-                  <p className='text-sm text-[color:var(--color-cream-200)]/80'>
-                     Couldn&apos;t sign ye in anonymously.
-                  </p>
-                  <pre className='whitespace-pre-wrap break-words rounded-lg bg-black/40 p-3 text-xs text-[color:var(--color-coral-400)]'>
-                     {error}
-                  </pre>
-                  <PirateButton variant='primary' size='md' fullWidth onClick={retry}>
-                     Try again
-                  </PirateButton>
-               </>
-            ) : (
-               <>
-                  <p className='animate-pulse text-sm text-[color:var(--color-cream-200)]/75'>
-                     Hoisting yer flag…
-                  </p>
-                  {attempts > 1 && (
-                     <p className='text-xs text-[color:var(--color-cream-200)]/55'>
-                        Reconnecting (attempt {attempts}/{MAX_ATTEMPTS})…
-                     </p>
-                  )}
-               </>
-            )}
-         </PiratePanel>
-      </main>
-   );
+   // Happy path — render nothing visible. The reload lands fast enough
+   // that any spinner would be noisier than the brief blank moment.
+   return <div aria-busy='true' aria-label='Boarding the ship' className='flex-1' />;
 }

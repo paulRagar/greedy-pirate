@@ -10,9 +10,21 @@ type Props = {
    kind: 'player' | 'spectator';
    request: { requestId: string; expiresAt: string } | null;
    onResolved: (outcome: KnockStatus) => void;
+   /**
+    * When true, render the modal even before the server has returned a
+    * pending request row. Lets the page open straight into "Hailin' the
+    * captain" instead of flashing the empty boarding-pass screen first.
+    */
+   showPreliminary?: boolean;
 };
 
-export default function KnockWaitingModal({ code, kind, request, onResolved }: Props) {
+export default function KnockWaitingModal({
+   code,
+   kind,
+   request,
+   onResolved,
+   showPreliminary = false,
+}: Props) {
    const { status, secondsLeft, cancel } = useKnockRequest({
       code,
       requestId: request?.requestId ?? null,
@@ -25,8 +37,19 @@ export default function KnockWaitingModal({ code, kind, request, onResolved }: P
       onResolved(status);
    }, [status, request, onResolved]);
 
-   const open = !!request && status === 'pending';
+   const hasPending = !!request && status === 'pending';
+   const open = hasPending || (showPreliminary && !request);
    const title = kind === 'player' ? "Hailin' the Captain" : "Askin' to Watch";
+
+   const handleCancel = () => {
+      if (hasPending) {
+         void cancel();
+      } else {
+         // No pending row yet — synthesize a cancelled resolve so the
+         // parent can route us out.
+         onResolved('cancelled');
+      }
+   };
 
    return (
       <PirateModal open={open} dismissible={false} title={title}>
@@ -35,12 +58,14 @@ export default function KnockWaitingModal({ code, kind, request, onResolved }: P
                🏴‍☠️
             </span>
             <p className='text-sm text-[color:var(--color-cream-200)]/85'>
-               Awaiting the captain&apos;s word. Their decision is incoming…
+               {hasPending
+                  ? "Awaiting the captain's word. Their decision is incoming…"
+                  : "Sendin' yer hail to the captain…"}
             </p>
             <div className='font-mono font-bold tabular-nums text-3xl text-[color:var(--color-gold-300)]'>
-               {secondsLeft}s
+               {hasPending ? `${secondsLeft}s` : '—'}
             </div>
-            <PirateButton variant='tertiary' size='md' fullWidth onClick={cancel}>
+            <PirateButton variant='tertiary' size='md' fullWidth onClick={handleCancel}>
                Withdraw hail
             </PirateButton>
          </div>
