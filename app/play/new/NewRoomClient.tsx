@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createRoom } from '@/server/actions/createRoom';
-import { DEFAULT_DISPLAY_NAME, useCurrentUser } from '@/client/auth/useCurrentUser';
+import { useCurrentUser } from '@/client/auth/useCurrentUser';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { cn } from '@/lib/cn';
@@ -13,13 +13,12 @@ type Visibility = 'public' | 'private';
 
 export default function NewRoomClient() {
    const router = useRouter();
-   const { ready, profile } = useCurrentUser();
+   const { ready } = useCurrentUser();
    const [visibility, setVisibility] = useState<Visibility>('private');
    const [submitting, setSubmitting] = useState(false);
    const [error, setError] = useState<string | null>(null);
 
-   const needsName = !ready || !profile || profile.displayName === DEFAULT_DISPLAY_NAME;
-   if (needsName) {
+   if (!ready) {
       return (
          <main className='flex flex-1 flex-col items-center justify-center gap-3 px-5 py-10 text-center'>
             <p className='pirate-display animate-pulse text-2xl text-[color:var(--color-gold-300)]'>

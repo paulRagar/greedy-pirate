@@ -19,7 +19,8 @@ export type CurrentUserState = {
    refreshProfile: () => Promise<void>;
 };
 
-const DEFAULT_DISPLAY_NAME = 'Crewmate';
+import { DEFAULT_DISPLAY_NAME, isDefaultDisplayName } from '@/lib/displayName';
+export { isDefaultDisplayName };
 
 /** Window event name used to broadcast "profile changed, refetch please". */
 export const PROFILE_CHANGED_EVENT = 'gp:profile-changed';
@@ -70,15 +71,32 @@ export function useCurrentUser(): CurrentUserState {
       setError(null);
 
       const bootstrap = async () => {
+         const MAX_ANON_ATTEMPTS = 3;
          try {
             let {
                data: { user: current },
             } = await supabase.auth.getUser();
 
             if (!current) {
-               const { data, error: signInError } = await supabase.auth.signInAnonymously();
-               if (signInError) throw signInError;
-               current = data.user;
+               // Cold-network races (especially fresh incognito) sometimes
+               // surface as transient "NetworkError" / "Failed to fetch"
+               // before Supabase is reachable. Retry a couple times before
+               // surfacing the overlay so the common case stays silent.
+               let lastErr: unknown = null;
+               for (let attempt = 1; attempt <= MAX_ANON_ATTEMPTS; attempt += 1) {
+                  const { data, error: signInError } = await supabase.auth.signInAnonymously();
+                  if (!signInError) {
+                     current = data.user;
+                     lastErr = null;
+                     break;
+                  }
+                  lastErr = signInError;
+                  const msg = signInError.message ?? '';
+                  const transient = /networkerror|failed to fetch|fetch failed/i.test(msg);
+                  if (!transient || attempt === MAX_ANON_ATTEMPTS) break;
+                  await new Promise((r) => setTimeout(r, 300 * attempt));
+               }
+               if (lastErr) throw lastErr;
             }
 
             if (!active) return;

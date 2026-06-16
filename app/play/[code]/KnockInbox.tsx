@@ -66,6 +66,7 @@ export default function KnockInbox({ knocks, onRemove }: Props) {
                      fullWidth
                      onClick={() => respond(k.requestId, false)}
                      disabled={responding === k.requestId}
+                     data-testid='knock-deny'
                   >
                      {responding === k.requestId ? '…' : "Send 'em packing"}
                   </PirateButton>
@@ -75,6 +76,7 @@ export default function KnockInbox({ knocks, onRemove }: Props) {
                      fullWidth
                      onClick={() => respond(k.requestId, true)}
                      disabled={responding === k.requestId}
+                     data-testid='knock-approve'
                   >
                      {responding === k.requestId ? '…' : 'Welcome aboard'}
                   </PirateButton>

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 
 interface Props {
@@ -13,6 +14,13 @@ interface Props {
 }
 
 export function PirateModal({ open, onClose, dismissible = true, title, children, className }: Props) {
+   // Portal target. Set after mount so SSR returns null instead of rendering
+   // a stray overlay before hydration.
+   const [mounted, setMounted] = useState(false);
+   useEffect(() => {
+      setMounted(true);
+   }, []);
+
    useEffect(() => {
       if (!open) return;
       const onKey = (e: KeyboardEvent) => {
@@ -27,9 +35,13 @@ export function PirateModal({ open, onClose, dismissible = true, title, children
       };
    }, [open, dismissible, onClose]);
 
-   if (!open) return null;
+   if (!open || !mounted) return null;
 
-   return (
+   // Portal to document.body so `position: fixed` is resolved against the
+   // viewport. Without this, any ancestor with a backdrop-filter / filter /
+   // transform creates a containing block for fixed descendants and the
+   // modal misaligns (e.g. TopNav's backdrop-blur clipping the top).
+   return createPortal(
       <div
          className='fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center'
          onClick={dismissible ? onClose : undefined}
@@ -47,6 +59,7 @@ export function PirateModal({ open, onClose, dismissible = true, title, children
             {title && <h2 className='pirate-display text-2xl text-[color:var(--color-gold-300)]'>{title}</h2>}
             {children}
          </div>
-      </div>
+      </div>,
+      document.body,
    );
 }
