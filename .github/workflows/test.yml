@@ -56,14 +56,26 @@ jobs:
            with:
               version: latest
 
-         - name: Start local Supabase
-           run: supabase start
+         - name: Start local Supabase (without applying SQL migrations)
+           # `supabase start` auto-applies anything under supabase/migrations,
+           # but those expect Drizzle tables to already exist. Stash them
+           # aside so the stack boots clean, run Drizzle next, then push
+           # the Supabase migrations on top.
+           run: |
+              mkdir -p /tmp/sb-stash
+              if [ -d supabase/migrations ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
+                 mv supabase/migrations/* /tmp/sb-stash/
+              fi
+              supabase start
 
          - run: npm ci
 
-         - name: Apply migrations
+         - name: Apply migrations (Drizzle then Supabase)
            run: |
               npm run db:migrate
+              if [ "$(ls -A /tmp/sb-stash 2>/dev/null)" ]; then
+                 mv /tmp/sb-stash/* supabase/migrations/
+              fi
               supabase db push --local
 
          - name: Install Playwright browsers
