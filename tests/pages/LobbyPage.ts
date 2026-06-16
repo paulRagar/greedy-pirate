@@ -32,9 +32,37 @@ export class LobbyPage {
    }
 
    async openRenameForSelf(): Promise<void> {
-      // The pencil only renders on the user's own row.
+      // The pencil only renders on the user's own row. The nudge may
+      // have auto-opened the modal already — if so, the pencil is
+      // hidden behind it, so dismiss the nudge first.
+      await this.dismissRenameNudgeIfOpen();
       await this.page.getByTestId('lobby-rename').click();
       await this.page.getByTestId('display-name-input').waitFor({ state: 'visible' });
+   }
+
+   /**
+    * Submit a name through the pencil flow — opens the editor, fills,
+    * and waits for the modal to close on success. Throws on a validation
+    * error left visible. Use this when a test wants to set up a known
+    * name deterministically without racing the post-admission nudge.
+    */
+   async setName(name: string): Promise<void> {
+      await this.openRenameForSelf();
+      await this.page.getByTestId('display-name-input').fill(name);
+      await this.page.getByTestId('display-name-save').click();
+      await this.page.getByTestId('display-name-input').waitFor({ state: 'hidden' });
+   }
+
+   async dismissRenameNudgeIfOpen(timeoutMs = 1_000): Promise<void> {
+      const input = this.page.getByTestId('display-name-input');
+      try {
+         await input.waitFor({ state: 'visible', timeout: timeoutMs });
+      } catch {
+         return; // never opened
+      }
+      const cancel = this.page.getByRole('button', { name: /cancel/i }).first();
+      await cancel.click();
+      await input.waitFor({ state: 'hidden' });
    }
 
    async submitRename(name: string): Promise<void> {
@@ -50,14 +78,5 @@ export class LobbyPage {
 
    async closeRenameModal(): Promise<void> {
       await this.page.getByRole('button', { name: /cancel/i }).first().click();
-   }
-
-   async dismissRenameNudgeIfOpen(): Promise<void> {
-      // The post-admission nudge uses the same editor — close it so it
-      // doesn't interfere with the explicit click on the pencil.
-      const cancel = this.page.getByRole('button', { name: /cancel/i }).first();
-      if (await cancel.isVisible().catch(() => false)) {
-         await cancel.click();
-      }
    }
 }

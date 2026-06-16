@@ -1,4 +1,4 @@
-import { test } from '../../fixtures/users';
+import { test, expect } from '../../fixtures/users';
 import { HomePage } from '../../pages/HomePage';
 import { LobbyPage } from '../../pages/LobbyPage';
 import { ProfilePage } from '../../pages/ProfilePage';
@@ -28,12 +28,9 @@ test('seating an approved knocker uses their current name, not the snapshot', as
 
    const code = await home.createRoom('private');
 
-   // Captain accepts a deterministic name via the auto-nudge so the
-   // open modal doesn't intercept later clicks on the knock inbox.
-   await pageA.getByTestId('display-name-input').waitFor({ state: 'visible', timeout: 5_000 });
-   await pageA.getByTestId('display-name-input').fill('Captain Alpha');
-   await pageA.getByTestId('display-name-save').click();
-   await pageA.getByTestId('display-name-input').waitFor({ state: 'hidden' });
+   // Captain picks a deterministic name via the pencil so the post-
+   // admission nudge can't intercept later clicks on the knock inbox.
+   await lobbyA.setName('Captain Alpha');
 
    // B opens the room — private rooms auto-knock on mount.
    await pageB.goto(`/play/${code}`);

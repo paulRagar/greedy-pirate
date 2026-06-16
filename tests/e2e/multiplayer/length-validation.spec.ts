@@ -1,5 +1,6 @@
 import { test, expect } from '../../fixtures/users';
 import { HomePage } from '../../pages/HomePage';
+import { LobbyPage } from '../../pages/LobbyPage';
 
 /**
  * The display-name editor enforces a 2-character minimum on the
@@ -9,10 +10,13 @@ import { HomePage } from '../../pages/HomePage';
 test('rename rejects single-character names', async ({ contextA }) => {
    const page = await contextA.newPage();
    const home = new HomePage(page);
+   const lobby = new LobbyPage(page);
    await home.createRoom('private');
 
+   await lobby.dismissRenameNudgeIfOpen(3_000);
+   await page.getByTestId('lobby-rename').click();
    const input = page.getByTestId('display-name-input');
-   await input.waitFor({ state: 'visible', timeout: 5_000 });
+   await input.waitFor({ state: 'visible' });
 
    await input.fill('A');
    await page.getByTestId('display-name-save').click();

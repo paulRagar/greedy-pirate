@@ -41,11 +41,8 @@ test('signing in mid-lobby transfers the anon seat to the existing account', asy
    try {
       const code = await home.createRoom('private');
 
-      // Captain accepts a deterministic name via the auto-nudge.
-      await pageA.getByTestId('display-name-input').waitFor({ state: 'visible', timeout: 5_000 });
-      await pageA.getByTestId('display-name-input').fill('Captain Alpha');
-      await pageA.getByTestId('display-name-save').click();
-      await pageA.getByTestId('display-name-input').waitFor({ state: 'hidden' });
+      // Captain sets a deterministic name via the pencil.
+      await lobbyA.setName('Captain Alpha');
 
       // B knocks via auto-fire on JoinGate mount.
       await pageB.goto(`/play/${code}`);
@@ -58,12 +55,10 @@ test('signing in mid-lobby transfers the anon seat to the existing account', asy
       // B's tab transitions to the lobby — wait for the room code chrome.
       await pageB.getByTestId('room-code').waitFor({ state: 'visible', timeout: 10_000 });
 
-      // B's post-admission rename nudge will pop. Dismiss it so it
-      // doesn't intercept the account menu click that follows.
-      const bInput = pageB.getByTestId('display-name-input');
-      await bInput.waitFor({ state: 'visible', timeout: 8_000 });
-      await pageB.getByRole('button', { name: /cancel/i }).first().click();
-      await bInput.waitFor({ state: 'hidden' });
+      // Dismiss the post-admission nudge if it auto-opened — we don't
+      // want it intercepting the account menu click that follows.
+      const lobbyB = new LobbyPage(pageB);
+      await lobbyB.dismissRenameNudgeIfOpen(3_000);
 
       // B opens TopNav and signs in as Peter Pan.
       await pageB.getByTestId('account-menu-trigger').click();

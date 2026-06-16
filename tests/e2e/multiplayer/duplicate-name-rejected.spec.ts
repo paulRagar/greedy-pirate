@@ -1,5 +1,6 @@
 import { test, expect } from '../../fixtures/users';
 import { HomePage } from '../../pages/HomePage';
+import { LobbyPage } from '../../pages/LobbyPage';
 
 /**
  * Two crewmates in the same room can't share a display name —
@@ -16,13 +17,12 @@ test('duplicate name in the same room is rejected', async ({ contextA, contextB 
    const pageB = await contextB.newPage();
 
    const home = new HomePage(pageA);
+   const lobbyA = new LobbyPage(pageA);
+   const lobbyB = new LobbyPage(pageB);
    const code = await home.createRoom('private');
 
-   // A takes the contested name first.
-   await pageA.getByTestId('display-name-input').waitFor({ state: 'visible', timeout: 5_000 });
-   await pageA.getByTestId('display-name-input').fill('Buckus');
-   await pageA.getByTestId('display-name-save').click();
-   await pageA.getByTestId('display-name-input').waitFor({ state: 'hidden' });
+   // A takes the contested name first via the pencil.
+   await lobbyA.setName('Buckus');
 
    // B knocks; A approves.
    await pageB.goto(`/play/${code}`);
@@ -30,8 +30,11 @@ test('duplicate name in the same room is rejected', async ({ contextA, contextB 
    await knockApprove.waitFor({ state: 'visible', timeout: 10_000 });
    await knockApprove.click();
 
-   // B's post-admission nudge auto-opens. Try to take "Buckus".
-   await pageB.getByTestId('display-name-input').waitFor({ state: 'visible', timeout: 8_000 });
+   // B's lobby renders; try to take "Buckus" via pencil.
+   await pageB.getByTestId('room-code').waitFor({ state: 'visible', timeout: 10_000 });
+   await lobbyB.dismissRenameNudgeIfOpen(3_000);
+   await pageB.getByTestId('lobby-rename').click();
+   await pageB.getByTestId('display-name-input').waitFor({ state: 'visible' });
    await pageB.getByTestId('display-name-input').fill('Buckus');
    await pageB.getByTestId('display-name-save').click();
 

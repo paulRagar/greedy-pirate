@@ -1,5 +1,6 @@
 import { test, expect } from '../../fixtures/users';
 import { HomePage } from '../../pages/HomePage';
+import { LobbyPage } from '../../pages/LobbyPage';
 
 /**
  * UI assertion that the profanity filter shows a generic rejection
@@ -17,10 +18,13 @@ import { HomePage } from '../../pages/HomePage';
 test('profanity in the rename modal is rejected with a generic error', async ({ contextA }) => {
    const page = await contextA.newPage();
    const home = new HomePage(page);
+   const lobby = new LobbyPage(page);
    await home.createRoom('private');
 
+   await lobby.dismissRenameNudgeIfOpen(3_000);
+   await page.getByTestId('lobby-rename').click();
    const input = page.getByTestId('display-name-input');
-   await input.waitFor({ state: 'visible', timeout: 5_000 });
+   await input.waitFor({ state: 'visible' });
 
    await input.fill('shit');
    await page.getByTestId('display-name-save').click();

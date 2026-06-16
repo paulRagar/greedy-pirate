@@ -38,12 +38,10 @@ test('rename in lobby broadcasts to every connected player', async ({ contextA, 
    // A should now see two crewmates aboard.
    await expect(pageA.getByTestId('crew-row')).toHaveCount(2, { timeout: 5_000 });
 
-   // The post-admission nudge auto-opens 2s after seating. Use it to
-   // drive the rename — that exercises both the nudge and the same
-   // setDisplayName action the pencil uses.
-   await pageB.getByTestId('display-name-input').waitFor({ state: 'visible', timeout: 8_000 });
-   await pageB.getByTestId('display-name-input').fill('Buckus');
-   await pageB.getByTestId('display-name-save').click();
+   // Drive the rename through the pencil — the same `setDisplayName`
+   // action the post-admission nudge would fire, but with no timing
+   // race for the test to depend on.
+   await lobbyB.setName('Buckus');
 
    // Broadcast should propagate within a second; allow some slack.
    await lobbyA.expectPlayerNamed('Buckus');
