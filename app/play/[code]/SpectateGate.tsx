@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
+import { PirateLinkButton } from '@/ui/pirate-button/PirateLinkButton';
 import { PirateModal } from '@/ui/pirate-modal/PirateModal';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { requestJoin } from '@/server/actions/requestJoin';
@@ -21,6 +21,7 @@ export default function SpectateGate({
    const router = useRouter();
    const [error, setError] = useState<string | null>(null);
    const [submitting, setSubmitting] = useState(false);
+   const [returning, startReturn] = useTransition();
    const [pending, setPending] = useState<Pending>(null);
    const [deniedOpen, setDeniedOpen] = useState(false);
    const autoFired = useRef(false);
@@ -78,20 +79,18 @@ export default function SpectateGate({
                   size='lg'
                   fullWidth
                   onClick={watch}
-                  disabled={submitting}
+                  loading={submitting}
                >
-                  {submitting ? 'Climbing aboard…' : cta}
+                  {cta}
                </PirateButton>
             ) : (
                <p className='animate-pulse text-xs uppercase tracking-[0.3em] text-[color:var(--color-gold-300)]'>
                   Awaitin&apos; the captain&apos;s word
                </p>
             )}
-            <Link href='/choose-game' className='w-full'>
-               <PirateButton variant='tertiary' size='md' fullWidth>
-                  Back to port
-               </PirateButton>
-            </Link>
+            <PirateLinkButton href='/choose-game' variant='tertiary' size='md' fullWidth>
+               Back to port
+            </PirateLinkButton>
          </PiratePanel>
 
          <KnockWaitingModal
@@ -123,7 +122,8 @@ export default function SpectateGate({
                   variant='primary'
                   size='lg'
                   fullWidth
-                  onClick={() => router.push('/choose-game')}
+                  loading={returning}
+                  onClick={() => startReturn(() => router.push('/choose-game'))}
                >
                   Return to docks
                </PirateButton>

@@ -1,12 +1,9 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { PirateButton } from '@/ui/pirate-button/PirateButton';
+import { PirateLinkButton } from '@/ui/pirate-button/PirateLinkButton';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 
 export default function ChooseGameClient() {
-   const router = useRouter();
-
    return (
       <main className='scrollbar-none flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-5 py-6 safe-bottom sm:py-10'>
          <header className='flex flex-col gap-1 text-center'>
@@ -25,9 +22,9 @@ export default function ChooseGameClient() {
                glow='teal-glow'
                subtitle='Pass the device around. 2–10 crewmates duel for doubloons on one screen.'
                action={
-                  <PirateButton variant='primary' size='lg' fullWidth onClick={() => router.push('/setup')}>
+                  <PirateLinkButton href='/setup' variant='primary' size='lg' fullWidth>
                      Play Local
-                  </PirateButton>
+                  </PirateLinkButton>
                }
             />
             <ModeCard
@@ -39,12 +36,12 @@ export default function ChooseGameClient() {
                subtitle='Sail against friends on other devices. Real-time, server-authoritative, no peeking at the deck.'
                action={
                   <div className='flex flex-col gap-2'>
-                     <PirateButton variant='secondary' size='lg' fullWidth onClick={() => router.push('/play/new')}>
+                     <PirateLinkButton href='/play/new' variant='secondary' size='lg' fullWidth>
                         Charter Ship
-                     </PirateButton>
-                     <PirateButton variant='tertiary' size='md' fullWidth onClick={() => router.push('/play/lobby')}>
+                     </PirateLinkButton>
+                     <PirateLinkButton href='/play/lobby' variant='tertiary' size='md' fullWidth>
                         Find Crew
-                     </PirateButton>
+                     </PirateLinkButton>
                   </div>
                }
             />

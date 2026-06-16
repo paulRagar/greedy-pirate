@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/client/stores/gameStore';
 import { useGameJuice, type JuiceSnapshot } from '@/client/hooks/useGameJuice';
@@ -27,6 +27,7 @@ const PLAYERS_KEY = 'players';
 
 export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
    const router = useRouter();
+   const [changingCrew, startChangeCrew] = useTransition();
    const state = useGameStore((s) => s.state);
    const dispatch = useGameStore((s) => s.dispatch);
    const reset = useGameStore((s) => s.reset);
@@ -178,7 +179,13 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
             ranked={ranked}
             actions={
                <>
-                  <PirateButton variant='tertiary' size='md' fullWidth onClick={() => router.push('/setup')}>
+                  <PirateButton
+                     variant='tertiary'
+                     size='md'
+                     fullWidth
+                     loading={changingCrew}
+                     onClick={() => startChangeCrew(() => router.push('/setup'))}
+                  >
                      Change Crew
                   </PirateButton>
                   <PirateButton variant='treasure' size='md' fullWidth onClick={playAgain}>

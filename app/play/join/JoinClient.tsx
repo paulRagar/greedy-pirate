@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
@@ -11,7 +11,7 @@ export default function JoinClient() {
    const { ready } = useCurrentUser();
    const [code, setCode] = useState('');
    const [error, setError] = useState<string | null>(null);
-   const [submitting, setSubmitting] = useState(false);
+   const [submitting, startSubmit] = useTransition();
 
    if (!ready) {
       return (
@@ -31,11 +31,10 @@ export default function JoinClient() {
          return;
       }
       setError(null);
-      setSubmitting(true);
       // Don't try to join here — route to the room page and let JoinGate /
       // SpectateGate decide between direct-board (public) and knock (private).
       // The page handles not-found and visibility-gated paths.
-      router.push(`/play/${trimmed}`);
+      startSubmit(() => router.push(`/play/${trimmed}`));
    };
 
    return (
@@ -71,9 +70,10 @@ export default function JoinClient() {
                   size='lg'
                   fullWidth
                   type='submit'
-                  disabled={submitting || code.trim().length !== 4}
+                  loading={submitting}
+                  disabled={code.trim().length !== 4}
                >
-                  {submitting ? 'Boarding…' : 'Board the ship'}
+                  Board the ship
                </PirateButton>
             </form>
          </PiratePanel>

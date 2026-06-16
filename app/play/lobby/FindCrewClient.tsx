@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
+import { PirateLinkButton } from '@/ui/pirate-button/PirateLinkButton';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { requestJoin } from '@/server/actions/requestJoin';
 import {
@@ -15,18 +15,19 @@ export default function FindCrewClient({ initial }: { initial: PublicRoomSummary
    const router = useRouter();
    const rooms = usePublicLobby(initial);
    const [joining, setJoining] = useState<string | null>(null);
+   const [navigating, startNavigation] = useTransition();
    const [error, setError] = useState<string | null>(null);
 
    const board = async (code: string, kind: 'player' | 'spectator') => {
       setJoining(`${code}:${kind}`);
       setError(null);
       const res = await requestJoin({ code, kind });
-      setJoining(null);
       if (!res.ok) {
+         setJoining(null);
          setError(res.error);
          return;
       }
-      router.push(`/play/${code}`);
+      startNavigation(() => router.push(`/play/${code}`));
    };
 
    return (
@@ -39,11 +40,9 @@ export default function FindCrewClient({ initial }: { initial: PublicRoomSummary
          </header>
 
          <div className='flex flex-col gap-2'>
-            <Link href='/play/join' className='w-full'>
-               <PirateButton variant='secondary' size='md' fullWidth>
-                  Have a code? Board a sealed ship
-               </PirateButton>
-            </Link>
+            <PirateLinkButton href='/play/join' variant='secondary' size='md' fullWidth>
+               Have a code? Board a sealed ship
+            </PirateLinkButton>
          </div>
 
          {error && (
@@ -61,11 +60,9 @@ export default function FindCrewClient({ initial }: { initial: PublicRoomSummary
                <p className='text-sm text-[color:var(--color-cream-200)]/70'>
                   No open voyages right now. Charter yer own and let the crew come to ye.
                </p>
-               <Link href='/play/new' className='w-full'>
-                  <PirateButton variant='primary' size='md' fullWidth>
-                     Charter Ship
-                  </PirateButton>
-               </Link>
+               <PirateLinkButton href='/play/new' variant='primary' size='md' fullWidth>
+                  Charter Ship
+               </PirateLinkButton>
             </PiratePanel>
          ) : (
             <ul className='flex flex-col gap-2'>
@@ -80,6 +77,7 @@ export default function FindCrewClient({ initial }: { initial: PublicRoomSummary
                               ? (joining.split(':')[1] as 'player' | 'spectator')
                               : null
                         }
+                        anyJoining={joining !== null || navigating}
                      />
                   </li>
                ))}
@@ -87,11 +85,9 @@ export default function FindCrewClient({ initial }: { initial: PublicRoomSummary
          )}
 
          <div className='mt-auto pt-2 safe-bottom'>
-            <Link href='/choose-game' className='w-full'>
-               <PirateButton variant='tertiary' size='md' fullWidth>
-                  Back to port
-               </PirateButton>
-            </Link>
+            <PirateLinkButton href='/choose-game' variant='tertiary' size='md' fullWidth>
+               Back to port
+            </PirateLinkButton>
          </div>
       </main>
    );
@@ -102,11 +98,13 @@ function RoomRow({
    onBoard,
    onSpectate,
    joiningKind,
+   anyJoining,
 }: {
    room: PublicRoomSummary;
    onBoard: () => void;
    onSpectate: () => void;
    joiningKind: 'player' | 'spectator' | null;
+   anyJoining: boolean;
 }) {
    const isActive = room.status === 'active';
    const seatsFree = room.playerCount < room.maxPlayers;
@@ -145,10 +143,11 @@ function RoomRow({
                   size='sm'
                   fullWidth
                   onClick={onBoard}
-                  disabled={joiningKind !== null}
+                  disabled={anyJoining}
+                  loading={joiningKind === 'player'}
                   title='Take a seat'
                >
-                  {joiningKind === 'player' ? '…' : 'Board'}
+                  Board
                </PirateButton>
             ) : null}
             <PirateButton
@@ -156,10 +155,11 @@ function RoomRow({
                size='sm'
                fullWidth
                onClick={onSpectate}
-               disabled={joiningKind !== null}
+               disabled={anyJoining}
+               loading={joiningKind === 'spectator'}
                title='Watch the voyage'
             >
-               {joiningKind === 'spectator' ? '…' : 'Spectate'}
+               Spectate
             </PirateButton>
          </div>
       </PiratePanel>
