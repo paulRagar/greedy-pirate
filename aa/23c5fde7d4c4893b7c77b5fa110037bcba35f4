@@ -1,0 +1,176 @@
+tsconfig.json
+  s_283d261a447c79::t_717d46c4922c07 33-37,40-47
+tests/e2e/multiplayer/rename-profanity-rejected.spec.ts
+  s_283d261a447c79::t_c393d00ac233d4 1-36
+src/ui/game-room/CrewGrid.tsx
+  s_283d261a447c79::t_937d52d6b66e0b 39-40
+src/server/db/migrations/meta/_journal.json
+  s_283d261a447c79::t_9c2652b98630aa 18-24
+src/server/db/migrations/meta/0002_snapshot.json
+  s_283d261a447c79::t_9c2652b98630aa 1-880
+src/lib/leaveBeacon.ts
+  s_283d261a447c79::t_bad190a1168599 1-7
+src/client/auth/AuthBootstrap.tsx
+  s_283d261a447c79::t_b9138d8b2b4c1c 4,8
+src/server/actions/seatTransfer.ts
+  s_283d261a447c79::t_abe9afb3dda7c1 7
+  s_283d261a447c79::t_ff2a2bdc14026e 124-131,135-140,143,149
+  s_283d261a447c79::t_2aee45028ab1d8 1-6,8-123,132-134,141-142,144-148,150-193
+src/server/actions/respondToJoinRequest.ts
+  s_283d261a447c79::t_4257650dfbfa32 124
+  s_283d261a447c79::t_e29ff063153ff8 7
+  s_283d261a447c79::t_566255ef7e1c18 68-77,98
+tests/tsconfig.json
+  s_283d261a447c79::t_b874745efa4a11 1-8
+tests/pages/LobbyPage.ts
+  s_283d261a447c79::t_0401bf3c1d29fe 1-63
+app/play/[code]/AnonBootstrapGate.tsx
+  s_283d261a447c79::t_be57b447cde886 1-119
+src/ui/pirate-modal/PirateModal.tsx
+  s_283d261a447c79::t_4323c00f5f1d03 3-4,17-23,38,40-44,62-63
+app/play/[code]/KnockInbox.tsx
+  s_283d261a447c79::t_92baa8ac8483d2 69,79
+src/client/auth/AccountLinkModal.tsx
+  s_283d261a447c79::t_a6a56460d07dfb 152-155,158
+  s_283d261a447c79::t_bd2a071eda225b 230
+  s_283d261a447c79::t_e293122ce574f8 118,121,125-140,146,159-162
+  s_283d261a447c79::t_ccdb96e8187b6f 141-145,147-151
+  s_283d261a447c79::t_fadad0c0590404 175,188
+  s_283d261a447c79::t_e4273496f2321f 1-8,10-117,119-120,122-124,163-174,176-187,189-213,215-229,231-248,250-265
+  s_283d261a447c79::t_8b812536c1ff75 156-157
+  s_283d261a447c79::t_87c9d955e983e2 9
+  s_283d261a447c79::t_c1ed8f7a058687 214
+  s_283d261a447c79::t_8205bcb1b53dfd 249
+tests/e2e/auth/anon-paste-link.spec.ts
+  s_283d261a447c79::t_c21a36472ef432 1-41
+next.config.js
+  s_283d261a447c79::t_22ad07fa2d42e1 16-18,24
+  s_283d261a447c79::t_ae68fda3a89c99 11-15,19-23,25-32
+app/profile/page.tsx
+  s_283d261a447c79::t_60d61accbb7af5 80-85
+  s_283d261a447c79::t_b23cd9ffe07727 8
+  s_283d261a447c79::t_33323369a5759c 30
+src/ui/display-name/DisplayNameEditor.tsx
+  s_283d261a447c79::t_3a1b74a3ffcb9e 71,75-78
+  s_283d261a447c79::t_698a6fd1acf84c 24
+  s_283d261a447c79::t_ce0f489c51388d 96-103
+  s_283d261a447c79::t_c6cec1ea18c521 72-74
+  s_283d261a447c79::t_d8515c9f563a59 1-5,7-23,25-58,60-70,79-81,85-87,89-95,105-107,109-111
+  s_283d261a447c79::t_01fdb79cead81a 104
+  s_283d261a447c79::t_f7c9c08c253ade 108
+  s_283d261a447c79::t_ca9f856f768dc2 82-84,88
+  s_283d261a447c79::t_073628ff1e22d4 59
+  s_283d261a447c79::t_2938b72638692e 6
+app/play/[code]/page.tsx
+  s_283d261a447c79::t_4d32ce437cc018 20
+  s_283d261a447c79::t_bbd34beb17af1a 32-36
+src/lib/displayNameValidation.ts
+  s_283d261a447c79::t_c788cfd2bd5672 1-16,20-22,24-50
+  s_283d261a447c79::t_10e13caaec37d8 17-19,23
+tests/pages/HomePage.ts
+  s_283d261a447c79::t_160cdba20cb3d5 4-5,7-10,17,19-29
+  s_283d261a447c79::t_ae021c3639ae48 1-3,6,11-16,18,30-38
+tests/utils/supabaseAdmin.ts
+  s_283d261a447c79::t_a67e856f4d1fc3 1-47
+src/lib/displayNameValidation.test.ts
+  s_283d261a447c79::t_c8dd3a160e85a7 1-63
+supabase/migrations/20260615000000_default_name_with_hash.sql
+  s_283d261a447c79::t_3f43fdabf2f0d7 1-31
+src/server/actions/setDisplayName.ts
+  s_283d261a447c79::t_df196fa9836250 3,5-11,14,24-25,36-63,66,69-116
+  s_283d261a447c79::t_c5a2cd272c5530 15,20-23
+tests/e2e/multiplayer/length-validation.spec.ts
+  s_283d261a447c79::t_1f51540aed8853 1-22
+tests/pages/JoinGatePage.ts
+  s_283d261a447c79::t_91a74b36ff32e6 1-3,7-11,15-16
+  s_283d261a447c79::t_77287fa2e204d3 4-6,12-14
+tests/e2e/auth/seat-transfer-on-signin.spec.ts
+  s_283d261a447c79::t_150d350fc76a05 1-24,28-33,37-75,88-91
+  s_283d261a447c79::t_e9998b66a73b4f 25,34-36
+  s_283d261a447c79::t_f6570105d1879b 85-87
+  s_283d261a447c79::t_db4ccef2396d71 26-27
+src/server/profanity.test.ts
+  s_283d261a447c79::t_fcf376c345188a 1-28
+src/server/db/schema.ts
+  s_283d261a447c79::t_df2e9d2945aca1 82-87,93-95
+package.json
+  s_283d261a447c79::t_d4ca19d4be7e92 14
+  s_283d261a447c79::t_c961f82a584c0f 23-25
+  s_283d261a447c79::t_e6977917f9e76b 42,53
+  s_283d261a447c79::t_648d63540126dc 34
+  s_283d261a447c79::t_1716d199cbdb40 15
+.github/workflows/test.yml
+  s_283d261a447c79::t_483128d2d42601 1-94
+app/profile/ProfileNameHeader.tsx
+  s_283d261a447c79::t_9c2da3bc4aa00f 1-47,49-70
+  s_283d261a447c79::t_fb2f4580be6b9c 48
+src/server/db/migrations/0002_hesitant_killraven.sql
+  s_283d261a447c79::t_5235b14b52f45c 1-7
+tests/fixtures/users.ts
+  s_283d261a447c79::t_d1dd90e47e8de9 1-30
+app/play/join/JoinClient.tsx
+  s_283d261a447c79::t_b5674278fa8bb0 7,11,16
+vitest.config.ts
+  s_283d261a447c79::t_25da35229a317f 12-14
+tests/pages/ProfilePage.ts
+  s_283d261a447c79::t_b59cb7e91f1e5f 1-20
+src/server/profanity.ts
+  s_283d261a447c79::t_254107d334e200 1-15
+src/ui/top-nav/TopNav.tsx
+  s_283d261a447c79::t_8c04bd91cd1bff 9,61-64,70-76,80,114-116,129-134,136-142,151-165,167-199,201-214,217-218,244-249
+  s_283d261a447c79::t_f1e7752ef43723 122
+  s_283d261a447c79::t_fb948147e070d1 200
+  s_283d261a447c79::t_f993f3b3718070 166
+tests/e2e/multiplayer/lobby-rename-broadcast.spec.ts
+  s_283d261a447c79::t_000837c72f6b15 4,9-14,17-19,28,32-33,35-36,38-39,41-46,48,50
+  s_283d261a447c79::t_e343a681dafdf1 1-3,5-8,15-16,20-27,29-31,34,37,40,47,49,51
+src/lib/displayName.ts
+  s_283d261a447c79::t_e9041673636ffc 1-15
+app/play/[code]/LobbyRenameButton.tsx
+  s_283d261a447c79::t_c081485655a2db 1-17,19-34
+  s_283d261a447c79::t_33a9efa20fc104 18
+app/play/[code]/OnlineRoomClient.tsx
+  s_283d261a447c79::t_13476baa949b1f 49
+  s_283d261a447c79::t_8f934db7b8521b 207-214,217-222,224-226
+  s_283d261a447c79::t_c92847fbf71df3 223,227
+  s_283d261a447c79::t_e4152100f11911 775-792
+  s_283d261a447c79::t_4f060d53a971bf 850
+  s_283d261a447c79::t_9ae02dbbe40544 47
+  s_283d261a447c79::t_3fa8043e55abb8 732-735
+  s_283d261a447c79::t_46b3c25680e4bb 48
+app/play/[code]/RenameNudge.tsx
+  s_283d261a447c79::t_c7c2c1630d9dd8 1-69
+tests/e2e/multiplayer/duplicate-name-rejected.spec.ts
+  s_283d261a447c79::t_9a920eb6706886 1-41
+src/client/auth/useCurrentUser.ts
+  s_283d261a447c79::t_32f154654f7e66 22-23
+  s_283d261a447c79::t_9b23bf5f648790 74,81-99
+app/play/new/NewRoomClient.tsx
+  s_283d261a447c79::t_9da4ea370b9598 7,16,21
+tests/e2e/multiplayer/knock-then-rename.spec.ts
+  s_283d261a447c79::t_4f172842e3e21e 1,14-17,31-32,44,49-50
+  s_283d261a447c79::t_a8ce9b045e18f4 2-8,10,13,18-30,39-43,51-58
+  s_283d261a447c79::t_338ea4614a2cad 9,11-12,33-38
+  s_283d261a447c79::t_3d84b0cc937691 45-48
+tests/stubs/server-only.ts
+  s_283d261a447c79::t_8aa4d7ff3300f7 1-5
+playwright.config.ts
+  s_283d261a447c79::t_ee5f27110c56d8 2-8
+  s_283d261a447c79::t_e62da48fbf151b 1,9-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "aa23c5fde7d4c4893b7c77b5fa110037bcba35f4",
+  "prompts": {},
+  "sessions": {
+    "s_283d261a447c79": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9646652f-1f9e-437f-ac13-bf2f684ed6ea",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
