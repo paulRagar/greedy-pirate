@@ -17,6 +17,7 @@ export default function JoinGate({ code, isPublic }: { code: string; isPublic: b
    const [submitting, setSubmitting] = useState(false);
    const [pending, setPending] = useState<Pending>(null);
    const [deniedOpen, setDeniedOpen] = useState(false);
+   const [boarding, setBoarding] = useState(false);
    const autoFired = useRef(false);
 
    const board = async () => {
@@ -59,17 +60,25 @@ export default function JoinGate({ code, isPublic }: { code: string; isPublic: b
                code={code}
                kind='player'
                request={pending}
-               showPreliminary={!pending && !error}
+               showPreliminary={!pending && !error && !boarding}
+               boarding={boarding}
                onResolved={(outcome) => {
-                  setPending(null);
                   if (outcome === 'approved') {
+                     // Keep the modal up in its "welcome aboard" state
+                     // until the RSC refresh swaps us into the lobby —
+                     // dropping pending without this would let the
+                     // empty page show through for a beat.
+                     setBoarding(true);
+                     setPending(null);
                      router.refresh();
-                  } else if (outcome === 'denied') {
+                     return;
+                  }
+                  setPending(null);
+                  if (outcome === 'denied') {
                      setDeniedOpen(true);
                   } else if (outcome === 'expired') {
                      setError("No answer from the captain. Try hailin' again.");
                   } else if (outcome === 'cancelled') {
-                     // User withdrew — leave the room immediately.
                      router.push('/choose-game');
                   }
                }}

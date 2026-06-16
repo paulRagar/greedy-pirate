@@ -16,6 +16,13 @@ type Props = {
     * captain" instead of flashing the empty boarding-pass screen first.
     */
    showPreliminary?: boolean;
+   /**
+    * When true, render the modal in a terminal "boarding now" state —
+    * captain has approved and we're waiting for the page to swap into
+    * the lobby. The withdraw button is hidden so the user doesn't
+    * accidentally cancel their own admission mid-transition.
+    */
+   boarding?: boolean;
 };
 
 export default function KnockWaitingModal({
@@ -24,6 +31,7 @@ export default function KnockWaitingModal({
    request,
    onResolved,
    showPreliminary = false,
+   boarding = false,
 }: Props) {
    const { status, secondsLeft, cancel } = useKnockRequest({
       code,
@@ -38,15 +46,14 @@ export default function KnockWaitingModal({
    }, [status, request, onResolved]);
 
    const hasPending = !!request && status === 'pending';
-   const open = hasPending || (showPreliminary && !request);
-   const title = kind === 'player' ? "Hailin' the Captain" : "Askin' to Watch";
+   const open = boarding || hasPending || (showPreliminary && !request);
+   const baseTitle = kind === 'player' ? "Hailin' the Captain" : "Askin' to Watch";
+   const title = boarding ? 'Welcome aboard!' : baseTitle;
 
    const handleCancel = () => {
       if (hasPending) {
          void cancel();
       } else {
-         // No pending row yet — synthesize a cancelled resolve so the
-         // parent can route us out.
          onResolved('cancelled');
       }
    };
@@ -55,19 +62,25 @@ export default function KnockWaitingModal({
       <PirateModal open={open} dismissible={false} title={title}>
          <div className='flex flex-col items-center gap-3 text-center'>
             <span className='text-5xl' aria-hidden>
-               🏴‍☠️
+               {boarding ? '⚓' : '🏴‍☠️'}
             </span>
             <p className='text-sm text-[color:var(--color-cream-200)]/85'>
-               {hasPending
-                  ? "Awaiting the captain's word. Their decision is incoming…"
-                  : "Sendin' yer hail to the captain…"}
+               {boarding
+                  ? 'Captain waved ye aboard. Haulin yer trunk to the lower deck…'
+                  : hasPending
+                    ? "Awaiting the captain's word. Their decision is incoming…"
+                    : "Sendin' yer hail to the captain…"}
             </p>
-            <div className='font-mono font-bold tabular-nums text-3xl text-[color:var(--color-gold-300)]'>
-               {hasPending ? `${secondsLeft}s` : '—'}
-            </div>
-            <PirateButton variant='tertiary' size='md' fullWidth onClick={handleCancel}>
-               Withdraw hail
-            </PirateButton>
+            {!boarding && (
+               <div className='font-mono font-bold tabular-nums text-3xl text-[color:var(--color-gold-300)]'>
+                  {hasPending ? `${secondsLeft}s` : '—'}
+               </div>
+            )}
+            {!boarding && (
+               <PirateButton variant='tertiary' size='md' fullWidth onClick={handleCancel}>
+                  Withdraw hail
+               </PirateButton>
+            )}
          </div>
       </PirateModal>
    );
