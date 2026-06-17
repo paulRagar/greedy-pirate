@@ -14,6 +14,7 @@ import { broadcastRoomState } from '@/server/realtime/broadcast';
 import { fetchContinuation } from '@/server/continuation';
 import { toPublic } from '@/game/public';
 import { getSupabaseServer } from '@/server/supabase/server';
+import { finalizeContinuationCore } from '@/server/actions/finalizeContinuation';
 
 const InputSchema = z.object({
    code: z.string().trim().toUpperCase().length(4),
@@ -60,6 +61,19 @@ export async function continueIntoNextRound(
    const state = parseEngineState(game);
    const spectators = await fetchSpectators(db, game.id);
    const continuation = await fetchContinuation(db, game.id);
+
+   // Every seated player has opted in — skip the rest of the 60s wait
+   // and finalize now. Atomic claim inside finalizeContinuationCore makes
+   // concurrent last-clickers safe.
+   const allIn =
+      continuation !== null &&
+      continuation.seatedIds.length > 0 &&
+      continuation.continuedIds.length === continuation.seatedIds.length;
+   if (allIn) {
+      await finalizeContinuationCore(game.code, user.id, { force: true });
+      return { ok: true };
+   }
+
    await broadcastRoomState(game.code, {
       state: toPublic(state),
       spectators,
