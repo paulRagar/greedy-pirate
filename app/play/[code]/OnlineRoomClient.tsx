@@ -43,6 +43,7 @@ import { MAX_PLAYERS, MIN_PLAYERS } from '@/game/rules';
 import { cn } from '@/lib/cn';
 import KnockInbox, { type KnockEntry } from './KnockInbox';
 import HostLeaveModal, { type Candidate } from './HostLeaveModal';
+import LeaveConfirmModal, { type LeaveConfirmKind } from './LeaveConfirmModal';
 import CaptainMenu from './CaptainMenu';
 import { LobbyRenameButton } from './LobbyRenameButton';
 import { RenameNudge } from './RenameNudge';
@@ -71,6 +72,10 @@ export default function OnlineRoomClient({
    const wasMember = useRef(initial.players.some((p) => p.id === userId));
    const [knocks, setKnocks] = useState<KnockEntry[]>([]);
    const [hostLeaveCandidates, setHostLeaveCandidates] = useState<Candidate[] | null>(null);
+   const [leaveConfirm, setLeaveConfirm] = useState<
+      | { kind: LeaveConfirmKind; destination: string | null; submitting: boolean }
+      | null
+   >(null);
    const [plankedReason, setPlankedReason] = useState<'kicked' | 'hesitated' | null>(null);
    const [captainPromoted, setCaptainPromoted] = useState(false);
    const { showToast, toastElement: globalToast } = useGameToast();
@@ -332,18 +337,175 @@ export default function OnlineRoomClient({
       // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [continuation, live.status]);
 
-   const handleLeaveHost = async () => {
-      const res = await leaveAsHost({ code: initial.code });
-      if (res.ok) {
-         router.push('/play/lobby');
-         return;
+   const [hostLeaveDestination, setHostLeaveDestination] = useState<string | null>(null);
+
+   const onlineCrew = useMemo(
+      () => state.players.filter((p) => p.id !== userId && onlineIds.has(p.id)),
+      [state.players, userId, onlineIds],
+   );
+   const isSoloAboard = isHost && onlineCrew.length === 0;
+
+   /**
+    * Single entry point for "the player wants to leave". Picks the right
+    * confirmation surface based on role + crew presence:
+    *  - solo host        → "Go Down with the Ship" confirm (scuttles room)
+    *  - host with crew   → Pass-the-Wheel modal (must nominate successor)
+    *  - non-host         → "Jump Ship" confirm
+    *
+    * `destination` is the path to push to after a successful leave; null
+    * means /play/lobby.
+    */
+   const requestLeave = useCallback(
+      async (destination: string | null) => {
+         if (leaveConfirm || hostLeaveCandidates) return;
+         if (isHost && !isSoloAboard) {
+            // Suppress the plank flash before the server broadcasts our
+            // departure — the broadcast can race the HTTP response.
+            navigatingOutRef.current = true;
+            const res = await leaveAsHost({
+               code: initial.code,
+               onlineIds: Array.from(onlineIds),
+            });
+            if (res.ok) {
+               router.push(destination ?? '/play/lobby');
+               return;
+            }
+            // Server didn't let us go yet — restore the flag so a later
+            // legitimate eviction can still surface the plank modal.
+            navigatingOutRef.current = false;
+            if ('mustNominate' in res) {
+               setHostLeaveDestination(destination);
+               setHostLeaveCandidates(res.candidates);
+               return;
+            }
+            showToast(res.error, 'blood');
+            return;
+         }
+         setLeaveConfirm({
+            kind: isSoloAboard ? 'go-down' : 'jump',
+            destination,
+            submitting: false,
+         });
+      },
+      [
+         isHost,
+         isSoloAboard,
+         initial.code,
+         onlineIds,
+         router,
+         showToast,
+         leaveConfirm,
+         hostLeaveCandidates,
+      ],
+   );
+
+   const confirmLeave = async () => {
+      if (!leaveConfirm) return;
+      const { kind, destination } = leaveConfirm;
+      setLeaveConfirm((prev) => (prev ? { ...prev, submitting: true } : null));
+      // Suppress the plank flash up front — the engine broadcast that
+      // removes us from state.players can outrun the HTTP response.
+      navigatingOutRef.current = true;
+      try {
+         if (kind === 'go-down') {
+            const res = await leaveAsHost({
+               code: initial.code,
+               onlineIds: Array.from(onlineIds),
+            });
+            if (!res.ok) {
+               navigatingOutRef.current = false;
+               if ('mustNominate' in res) {
+                  // A crewmate reconnected between confirm and submit — fall
+                  // through to the Pass-the-Wheel modal so the host names a
+                  // successor instead of scuttling the ship.
+                  setLeaveConfirm(null);
+                  setHostLeaveDestination(destination);
+                  setHostLeaveCandidates(res.candidates);
+                  return;
+               }
+               showToast(res.error, 'blood');
+               setLeaveConfirm((prev) => (prev ? { ...prev, submitting: false } : null));
+               return;
+            }
+         } else {
+            await leaveRoom(initial.code);
+         }
+         router.push(destination ?? '/play/lobby');
+      } catch (err) {
+         navigatingOutRef.current = false;
+         console.error('confirmLeave failed', err);
+         setLeaveConfirm((prev) => (prev ? { ...prev, submitting: false } : null));
       }
-      if ('mustNominate' in res) {
-         setHostLeaveCandidates(res.candidates);
-         return;
-      }
-      showToast(res.error, 'blood');
    };
+
+   const cancelLeave = () => {
+      if (leaveConfirm?.submitting) return;
+      setLeaveConfirm(null);
+   };
+
+   // Intercept SPA navigation away from the room so every exit hits one
+   // of the confirmation modals. We capture-phase the click before Next's
+   // Link handler sees it; for browser back/forward we re-push the
+   // current entry to undo the pop, then route the confirm flow.
+   // Spectators are exempt — they have their own leave button and aren't
+   // bound to a seat that needs a confirmed exit.
+   useEffect(() => {
+      if (isSpectator) return;
+      const here = `/play/${initial.code.toUpperCase()}`;
+      const onClick = (e: MouseEvent) => {
+         if (
+            e.defaultPrevented ||
+            e.button !== 0 ||
+            e.metaKey ||
+            e.ctrlKey ||
+            e.shiftKey ||
+            e.altKey
+         ) {
+            return;
+         }
+         const anchor = (e.target as Element | null)?.closest?.('a[href]');
+         if (!anchor) return;
+         if (anchor.getAttribute('target') === '_blank') return;
+         const raw = anchor.getAttribute('href');
+         if (!raw) return;
+         let url: URL;
+         try {
+            url = new URL(raw, window.location.origin);
+         } catch {
+            return;
+         }
+         if (url.origin !== window.location.origin) return;
+         if (url.pathname.toUpperCase() === here) return;
+         e.preventDefault();
+         e.stopPropagation();
+         void requestLeave(url.pathname + url.search);
+      };
+      const onPopState = () => {
+         // Re-pin history to the room so the page stays put while the
+         // confirm flow decides; if the user confirms, we navigate via
+         // router.push; if they cancel, history is already correct.
+         window.history.pushState(null, '', here);
+         void requestLeave(null);
+      };
+      document.addEventListener('click', onClick, true);
+      window.addEventListener('popstate', onPopState);
+      return () => {
+         document.removeEventListener('click', onClick, true);
+         window.removeEventListener('popstate', onPopState);
+      };
+   }, [initial.code, isSpectator, requestLeave]);
+
+   // Legacy wrapper for the existing Abandon Ship button binding.
+   const handleLeaveHost = () => {
+      void requestLeave(null);
+   };
+
+   // Wrapper for the Lobby's "Jump Ship" button (formerly "Disembark").
+   // Named distinctly from `handleJumpShip` above — that one is the
+   // continuation-window action ("opt out of the next round").
+   const handleLeaveRoom = useCallback(() => {
+      void requestLeave(null);
+   }, [requestLeave]);
 
    const seatedIdSet = useMemo(
       () => (continuation ? new Set(continuation.seatedIds) : undefined),
@@ -361,11 +523,32 @@ export default function OnlineRoomClient({
             code={initial.code}
             open={hostLeaveCandidates !== null}
             candidates={hostLeaveCandidates ?? []}
-            onClose={() => setHostLeaveCandidates(null)}
-            onLeft={() => {
+            onlineIds={onlineIds}
+            onClose={() => {
                setHostLeaveCandidates(null);
-               router.push('/play/lobby');
+               setHostLeaveDestination(null);
             }}
+            onLeft={() => {
+               navigatingOutRef.current = true;
+               const dest = hostLeaveDestination;
+               setHostLeaveCandidates(null);
+               setHostLeaveDestination(null);
+               router.push(dest ?? '/play/lobby');
+            }}
+            onSubmittingChange={(submitting) => {
+               // Same race-protection as confirmLeave — flip the flag the
+               // moment passTheWheel fires, so the engine broadcast that
+               // removes us from state.players can't surface the plank.
+               if (submitting) navigatingOutRef.current = true;
+               else navigatingOutRef.current = false;
+            }}
+         />
+         <LeaveConfirmModal
+            open={leaveConfirm !== null}
+            kind={leaveConfirm?.kind ?? 'jump'}
+            submitting={leaveConfirm?.submitting ?? false}
+            onConfirm={confirmLeave}
+            onCancel={cancelLeave}
          />
          <PirateModal
             open={plankedReason === 'hesitated'}
@@ -454,6 +637,7 @@ export default function OnlineRoomClient({
                isSpectator={isSpectator}
                isPublic={isPublic}
                onLeave={goToLobby}
+               onLeaveRoom={handleLeaveRoom}
                navLeaving={leaving}
                onLeaveAsHost={handleLeaveHost}
             />
@@ -477,6 +661,7 @@ export default function OnlineRoomClient({
                isSpectator={isSpectator}
                isPublic={isPublic}
                onLeave={goToLobby}
+               onLeaveRoom={handleLeaveRoom}
                navLeaving={leaving}
                onLeaveAsHost={handleLeaveHost}
                continuationDeadline={continuation?.deadlineAt}
@@ -619,6 +804,7 @@ function Lobby({
    isSpectator,
    isPublic,
    onLeave,
+   onLeaveRoom,
    navLeaving,
    onLeaveAsHost,
    continuationDeadline,
@@ -634,6 +820,7 @@ function Lobby({
    isSpectator: boolean;
    isPublic: boolean;
    onLeave: () => void;
+   onLeaveRoom: () => void;
    navLeaving: boolean;
    onLeaveAsHost: () => void;
    continuationDeadline?: string;
@@ -859,14 +1046,10 @@ function Lobby({
                      variant='ghost'
                      size='sm'
                      fullWidth
-                     onClick={async () => {
-                        setLeaving(true);
-                        await leaveRoom(code);
-                        onLeave();
-                     }}
+                     onClick={onLeaveRoom}
                      loading={leaving || navLeaving}
                   >
-                     Disembark
+                     Jump Ship
                   </PirateButton>
                </div>
             )}
