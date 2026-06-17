@@ -16,12 +16,9 @@
       "typecheck": "tsc --noEmit",
       "db:generate": "drizzle-kit generate",
       "db:migrate": "drizzle-kit migrate",
-      "db:push": "drizzle-kit push",
-      "db:studio": "drizzle-kit studio",
       "supabase:start": "supabase start",
       "supabase:stop": "supabase stop",
       "supabase:reset": "supabase db reset",
-      "supabase:push": "supabase db push --local",
       "db:migrate:all": "drizzle-kit migrate && supabase db push --local"
    },
    "dependencies": {

@@ -41,6 +41,29 @@ export function AccountLinkModal({ open, onClose, initialMode = 'signup' }: Prop
    const [error, setError] = useState<string | null>(null);
    const [info, setInfo] = useState<string | null>(null);
    const [submitting, setSubmitting] = useState(false);
+   const [sendingReset, setSendingReset] = useState(false);
+
+   const sendReset = async () => {
+      setError(null);
+      setInfo(null);
+      const trimmed = email.trim().toLowerCase();
+      if (!trimmed.includes('@')) {
+         setError('Enter yer email above first, then tap "Forgot password?".');
+         return;
+      }
+      setSendingReset(true);
+      const supabase = getSupabaseBrowser();
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmed, {
+         redirectTo: `${origin}/auth/callback?type=recovery`,
+      });
+      setSendingReset(false);
+      if (resetError) {
+         setError(resetError.message);
+         return;
+      }
+      setInfo(`Password reset link sent to ${trimmed}. Check yer inbox.`);
+   };
 
    useEffect(() => {
       if (open) {
@@ -236,6 +259,17 @@ export function AccountLinkModal({ open, onClose, initialMode = 'signup' }: Prop
                   className='input-pirate min-h-[48px] text-base'
                />
             </label>
+
+            {!isSignup && (
+               <button
+                  type='button'
+                  onClick={sendReset}
+                  disabled={sendingReset}
+                  className='self-start text-xs font-semibold uppercase tracking-wider text-[color:var(--color-gold-300)] hover:text-[color:var(--color-gold-200)] disabled:opacity-60'
+               >
+                  {sendingReset ? 'Sending…' : 'Forgot password?'}
+               </button>
+            )}
 
             {error && <p className='text-sm text-[color:var(--color-coral-400)]'>{error}</p>}
             {info && <p className='text-sm text-[color:var(--color-teal-300)]'>{info}</p>}
