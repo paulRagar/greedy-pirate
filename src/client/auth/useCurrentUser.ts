@@ -78,6 +78,18 @@ export function useCurrentUser(): CurrentUserState {
             } = await supabase.auth.getUser();
 
             if (!current) {
+               // /auth/* pages manage their own session (recovery code
+               // exchange, callback, etc.). Creating an anonymous user
+               // here would clobber the session those pages are about
+               // to establish. Leave user null and let them claim.
+               const onAuthRoute =
+                  typeof window !== 'undefined' &&
+                  window.location.pathname.startsWith('/auth/');
+               if (onAuthRoute) {
+                  if (active) setReady(true);
+                  return;
+               }
+
                // Cold-network races (especially fresh incognito) sometimes
                // surface as transient "NetworkError" / "Failed to fetch"
                // before Supabase is reachable. Retry a couple times before

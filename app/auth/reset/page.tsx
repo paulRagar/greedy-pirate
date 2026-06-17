@@ -1,4 +1,3 @@
-import { getSupabaseServer } from '@/server/supabase/server';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { ResetPasswordForm } from './ResetPasswordForm';
 
@@ -11,38 +10,21 @@ interface Props {
 /**
  * Password recovery landing.
  *
- * Three entry shapes Supabase may produce:
+ * The PKCE code exchange runs on the CLIENT, not here. Server Components
+ * are read-only for cookies, so calling exchangeCodeForSession from this
+ * file silently fails to persist the new session — the user keeps their
+ * old anonymous cookies and updateUser later errors with "anonymous user
+ * without an email". The client form handles all three entry shapes:
  *
- *  1. PKCE flow — `?code=<pkce>`: we exchange server-side and the session
- *     lands in cookies before the form renders.
- *  2. Implicit flow — `#access_token=...&type=recovery`: the hash never
- *     reaches the server. We render the form regardless; the client SDK
- *     auto-detects the hash on mount and the form waits for a session.
- *  3. Error — `?error=...` or `#error=...`: render an "expired link"
- *     panel with a button to request a fresh recovery email.
+ *   1. PKCE: ?code=... — client calls exchangeCodeForSession.
+ *   2. Implicit: #access_token=...&type=recovery — SDK auto-detects.
+ *   3. Error: ?error=... or #error=... — render expired-link UI.
  */
 export default async function ResetPasswordPage({ searchParams }: Props) {
    const params = await searchParams;
-   const supabase = await getSupabaseServer();
 
-   // Surface query-string errors immediately (only the `?error=` shape;
-   // hash errors are caught client-side in the form).
-   const serverError = params.error
-      ? params.error_description ?? params.error
-      : null;
+   const serverError = params.error ? params.error_description ?? params.error : null;
 
-   // PKCE: exchange before rendering so the form sees a session.
-   if (params.code && !serverError) {
-      const { error } = await supabase.auth.exchangeCodeForSession(params.code);
-      if (error) {
-         return <ResetShell error={error.message} />;
-      }
-   }
-
-   return <ResetShell error={serverError} />;
-}
-
-function ResetShell({ error }: { error: string | null }) {
    return (
       <main className='mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-5 px-5 py-10'>
          <header className='text-center'>
@@ -54,7 +36,7 @@ function ResetShell({ error }: { error: string | null }) {
             </p>
          </header>
          <PiratePanel variant='deep' className='flex flex-col gap-4'>
-            <ResetPasswordForm initialError={error} />
+            <ResetPasswordForm initialError={serverError} code={params.code ?? null} />
          </PiratePanel>
       </main>
    );
