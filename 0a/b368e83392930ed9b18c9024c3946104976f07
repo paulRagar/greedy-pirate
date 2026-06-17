@@ -1,0 +1,31 @@
+src/server/actions/joinRoom.ts
+  s_7451e732580e74::t_7ab8a03798d2aa 86-88,93
+supabase/migrations/20260616000000_purge_old_games.sql
+  s_7451e732580e74::t_a178e72227fca3 1-37
+app/api/cron/cleanup/route.ts
+  s_7451e732580e74::t_769d3ca56e092d 106
+  s_7451e732580e74::t_604cbd08dc73d1 46-50
+src/server/actions/leaveAsHost.ts
+  s_7451e732580e74::t_8e3a88e06a5650 83-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "0ab368e83392930ed9b18c9024c3946104976f07",
+  "prompts": {},
+  "humans": {
+    "h_dfece43287da50": {
+      "author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_7451e732580e74": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a4539f3d-c85e-4f45-abd9-31c1d06bcde3",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
