@@ -1,0 +1,25 @@
+supabase/templates/email_change.html
+  s_85fd88a2dea950::t_b3fbf621d90b5b 6-7,10-11,14,17,22,27-29,34-35,42,45-46,51-52,58
+supabase/templates/confirmation.html
+  s_85fd88a2dea950::t_033ae51bce909e 6-7,10-11,14,17,22,27-29,34-35,42,45-46,51-52,58
+supabase/templates/recovery.html
+  s_85fd88a2dea950::t_c59553241387c4 6-7,10-11,14,17,22,27-29,34-35,42,45-46,51-52,58
+supabase/templates/magic_link.html
+  s_85fd88a2dea950::t_37ede5ce3ade30 6-7,10-11,14,17,22,27-29,34-35,42,45-46,51-52,58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "9d79ecf2c790375c8d2db695b37a37813edfa172",
+  "prompts": {},
+  "sessions": {
+    "s_85fd88a2dea950": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f17d324a-b52b-4d4e-be55-265756e5d86b",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
