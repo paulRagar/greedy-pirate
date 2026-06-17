@@ -18,16 +18,9 @@ interface Props {
     * effect below.
     */
    initialError: string | null;
-   /**
-    * PKCE code from `?code=` query param. Exchanged client-side so the
-    * resulting session is persisted in browser cookies (server
-    * components can't write cookies). Null when the link arrived as
-    * an implicit-flow hash instead.
-    */
-   code: string | null;
 }
 
-export function ResetPasswordForm({ initialError, code }: Props) {
+export function ResetPasswordForm({ initialError }: Props) {
    const router = useRouter();
    const [state, setState] = useState<State>(initialError ? 'expired' : 'waiting');
    const [errorMsg, setErrorMsg] = useState<string | null>(initialError);
@@ -61,35 +54,22 @@ export function ResetPasswordForm({ initialError, code }: Props) {
       let active = true;
 
       const claim = async () => {
-         // PKCE flow: exchange the code client-side. Server components
-         // can't write cookies, so this MUST happen here — otherwise
-         // the new session never reaches storage and the form's
-         // updateUser call later runs against the stale anonymous
-         // session.
-         if (code) {
-            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-            if (!active) return;
-            if (exchangeError) {
-               setErrorMsg(exchangeError.message);
-               setState('expired');
-               return;
-            }
-         }
-
          const {
             data: { user: current },
          } = await supabase.auth.getUser();
          if (!active) return;
-         // Anonymous users coming through home page auth don't count as
-         // "recovered" — we wait for the real account session to land
-         // via exchangeCodeForSession or the SDK's hash auto-detect.
+         // Anonymous users coming through home page auth don't count
+         // as "recovered" — we wait for the real account session.
+         // /auth/callback handles the PKCE exchange before redirecting
+         // here, so by the time this page mounts the session should
+         // already be in cookies.
          if (current && current.is_anonymous === false) {
             setUser(current);
             setState('ready');
          }
       };
 
-      // PKCE flow: exchange runs above.
+      // PKCE flow: session already in cookies via /auth/callback.
       // Implicit flow: SDK reads hash on init, fires PASSWORD_RECOVERY.
       void claim();
 
@@ -121,7 +101,7 @@ export function ResetPasswordForm({ initialError, code }: Props) {
          sub.subscription.unsubscribe();
          window.clearTimeout(timeout);
       };
-   }, [state, code]);
+   }, [state]);
 
    const submit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -157,7 +137,7 @@ export function ResetPasswordForm({ initialError, code }: Props) {
       const supabase = getSupabaseBrowser();
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const { error: resendError } = await supabase.auth.resetPasswordForEmail(email, {
-         redirectTo: `${origin}/auth/reset`,
+         redirectTo: `${origin}/auth/callback?type=recovery`,
       });
       setResending(false);
       if (resendError) {

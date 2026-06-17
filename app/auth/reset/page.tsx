@@ -4,21 +4,21 @@ import { ResetPasswordForm } from './ResetPasswordForm';
 export const dynamic = 'force-dynamic';
 
 interface Props {
-   searchParams: Promise<{ code?: string; error?: string; error_description?: string }>;
+   searchParams: Promise<{ error?: string; error_description?: string }>;
 }
 
 /**
  * Password recovery landing.
  *
- * The PKCE code exchange runs on the CLIENT, not here. Server Components
- * are read-only for cookies, so calling exchangeCodeForSession from this
- * file silently fails to persist the new session — the user keeps their
- * old anonymous cookies and updateUser later errors with "anonymous user
- * without an email". The client form handles all three entry shapes:
+ * The PKCE exchange is done by /auth/callback (a Route Handler that
+ * can read the HttpOnly verifier cookie and write the new session
+ * cookies). By the time we render here, the recovered session is
+ * already in storage. We just hand off to the client form, which
+ * verifies the session and lets the user set a new password.
  *
- *   1. PKCE: ?code=... — client calls exchangeCodeForSession.
- *   2. Implicit: #access_token=...&type=recovery — SDK auto-detects.
- *   3. Error: ?error=... or #error=... — render expired-link UI.
+ * Implicit flow is still supported: if the redirect arrived with
+ * `#access_token=...&type=recovery` (no `?code=`), the Supabase SDK
+ * auto-detects the hash on mount and fires PASSWORD_RECOVERY.
  */
 export default async function ResetPasswordPage({ searchParams }: Props) {
    const params = await searchParams;
@@ -36,7 +36,7 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
             </p>
          </header>
          <PiratePanel variant='deep' className='flex flex-col gap-4'>
-            <ResetPasswordForm initialError={serverError} code={params.code ?? null} />
+            <ResetPasswordForm initialError={serverError} />
          </PiratePanel>
       </main>
    );
