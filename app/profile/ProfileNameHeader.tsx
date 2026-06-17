@@ -7,7 +7,6 @@ import { DisplayNameEditor } from '@/ui/display-name/DisplayNameEditor';
 interface Props {
    initialName: string;
    isAnonymous: boolean;
-   userIdShort?: string;
    size?: 'md' | 'lg';
 }
 
@@ -15,7 +14,7 @@ function initialsOf(name: string | undefined): string {
    return name?.trim()[0]?.toUpperCase() ?? 'P';
 }
 
-export function ProfileNameHeader({ initialName, isAnonymous, userIdShort, size = 'lg' }: Props) {
+export function ProfileNameHeader({ initialName, isAnonymous, size = 'lg' }: Props) {
    const [name, setName] = useState(initialName);
    const [editing, setEditing] = useState(false);
    const dim = size === 'lg' ? 'h-32 w-32' : 'h-24 w-24';
@@ -47,16 +46,16 @@ export function ProfileNameHeader({ initialName, isAnonymous, userIdShort, size 
                   type='button'
                   data-testid='profile-rename'
                   onClick={() => setEditing(true)}
-                  className='inline-flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-surface-border)] bg-[color:var(--color-abyss-900)]/60 text-[color:var(--color-cream-200)]/75 transition-colors hover:border-[color:var(--color-gold-500)]/60 hover:text-[color:var(--color-gold-300)]'
+                  className='inline-flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-surface-border)] bg-[color:var(--color-abyss-900)]/60 text-[color:var(--color-cream-200)]/85 transition-colors hover:border-[color:var(--color-gold-500)]/60 hover:text-[color:var(--color-gold-300)]'
                   aria-label='Edit display name'
                   title='Edit display name'
                >
-                  ✎
+                  <PencilIcon />
                </button>
             </div>
-            <p className='text-xs text-[color:var(--color-cream-200)]/55'>
-               {isAnonymous ? 'Guest crewmate' : userIdShort ? `Email account · ID ${userIdShort}` : 'Email account'}
-            </p>
+            {isAnonymous && (
+               <p className='text-xs text-[color:var(--color-cream-200)]/55'>Guest crewmate</p>
+            )}
          </header>
          <DisplayNameEditor
             open={editing}
@@ -66,5 +65,23 @@ export function ProfileNameHeader({ initialName, isAnonymous, userIdShort, size 
             onSaved={(next) => setName(next)}
          />
       </>
+   );
+}
+
+function PencilIcon() {
+   return (
+      <svg
+         viewBox='0 0 24 24'
+         className='h-6 w-6'
+         fill='none'
+         stroke='currentColor'
+         strokeWidth='2'
+         strokeLinecap='round'
+         strokeLinejoin='round'
+         aria-hidden='true'
+      >
+         <path d='M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z' />
+         <path d='M15 5l4 4' />
+      </svg>
    );
 }
