@@ -1,0 +1,43 @@
+app/admin/rooms/page.tsx
+  s_7451e732580e74::t_e792775bf4aa97 1-74
+app/admin/rooms/RoomsTable.tsx
+  s_7451e732580e74::t_59be0c9e5cd645 1-132,147,149-150,152-153,155-159,161-170,172-176,178-179,182-183,185-188,190-193,197,201-202,205,209,212-246,248-249,271
+  s_7451e732580e74::t_59c64b49b02872 250-263
+  s_7451e732580e74::t_71e994021c93f3 136,138-142,146,148,151,154
+  s_7451e732580e74::t_0230931444915e 184
+  s_7451e732580e74::t_d625cc0ea3c862 247
+  s_7451e732580e74::t_149592f49f5be7 264-270
+  s_7451e732580e74::t_ace6ede8fd1bac 133-135,137,143-145,160,171,177,180-181,189,194-196,198-200,203-204,206-208,210-211
+src/client/auth/useIsAdmin.ts
+  s_7451e732580e74::t_dbed3fa93f8e25 1-26
+src/server/actions/adminRooms.ts
+  s_7451e732580e74::t_0fe8b012ab23e0 1-65
+src/ui/top-nav/TopNav.tsx
+  s_7451e732580e74::t_f8f8beee9b4852 111
+  s_7451e732580e74::t_00ac57f84b8e47 231-247
+  s_7451e732580e74::t_8e734f00e38452 7
+  s_7451e732580e74::t_3c1a8cd879b76a 305-313
+src/server/auth/admin.ts
+  s_7451e732580e74::t_d8714216e4f05c 1-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "64998bf78ce4166f611f5199f50a238b9ef53cec",
+  "prompts": {},
+  "humans": {
+    "h_dfece43287da50": {
+      "author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_7451e732580e74": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a4539f3d-c85e-4f45-abd9-31c1d06bcde3",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
