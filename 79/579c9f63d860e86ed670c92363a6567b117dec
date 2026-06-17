@@ -1,0 +1,22 @@
+src/server/actions/finalizeContinuation.ts
+  s_535895365e4f8d::t_50dbe9a66442e5 60,68
+src/server/actions/continueIntoNextRound.ts
+  s_535895365e4f8d::t_7b088e57bddf33 64-76
+  s_535895365e4f8d::t_9d2ef5dafc78c3 17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "79579c9f63d860e86ed670c92363a6567b117dec",
+  "prompts": {},
+  "sessions": {
+    "s_535895365e4f8d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e371b384-00cc-42df-929c-30e8a68457fc",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
