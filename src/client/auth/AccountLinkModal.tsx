@@ -53,11 +53,15 @@ export function AccountLinkModal({ open, onClose, initialMode = 'signup' }: Prop
       setSendingReset(true);
       const supabase = getSupabaseBrowser();
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      // Point straight at /auth/reset. The reset page handles both
-      // PKCE (?code=) and implicit (#access_token=...) flows itself, so
-      // there's no need to bounce through /auth/callback first.
+      // Route through /auth/callback (a Route Handler) so the PKCE
+      // exchange runs server-side. The PKCE verifier is stored as an
+      // HttpOnly cookie by @supabase/ssr — client JS can't read it,
+      // so a client-side exchangeCodeForSession fails with "PKCE code
+      // verifier not found in storage". The route handler can read
+      // the verifier AND write the resulting session cookies, then
+      // redirects to /auth/reset with the session already in place.
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmed, {
-         redirectTo: `${origin}/auth/reset`,
+         redirectTo: `${origin}/auth/callback?type=recovery`,
       });
       setSendingReset(false);
       if (resetError) {
