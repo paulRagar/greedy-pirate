@@ -1,0 +1,20 @@
+src/client/auth/RecoveryHashRouter.tsx
+  s_85fd88a2dea950::t_84d0187d2cd632 10,12-15,17-18,20-29,38-47,49-53,62
+  s_85fd88a2dea950::t_4bb63bb6fb4aab 54-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "a05f7544bbddc6c2281097ddcf66caeaac6bdb9e",
+  "prompts": {},
+  "sessions": {
+    "s_85fd88a2dea950": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f17d324a-b52b-4d4e-be55-265756e5d86b",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
