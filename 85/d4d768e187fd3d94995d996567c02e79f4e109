@@ -1,0 +1,25 @@
+app/auth/reset/ResetPasswordForm.tsx
+  s_85fd88a2dea950::t_e8bff9386913a6 21-27,30
+  s_85fd88a2dea950::t_21c275be03c3dc 64-78,83-86,92
+  s_85fd88a2dea950::t_cfc270149afd0c 124
+src/client/auth/useCurrentUser.ts
+  s_85fd88a2dea950::t_6672e4e55f6ca4 81-92
+app/auth/reset/page.tsx
+  s_85fd88a2dea950::t_4b149781bd09df 13-17,19-21,26,39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "85d4d768e187fd3d94995d996567c02e79f4e109",
+  "prompts": {},
+  "sessions": {
+    "s_85fd88a2dea950": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f17d324a-b52b-4d4e-be55-265756e5d86b",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
