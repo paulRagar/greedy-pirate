@@ -57,6 +57,7 @@ export async function finalizeContinuation(
 export async function finalizeContinuationCore(
    roomCode: string,
    actorId: string,
+   opts: { force?: boolean } = {},
 ): Promise<FinalizeResult> {
    const game = await findCompletedOrActiveGame(roomCode);
    if (!game?.code) return { ok: false, error: 'Room not found' };
@@ -64,7 +65,7 @@ export async function finalizeContinuationCore(
    if (game.continuationFinalized) return { ok: true, finalized: false };
 
    const deadline = game.continuationDeadline;
-   if (deadline && deadline.getTime() > Date.now()) {
+   if (!opts.force && deadline && deadline.getTime() > Date.now()) {
       return { ok: false, error: 'Window still open' };
    }
 
