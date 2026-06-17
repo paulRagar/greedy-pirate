@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { emitProfileChanged, useCurrentUser } from '@/client/auth/useCurrentUser';
+import { useIsAdmin } from '@/client/auth/useIsAdmin';
 import { getSupabaseBrowser } from '@/client/supabase/browser';
 import { haptics } from '@/client/juice/haptics';
 import { AccountLinkModal } from '@/client/auth/AccountLinkModal';
@@ -107,6 +108,7 @@ function AccountMenu({
    isAnonymous: boolean;
 }) {
    const router = useRouter();
+   const isAdmin = useIsAdmin();
    const [open, setOpen] = useState(false);
    const [signingOut, setSigningOut] = useState(false);
    const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -226,6 +228,23 @@ function AccountMenu({
                            </span>
                         </span>
                      </Link>
+                     {isAdmin && (
+                        <Link
+                           href='/admin/rooms'
+                           role='menuitem'
+                           data-testid='account-menu-admin'
+                           onClick={() => setOpen(false)}
+                           className='flex min-h-[48px] items-center gap-3 border-t border-[color:var(--color-surface-border)] px-4 text-sm font-semibold text-[color:var(--color-teal-200)] transition-colors hover:bg-[color:var(--color-teal-600)]/15'
+                        >
+                           <AdminIcon />
+                           <span>
+                              Admin · Rooms
+                              <span className='block text-xs font-normal text-[color:var(--color-cream-200)]/55'>
+                                 Inspect &amp; purge
+                              </span>
+                           </span>
+                        </Link>
+                     )}
                      <button
                         type='button'
                         role='menuitem'
@@ -279,6 +298,15 @@ function SignInIcon() {
          <path d='M10 4 H17 a2 2 0 0 1 2 2 v12 a2 2 0 0 1 -2 2 h-7' />
          <path d='M7 8 L3 12 L7 16' />
          <line x1='3' y1='12' x2='14' y2='12' />
+      </svg>
+   );
+}
+
+function AdminIcon() {
+   return (
+      <svg viewBox='0 0 24 24' className='h-5 w-5 shrink-0 text-[color:var(--color-teal-300)]' fill='none' stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' strokeLinejoin='round' aria-hidden='true'>
+         <path d='M12 3 L20 6 V12 a8 8 0 0 1 -8 8 a8 8 0 0 1 -8 -8 V6 Z' />
+         <path d='M9 12 L11 14 L15 10' />
       </svg>
    );
 }
