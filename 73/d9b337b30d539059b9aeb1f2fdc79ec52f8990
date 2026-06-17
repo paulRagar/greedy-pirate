@@ -1,0 +1,58 @@
+src/server/actions/leaveAsHost.ts
+  s_776052e64e39d5::t_72f17e3a0b7f8a 54-55,57,61-66,68-69
+  s_776052e64e39d5::t_14163c9612f488 17-21
+  s_776052e64e39d5::t_f7f48ed1ee1fdb 4
+  s_776052e64e39d5::t_81bd80d5633efc 67,70-80
+  s_776052e64e39d5::t_d9ef110a57153b 83-98
+  s_776052e64e39d5::t_7cd9e689f55aec 9
+  s_776052e64e39d5::t_9b494dbcff4eac 118-121
+  s_776052e64e39d5::t_01fe44251c70d0 51-53,56
+  s_776052e64e39d5::t_d7a20dd4d3879c 8
+app/play/[code]/OnlineRoomClient.tsx
+  s_776052e64e39d5::t_3521e87146cc0c 807,823
+  s_776052e64e39d5::t_5df2fdec5ab58d 640,664
+  s_776052e64e39d5::t_c78324025964f9 526
+  s_776052e64e39d5::t_b06e5a4eccc854 362-364,373-375
+  s_776052e64e39d5::t_fc4201f28a184f 340-361,365-372,376-405,409-415,417-434,436-437,441-449,452,454-495,497-502,507-508
+  s_776052e64e39d5::t_a2e0959e989b3f 1049
+  s_776052e64e39d5::t_8995040ffe8b25 496
+  s_776052e64e39d5::t_eeb842c8aac865 450-451,453
+  s_776052e64e39d5::t_b59e3e12f27f06 406-408,416,435
+  s_776052e64e39d5::t_8f77bd91a6c345 46
+  s_776052e64e39d5::t_dff9b8fd56cdf8 538-544
+  s_776052e64e39d5::t_e4fc1ea369392b 1052
+  s_776052e64e39d5::t_a8b9b5bbc3b43d 75-78
+  s_776052e64e39d5::t_7fe35b5f3d2d49 503-506
+  s_776052e64e39d5::t_84aee78dd7264c 527-530,532-533,535-536,545-551
+app/play/[code]/LeaveConfirmModal.tsx
+  s_776052e64e39d5::t_f167fc136d59f4 1-67
+src/ui/top-nav/TopNav.tsx
+  s_776052e64e39d5::t_7400ee32c5e363 38-66
+  s_776052e64e39d5::t_ca39765ec62aa1 11-13
+app/play/[code]/HostLeaveModal.tsx
+  s_776052e64e39d5::t_5e6f6311cc6a03 85-89
+  s_776052e64e39d5::t_0ad508dc5d9894 45
+  s_776052e64e39d5::t_16a07379f8383f 55-59
+  s_776052e64e39d5::t_b4e4a1ac354a42 14-20
+  s_776052e64e39d5::t_43ef9937fe4528 64,69
+  s_776052e64e39d5::t_077dae0fe535a4 91
+  s_776052e64e39d5::t_f4f074f0d1ce03 23-29
+  s_776052e64e39d5::t_5dd5064137f03d 38-44,46,51-54
+  s_776052e64e39d5::t_6c6e812654e1f5 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "73d9b337b30d539059b9aeb1f2fdc79ec52f8990",
+  "prompts": {},
+  "sessions": {
+    "s_776052e64e39d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1e501189-db57-4d4b-8cdf-e81eba8637dc",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
