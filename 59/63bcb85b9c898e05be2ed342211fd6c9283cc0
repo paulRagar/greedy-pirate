@@ -1,0 +1,51 @@
+app/admin/rooms/page.tsx
+  s_7451e732580e74::t_a7746d55eecb86 28,30-32
+  s_7451e732580e74::t_953a31583d76b5 40-41
+app/admin/rooms/RoomsTable.tsx
+  s_7451e732580e74::t_07647dfc72fa73 15
+  s_7451e732580e74::t_29985ae7a013d5 195-199
+  s_7451e732580e74::t_a37f7acf3e752f 140
+app/auth/callback/route.ts
+  s_7451e732580e74::t_3e906b21b0b620 1-45
+app/auth/reset/page.tsx
+  s_7451e732580e74::t_83867d526e851a 1-31
+src/client/auth/AccountLinkModal.tsx
+  s_7451e732580e74::t_da4031c26e7758 263-273
+  s_7451e732580e74::t_9c9b1c0865a69c 44-66
+supabase/migrations/20260617000000_users_email_mirror.sql
+  s_7451e732580e74::t_708f7d5fd1343d 1-80
+src/client/auth/AccountSettings.tsx
+  s_7451e732580e74::t_77d3df556c74af 1-296
+.claude/docs/database.md
+  s_7451e732580e74::t_846b95a178b23c 24
+app/profile/page.tsx
+  s_7451e732580e74::t_606d3501b29999 184-185
+  s_7451e732580e74::t_7f2f4d5a8884ba 8,13-32
+  s_7451e732580e74::t_4c0e3c73314486 100-113,121-125
+.claude/docs/supabase-setup.md
+  s_7451e732580e74::t_ce3fef05bb6a13 140-143
+  s_7451e732580e74::t_6412bc51c656bf 188-189
+app/auth/reset/ResetPasswordForm.tsx
+  s_7451e732580e74::t_5c08009099d9e7 1-74
+README.md
+  s_7451e732580e74::t_3c31683df340a1 71-76
+  s_7451e732580e74::t_b78d8d26f3732c 107
+src/server/db/schema.ts
+  s_7451e732580e74::t_a2ddb7d9f04833 28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "5963bcb85b9c898e05be2ed342211fd6c9283cc0",
+  "prompts": {},
+  "sessions": {
+    "s_7451e732580e74": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a4539f3d-c85e-4f45-abd9-31c1d06bcde3",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
