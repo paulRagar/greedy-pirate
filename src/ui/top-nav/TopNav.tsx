@@ -8,6 +8,9 @@ import { getSupabaseBrowser } from '@/client/supabase/browser';
 import { haptics } from '@/client/juice/haptics';
 import { AccountLinkModal } from '@/client/auth/AccountLinkModal';
 import { GuestAvatar } from '@/ui/avatar/GuestAvatar';
+import { SKIP_LEAVE_BEACON_KEY } from '@/lib/leaveBeacon';
+
+const ROOM_PATH_RE = /^\/play\/([A-Z0-9]{4})$/i;
 
 const PARENT: Record<string, string> = {
    '/choose-game': '/',
@@ -31,6 +34,35 @@ function firstLetterOf(name: string | undefined): string {
 export function TopNav() {
    const pathname = usePathname();
    const { profile } = useCurrentUser();
+
+   // SPA nav away from /play/{CODE} (back arrow, account menu, logo, any
+   // internal Link) bypasses the OnlineRoomClient unload beacon. Fire the
+   // leave beacon here from the layout-level component, which survives
+   // pathname transitions, so the player's seat row + engine state are
+   // cleaned up before the next page mounts.
+   const prevPathRef = useRef(pathname);
+   useEffect(() => {
+      const prev = prevPathRef.current;
+      prevPathRef.current = pathname;
+      if (!prev || prev === pathname) return;
+      const match = prev.match(ROOM_PATH_RE);
+      if (!match) return;
+      const code = match[1];
+      try {
+         if (sessionStorage.getItem(SKIP_LEAVE_BEACON_KEY) === '1') return;
+      } catch {
+         // private mode: fall through
+      }
+      if (typeof navigator === 'undefined' || !navigator.sendBeacon) return;
+      try {
+         const blob = new Blob([JSON.stringify({ code })], {
+            type: 'application/json',
+         });
+         navigator.sendBeacon('/api/room/leave', blob);
+      } catch {
+         // beacons can't surface errors
+      }
+   }, [pathname]);
 
    if (pathname === '/') return null;
 

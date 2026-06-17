@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PirateModal } from '@/ui/pirate-modal/PirateModal';
 import { leaveAsHost } from '@/server/actions/leaveAsHost';
@@ -11,8 +11,22 @@ type Props = {
    code: string;
    open: boolean;
    candidates: Candidate[];
+   /**
+    * Presence-derived set of user ids currently connected to the room
+    * channel. Used to hide candidates whose tab has closed but whose
+    * server-side row hasn't been pruned yet (e.g., mobile force-quit
+    * where the beacon never lands).
+    */
+   onlineIds: ReadonlySet<string>;
    onClose: () => void;
    onLeft: () => void;
+   /**
+    * Fires when the in-flight passTheWheel request transitions in/out
+    * of pending state. Parent uses it to flip the "I'm leaving on
+    * purpose" flag so the plank modal doesn't flash during the engine
+    * broadcast race.
+    */
+   onSubmittingChange?: (submitting: boolean) => void;
 };
 
 /**
@@ -21,18 +35,38 @@ type Props = {
  * server-side (in leaveAsHost without toUserId) and the cleanup cron
  * promotes the earliest-joined sailor.
  */
-export default function HostLeaveModal({ code, open, candidates, onClose, onLeft }: Props) {
+export default function HostLeaveModal({
+   code,
+   open,
+   candidates,
+   onlineIds,
+   onClose,
+   onLeft,
+   onSubmittingChange,
+}: Props) {
    const [picked, setPicked] = useState<string | null>(null);
    const [submitting, setSubmitting] = useState(false);
    const [error, setError] = useState<string | null>(null);
 
+   const visibleCandidates = candidates.filter((c) => onlineIds.has(c.id));
+
+   // If the picked successor went offline between open and selection,
+   // forget them so the submit button doesn't fire a stale id.
+   useEffect(() => {
+      if (picked && !visibleCandidates.some((c) => c.id === picked)) {
+         setPicked(null);
+      }
+   }, [picked, visibleCandidates]);
+
    const confirm = async () => {
       if (!picked) return;
       setSubmitting(true);
+      onSubmittingChange?.(true);
       setError(null);
       const res = await leaveAsHost({ code, toUserId: picked });
       setSubmitting(false);
       if (!res.ok) {
+         onSubmittingChange?.(false);
          if ('mustNominate' in res) {
             setError('Pick a successor to hand the wheel.');
             return;
@@ -48,8 +82,13 @@ export default function HostLeaveModal({ code, open, candidates, onClose, onLeft
          <p className='text-sm text-[color:var(--color-cream-200)]/85'>
             Ye can&apos;t abandon the ship without naming a new captain. Pick yer successor.
          </p>
+         {visibleCandidates.length === 0 && (
+            <p className='text-sm text-[color:var(--color-cream-200)]/60'>
+               No crewmates aboard right now. Stay aboard or wait for someone to join.
+            </p>
+         )}
          <ul className='flex flex-col gap-1.5'>
-            {candidates.map((c) => (
+            {visibleCandidates.map((c) => (
                <li key={c.id}>
                   <button
                      type='button'
