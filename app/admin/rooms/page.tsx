@@ -25,9 +25,11 @@ export default async function AdminRoomsPage() {
    }
 
    const hostRows = await db.query.users.findMany({
-      columns: { id: true, displayName: true },
+      columns: { id: true, displayName: true, email: true },
    });
-   const hostNames = new Map(hostRows.map((u) => [u.id, u.displayName]));
+   const hosts = new Map(
+      hostRows.map((u) => [u.id, { name: u.displayName, email: u.email }]),
+   );
 
    const data: AdminRoomRow[] = rows.map((g) => ({
       id: g.id,
@@ -35,7 +37,8 @@ export default async function AdminRoomsPage() {
       isPublic: g.isPublic,
       status: g.status,
       deckVariant: g.deckVariant,
-      hostName: hostNames.get(g.hostId) ?? '—',
+      hostName: hosts.get(g.hostId)?.name ?? '—',
+      hostEmail: hosts.get(g.hostId)?.email ?? null,
       seatedPlayers: seatedByGame.get(g.id) ?? 0,
       createdAt:
          typeof g.createdAt === 'string'

@@ -21,6 +21,7 @@ Supabase Auth manages `auth.users`. We add a profile table; the `handle_new_user
 |---|---|---|
 | `id` | `uuid` PK | FK → `auth.users.id`. Same id for anon and email users. |
 | `display_name` | `text` not null | Player's chosen name. Defaults to `Crewmate` until the name prompt completes. |
+| `email` | `text` nullable | Mirror of `auth.users.email`. Populated by the `handle_new_user` insert trigger and the `sync_user_email` update trigger so anon→email upgrades stay in sync. Null for anonymous users. Protected by the `users_self_read` RLS policy. |
 | `is_anonymous` | `boolean` default true | Flipped to false when `markAccountClaimed` runs after an email upgrade. |
 | `created_at` | `timestamptz` default now() | |
 

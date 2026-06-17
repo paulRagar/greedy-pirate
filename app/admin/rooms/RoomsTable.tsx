@@ -12,6 +12,7 @@ export type AdminRoomRow = {
    status: 'lobby' | 'active' | 'complete' | 'abandoned';
    deckVariant: string;
    hostName: string;
+   hostEmail: string | null;
    seatedPlayers: number;
    createdAt: string;
    startedAt: string | null;
@@ -136,7 +137,7 @@ export default function RoomsTable({ rows }: { rows: AdminRoomRow[] }) {
                   <col className='w-[64px]' />
                   <col className='w-[68px]' />
                   <col className='w-[78px]' />
-                  <col className='w-[110px]' />
+                  <col className='w-[180px]' />
                   <col className='w-[64px]' />
                   <col className='w-[80px]' />
                   <col className='w-[56px]' />
@@ -191,8 +192,11 @@ export default function RoomsTable({ rows }: { rows: AdminRoomRow[] }) {
                               {r.status}
                            </span>
                         </Td>
-                        <Td className='truncate' title={r.hostName}>
-                           {r.hostName}
+                        <Td title={r.hostEmail ? `${r.hostName} · ${r.hostEmail}` : r.hostName}>
+                           <div className='truncate'>{r.hostName}</div>
+                           <div className='truncate text-[10px] opacity-60'>
+                              {r.hostEmail ?? 'anon'}
+                           </div>
                         </Td>
                         <Td className='text-right tabular-nums'>{r.seatedPlayers}</Td>
                         <Td className='truncate opacity-80' title={r.deckVariant}>

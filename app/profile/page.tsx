@@ -5,11 +5,31 @@ import { games, userStats, users } from '@/server/db/schema';
 import { getSupabaseServer } from '@/server/supabase/server';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { AccountUpgrade } from '@/client/auth/AccountUpgrade';
+import { AccountSettings } from '@/client/auth/AccountSettings';
 import { ProfileNameHeader } from './ProfileNameHeader';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProfilePage() {
+const AUTH_BANNERS: Record<string, { tone: 'info' | 'success' | 'error'; text: string }> = {
+   'email-changed': {
+      tone: 'success',
+      text: 'Email change confirmed.',
+   },
+   'password-reset': {
+      tone: 'success',
+      text: 'Password reset. You are signed in.',
+   },
+   failed: { tone: 'error', text: 'Auth link expired or invalid. Try again.' },
+   'missing-code': { tone: 'error', text: 'Auth link was incomplete.' },
+};
+
+export default async function ProfilePage({
+   searchParams,
+}: {
+   searchParams: Promise<{ auth?: string }>;
+}) {
+   const params = await searchParams;
+   const banner = params.auth ? AUTH_BANNERS[params.auth] : undefined;
    const supabase = await getSupabaseServer();
    const {
       data: { user },
@@ -77,12 +97,32 @@ export default async function ProfilePage() {
 
    return (
       <main className='flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] sm:py-10'>
+         {banner && (
+            <div
+               className={
+                  banner.tone === 'success'
+                     ? 'rounded-lg border border-[color:var(--color-teal-500)]/40 bg-[color:var(--color-teal-600)]/15 px-3 py-2 text-sm text-[color:var(--color-teal-200)]'
+                     : banner.tone === 'error'
+                     ? 'rounded-lg border border-[color:var(--color-coral-500)]/50 bg-[color:var(--color-coral-600)]/15 px-3 py-2 text-sm text-[color:var(--color-coral-200)]'
+                     : 'rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm'
+               }
+            >
+               {banner.text}
+            </div>
+         )}
+
          <ProfileNameHeader
             initialName={displayName}
             isAnonymous={false}
             userIdShort={user.id.slice(0, 8)}
             size='lg'
          />
+
+         {profile?.email && (
+            <p className='-mt-3 text-center text-sm text-[color:var(--color-cream-200)]/65'>
+               <span className='font-mono'>{profile.email}</span>
+            </p>
+         )}
 
          <section className='grid grid-cols-2 gap-3'>
             <Stat label='Voyages' value={gamesPlayed} tone='teal' />
@@ -141,6 +181,8 @@ export default async function ProfilePage() {
                </ul>
             )}
          </section>
+
+         {profile?.email && <AccountSettings currentEmail={profile.email} />}
       </main>
    );
 }

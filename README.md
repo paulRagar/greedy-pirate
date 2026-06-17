@@ -68,13 +68,12 @@ The first time you load the app you'll be silently signed in as an anonymous use
 
 ### Companion URLs (local)
 
-| What                                | URL                     |
-| ----------------------------------- | ----------------------- |
-| App                                 | http://localhost:3000   |
-| Supabase Studio (DB GUI)            | http://127.0.0.1:54323  |
-| Supabase API                        | http://127.0.0.1:54321  |
-| Mailpit (catches auth emails)       | http://127.0.0.1:54324  |
-| Drizzle Studio (alternative DB GUI) | run `npm run db:studio` |
+| What                          | URL                    |
+| ----------------------------- | ---------------------- |
+| App                           | http://localhost:3000  |
+| Supabase Studio (DB GUI)      | http://127.0.0.1:54323 |
+| Supabase API                  | http://127.0.0.1:54321 |
+| Mailpit (catches auth emails) | http://127.0.0.1:54324 |
 
 ### Stopping
 
@@ -105,8 +104,7 @@ npm run supabase:reset         # wipes the local DB and re-runs all migrations
 | `npm run test:run`       | Vitest single run. CI-friendly.                                                                          |
 | `npm run db:generate`    | Generate a new Drizzle migration after editing `schema.ts`.                                              |
 | `npm run db:migrate`     | Apply Drizzle migrations to the current `DATABASE_URL`.                                                  |
-| `npm run db:push`        | Push schema without writing a migration file (dev only).                                                 |
-| `npm run db:studio`      | Open Drizzle Studio (web GUI).                                                                           |
+| `npm run db:migrate:all` | Apply Drizzle migrations + push Supabase SQL migrations (RLS, triggers, functions) to the local DB.      |
 | `npm run supabase:start` | Start the local Supabase stack (Docker).                                                                 |
 | `npm run supabase:stop`  | Stop the local Supabase stack.                                                                           |
 | `npm run supabase:reset` | Wipe the local DB and re-run all migrations.                                                             |

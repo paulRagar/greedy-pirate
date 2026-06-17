@@ -25,6 +25,7 @@ export const users = pgTable('users', {
       .primaryKey()
       .references(() => authUsers.id, { onDelete: 'cascade' }),
    displayName: text('display_name').notNull(),
+   email: text('email'),
    isAnonymous: boolean('is_anonymous').notNull().default(true),
    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

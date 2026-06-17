@@ -57,7 +57,6 @@ The `mv` dance is required because Supabase auto-applies migrations during `star
 | API | http://127.0.0.1:54321 |
 | Postgres | postgres://postgres:postgres@127.0.0.1:54322/postgres |
 | Mailpit (catches confirmation emails) | http://127.0.0.1:54324 |
-| Drizzle Studio | run `npm run db:studio` |
 
 When you change `schema.ts`:
 ```bash
@@ -138,8 +137,10 @@ Vercel Hobby tier caps cron at once per day. Upgrade to Pro if you want more fre
 1. Dashboard → **Authentication** → **Providers** → scroll to **Anonymous Sign-ins** → toggle ON → **Save**. Confirm the page refreshes with the toggle still ON — it occasionally fails to persist on first save.
 2. **Authentication** → **URL Configuration**:
    - **Site URL** = production domain (e.g. `https://www.greedypirate.com`).
-   - **Redirect URLs** = add `https://www.greedypirate.com/**`, `https://greedypirate.com/**`, and `http://localhost:3000/**` (for local dev).
-   - Without this, email-verify links default to `localhost:3000`.
+   - **Redirect URLs** = add `https://www.greedypirate.com/**`, `https://greedypirate.com/**`, `https://*.vercel.app/**` (preview deploys), and `http://localhost:3000/**` (for local dev).
+   - Email-change, password-reset, and signup-confirmation links all redirect through `/auth/callback`. Without these entries the links fall back to `localhost:3000` and break in prod.
+3. **Authentication** → **Email**:
+   - Enable **Secure email change** (double-confirm) — sends the change link to both the old AND new address. Recommended; without it a hijacked active session can silently steal the account.
 
 ### Step 3 — Grab the keys
 
@@ -184,6 +185,8 @@ Migrations run automatically on every Vercel build via the `vercel-build` script
 | `SUPABASE_DB_PASSWORD` | raw DB password | script URL-encodes for you — paste it raw |
 | `SUPABASE_DB_HOST` | e.g. `aws-0-us-west-1.pooler.supabase.com` | session-pooler host (port 5432) |
 | `SUPABASE_PROJECT_REF` | e.g. `fyuasgpjrphxrituofsm` | the project ref slug |
+| `ADMIN_EMAILS` | comma-separated emails | server-side gate for `/admin/rooms` + admin actions; leave empty to lock everyone out |
+| `NEXT_PUBLIC_ADMIN_EMAILS` | same value as `ADMIN_EMAILS` | UI-only mirror; shows the admin link in the account dropdown |
 
 Add via dashboard or CLI:
 
