@@ -1,0 +1,21 @@
+supabase/config.toml
+  s_85fd88a2dea950::t_97fe60463fbc40 237-252,259
+supabase/templates/README.md
+  s_85fd88a2dea950::t_48ff00b22f9bae 28,31-32,34-35,38-39,43-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "9872314d9ca989302036e88368db9d2b7db9ed37",
+  "prompts": {},
+  "sessions": {
+    "s_85fd88a2dea950": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f17d324a-b52b-4d4e-be55-265756e5d86b",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
