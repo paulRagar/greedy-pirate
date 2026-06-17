@@ -18,9 +18,16 @@ interface Props {
     * effect below.
     */
    initialError: string | null;
+   /**
+    * PKCE code from `?code=` query param. Exchanged client-side so the
+    * resulting session is persisted in browser cookies (server
+    * components can't write cookies). Null when the link arrived as
+    * an implicit-flow hash instead.
+    */
+   code: string | null;
 }
 
-export function ResetPasswordForm({ initialError }: Props) {
+export function ResetPasswordForm({ initialError, code }: Props) {
    const router = useRouter();
    const [state, setState] = useState<State>(initialError ? 'expired' : 'waiting');
    const [errorMsg, setErrorMsg] = useState<string | null>(initialError);
@@ -54,17 +61,35 @@ export function ResetPasswordForm({ initialError }: Props) {
       let active = true;
 
       const claim = async () => {
+         // PKCE flow: exchange the code client-side. Server components
+         // can't write cookies, so this MUST happen here — otherwise
+         // the new session never reaches storage and the form's
+         // updateUser call later runs against the stale anonymous
+         // session.
+         if (code) {
+            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            if (!active) return;
+            if (exchangeError) {
+               setErrorMsg(exchangeError.message);
+               setState('expired');
+               return;
+            }
+         }
+
          const {
             data: { user: current },
          } = await supabase.auth.getUser();
          if (!active) return;
-         if (current) {
+         // Anonymous users coming through home page auth don't count as
+         // "recovered" — we wait for the real account session to land
+         // via exchangeCodeForSession or the SDK's hash auto-detect.
+         if (current && current.is_anonymous === false) {
             setUser(current);
             setState('ready');
          }
       };
 
-      // PKCE flow: session already in cookies from server exchange.
+      // PKCE flow: exchange runs above.
       // Implicit flow: SDK reads hash on init, fires PASSWORD_RECOVERY.
       void claim();
 
@@ -96,7 +121,7 @@ export function ResetPasswordForm({ initialError }: Props) {
          sub.subscription.unsubscribe();
          window.clearTimeout(timeout);
       };
-   }, [state]);
+   }, [state, code]);
 
    const submit = async (e: React.FormEvent) => {
       e.preventDefault();
