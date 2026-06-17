@@ -43,6 +43,11 @@ export async function GET(req: NextRequest) {
       )) as unknown as Array<{ prune_old_events: number }>;
       const prunedEvents = Number(pruneRows[0]?.prune_old_events ?? 0);
 
+      const purgeRows = (await db.execute<{ purge_old_games: number }>(
+         sql`select public.purge_old_games() as purge_old_games`,
+      )) as unknown as Array<{ purge_old_games: number }>;
+      const purgedGames = Number(purgeRows[0]?.purge_old_games ?? 0);
+
       const expiredRows = (await db.execute<ExpireRow>(
          sql`select * from public.expire_pending_join_requests()`,
       )) as unknown as ExpireRow[];
@@ -98,6 +103,7 @@ export async function GET(req: NextRequest) {
          abandonedLobbies: Number(abandon.abandoned_lobbies ?? 0),
          abandonedActive: Number(abandon.abandoned_active ?? 0),
          prunedEvents,
+         purgedGames,
          expiredKnocks: expiredRows.length,
          migratedHosts: migratedRows.length,
          finalizedContinuations,
