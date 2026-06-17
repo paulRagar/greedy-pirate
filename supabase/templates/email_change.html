@@ -3,57 +3,59 @@
    <head>
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <meta name="color-scheme" content="dark only" />
+      <meta name="supported-color-schemes" content="dark only" />
       <title>Confirm yer new email</title>
    </head>
-   <body style="margin:0;padding:0;background:#0b1424;font-family:'Trebuchet MS','Helvetica Neue',Arial,sans-serif;color:#f4e9d2;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0b1424;padding:24px 12px;">
+   <body style="margin:0;padding:0;background-color:#02060f;font-family:'Trebuchet MS','Helvetica Neue',Arial,sans-serif;color:#fff8e7;-webkit-font-smoothing:antialiased;mso-line-height-rule:exactly;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#02060f;padding:24px 12px;">
          <tr>
             <td align="center">
-               <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#13203a;border:1px solid #2a3a5e;border-radius:14px;overflow:hidden;">
+               <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#0a2240;border:1px solid #0e4f70;border-radius:16px;overflow:hidden;">
                   <tr>
                      <td style="padding:28px 32px 8px 32px;text-align:center;">
-                        <div style="font-family:'Georgia','Times New Roman',serif;font-size:28px;letter-spacing:0.5px;color:#ffcb53;text-shadow:0 1px 0 #000;">⚓ Greedy Pirate</div>
+                        <div style="font-family:'Georgia','Times New Roman',serif;font-size:30px;letter-spacing:0.5px;color:#ffd966;text-shadow:0 1px 0 #000;">⚓ Greedy Pirate</div>
                      </td>
                   </tr>
                   <tr>
                      <td style="padding:8px 32px 0 32px;text-align:center;">
-                        <div style="height:1px;background:linear-gradient(90deg,transparent,#ffcb53,transparent);opacity:0.6;"></div>
+                        <div style="height:1px;background:linear-gradient(90deg,transparent,#ffd966,transparent);opacity:0.6;line-height:1px;font-size:0;">&nbsp;</div>
                      </td>
                   </tr>
                   <tr>
                      <td style="padding:28px 32px 8px 32px;">
-                        <h1 style="margin:0 0 14px 0;font-family:'Georgia','Times New Roman',serif;font-size:26px;color:#ffcb53;">Confirm yer new email, crewmate</h1>
-                        <p style="margin:0 0 14px 0;font-size:15px;line-height:1.55;color:#f4e9d2;">
-                           Ye asked to chart <strong style="color:#ffd773;">{{ .NewEmail }}</strong> as yer new mailing address. Tap the seal below to make it official.
+                        <h1 style="margin:0 0 14px 0;font-family:'Georgia','Times New Roman',serif;font-size:26px;line-height:1.25;color:#ffd966;">Confirm yer new email, crewmate</h1>
+                        <p style="margin:0 0 16px 0;font-size:15px;line-height:1.55;color:#fff8e7;">
+                           Ye asked to chart <strong style="color:#ffeaa0;">{{ .NewEmail }}</strong> as yer new mailing address. Tap the seal below to make it official.
                         </p>
                      </td>
                   </tr>
                   <tr>
-                     <td align="center" style="padding:16px 32px 24px 32px;">
-                        <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 28px;background:linear-gradient(180deg,#ff3b8a,#c1255e);color:#fff5dc;font-family:'Georgia','Times New Roman',serif;font-size:17px;text-decoration:none;border-radius:10px;border:1px solid #ffcb53;box-shadow:0 4px 14px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.15);">
+                     <td align="center" style="padding:18px 32px 28px 32px;">
+                        <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:18px 36px;background-color:#16a5b5;background-image:linear-gradient(180deg,#5eead4 0%,#16a5b5 100%);color:#061427 !important;font-family:'Georgia','Times New Roman',serif;font-size:22px;font-weight:700;line-height:1;text-decoration:none;text-transform:uppercase;letter-spacing:0.08em;border-radius:14px;border:2px solid #16a5b5;box-shadow:0 4px 0 0 rgba(13,77,112,0.9),0 8px 18px -2px rgba(0,0,0,0.5);">
                            ⚓ Confirm new email
                         </a>
                      </td>
                   </tr>
                   <tr>
                      <td style="padding:0 32px 24px 32px;">
-                        <p style="margin:0 0 8px 0;font-size:13px;line-height:1.55;color:#b9b0a0;">
+                        <p style="margin:0 0 8px 0;font-size:13px;line-height:1.55;color:#e8d49c;">
                            Or copy this link into yer browser:
                         </p>
-                        <p style="margin:0;font-size:12px;line-height:1.5;color:#7da9c2;word-break:break-all;">
-                           <a href="{{ .ConfirmationURL }}" style="color:#7da9c2;text-decoration:underline;">{{ .ConfirmationURL }}</a>
+                        <p style="margin:0;font-size:12px;line-height:1.5;color:#5eead4;word-break:break-all;">
+                           <a href="{{ .ConfirmationURL }}" style="color:#5eead4;text-decoration:underline;">{{ .ConfirmationURL }}</a>
                         </p>
                      </td>
                   </tr>
                   <tr>
-                     <td style="padding:18px 32px 28px 32px;border-top:1px solid #2a3a5e;background:#0e192f;">
-                        <p style="margin:0;font-size:12px;line-height:1.5;color:#8f8470;">
+                     <td style="padding:18px 32px 28px 32px;border-top:1px solid #0e4f70;background-color:#061427;">
+                        <p style="margin:0;font-size:12px;line-height:1.5;color:#d4b87a;">
                            Didn't request this? Toss this letter overboard — yer account stays right where it is.
                         </p>
                      </td>
                   </tr>
                </table>
-               <p style="margin:14px 0 0 0;font-size:11px;color:#5e6b80;">Sent by Greedy Pirate · A risk-and-reward card game</p>
+               <p style="margin:14px 0 0 0;font-size:11px;color:#7a8aa0;">Sent by Greedy Pirate · A risk-and-reward card game</p>
             </td>
          </tr>
       </table>
