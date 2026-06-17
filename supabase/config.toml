@@ -234,26 +234,50 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
+# SMTP is configured via the Resend ↔ Supabase integration in the
+# Supabase dashboard (Auth → Emails → SMTP). The integration writes the
+# API key + sender details directly into the project's secrets, so
+# nothing about SMTP needs to live in this file. Reference values
+# currently set in the dashboard for both prod + preview projects:
+#   host = "smtp.resend.com"
+#   port = 465
+#   user = "resend"
+#   sender_email = "crewmate@greedypirate.com"
+#   sender_name = "Greedy Pirate"
+# Free tier limits: 3,000 emails/mo, 100/day.
+#
+# Keep this block commented. Uncommenting and pushing would attempt to
+# override the integration-managed config with `env(RESEND_API_KEY)`,
+# which we deliberately do NOT set on Supabase (the integration has
+# its own copy).
 # [auth.email.smtp]
 # enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# host = "smtp.resend.com"
+# port = 465
+# user = "resend"
+# pass = "env(RESEND_API_KEY)"
+# admin_email = "crewmate@greedypirate.com"
+# sender_name = "Greedy Pirate"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Greedy Pirate-themed email templates. Subjects + HTML bodies override
+# the default Supabase copy. Variables available per template:
+#   {{ .ConfirmationURL }}  {{ .Email }}  {{ .NewEmail }}  {{ .SiteURL }}
+#   {{ .Token }}  {{ .TokenHash }}  {{ .RedirectTo }}
+[auth.email.template.confirmation]
+subject = "Welcome aboard — confirm yer ship's papers"
+content_path = "./supabase/templates/confirmation.html"
 
-# Uncomment to customize notification email template
-# [auth.email.notification.password_changed]
-# enabled = true
-# subject = "Your password has been changed"
-# content_path = "./templates/password_changed_notification.html"
+[auth.email.template.email_change]
+subject = "Confirm yer new email, crewmate"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.recovery]
+subject = "Reset yer plunder password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.magic_link]
+subject = "Yer boarding pass, crewmate"
+content_path = "./supabase/templates/magic_link.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
