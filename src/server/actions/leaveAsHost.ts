@@ -80,20 +80,11 @@ export async function leaveAsHost(
       : engineOthers;
 
    if (others.length === 0) {
-      // Solo aboard — scuttle the ship. Marks the room abandoned outright
-      // (vs. relying on PLAYER_LEAVE leaving the engine empty) so ghost
-      // engine entries from disconnected players can't keep the room
-      // alive after the captain leaves. Also drops the host's gamePlayer
-      // row so it doesn't show up in Find Crew as orphaned.
-      await db.transaction(async (tx) => {
-         await tx
-            .delete(gamePlayers)
-            .where(and(eq(gamePlayers.gameId, game.id), eq(gamePlayers.userId, user.id)));
-         await tx
-            .update(games)
-            .set({ status: 'abandoned', hostLeftAt: new Date() })
-            .where(eq(games.id, game.id));
-      });
+      // Solo aboard — scuttle the ship completely. Hard-delete cascades
+      // game_players, events, and knocks so the games table stays bounded.
+      // Stats are aggregated separately in user_stats on game completion,
+      // so a never-finished lobby loses nothing on delete.
+      await db.delete(games).where(eq(games.id, game.id));
       if (game.isPublic && game.code) {
          await broadcastLobbyEvent({ type: 'room_removed', code: game.code });
       }

@@ -83,15 +83,14 @@ export async function leaveRoom(code: string): Promise<{ ok: boolean }> {
    }
 
    // Auto-close empty rooms. A lobby with 0 seated players is a ghost ship —
-   // no one can start it, and it just clutters the Find Crew feed.
+   // hard-delete so the games table stays bounded. Cascades clear any
+   // residual join requests / events. Stats already aggregated in
+   // user_stats on game completion, so abandoned/lobby rows lose nothing.
    const refreshed = await findGameByCode(code.toUpperCase());
    if (refreshed) {
       const state = parseEngineState(refreshed);
       if (state.players.length === 0) {
-         await db
-            .update(games)
-            .set({ status: 'abandoned' })
-            .where(eq(games.id, refreshed.id));
+         await db.delete(games).where(eq(games.id, refreshed.id));
          if (refreshed.isPublic && refreshed.code) {
             await broadcastLobbyEvent({ type: 'room_removed', code: refreshed.code });
          }
