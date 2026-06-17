@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/react';
 import { AuthBootstrap } from '@/client/auth/AuthBootstrap';
+import { RecoveryHashRouter } from '@/client/auth/RecoveryHashRouter';
 import { AmbientSea } from '@/ui/effects/AmbientSea';
 import { TopNav } from '@/ui/top-nav/TopNav';
 
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
          <body>
             <AmbientSea />
             <AuthBootstrap>
+               <RecoveryHashRouter />
                {/* Fixed app shell: exactly one viewport tall, no document scroll.
                    Screens that need scrolling (profile) opt in with overflow-y-auto
                    on their own <main> and handle their own bottom safe inset. */}

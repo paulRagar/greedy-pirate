@@ -53,8 +53,11 @@ export function AccountLinkModal({ open, onClose, initialMode = 'signup' }: Prop
       setSendingReset(true);
       const supabase = getSupabaseBrowser();
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      // Point straight at /auth/reset. The reset page handles both
+      // PKCE (?code=) and implicit (#access_token=...) flows itself, so
+      // there's no need to bounce through /auth/callback first.
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmed, {
-         redirectTo: `${origin}/auth/callback?type=recovery`,
+         redirectTo: `${origin}/auth/reset`,
       });
       setSendingReset(false);
       if (resetError) {
