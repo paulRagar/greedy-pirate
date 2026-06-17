@@ -111,12 +111,7 @@ export default async function ProfilePage({
             </div>
          )}
 
-         <ProfileNameHeader
-            initialName={displayName}
-            isAnonymous={false}
-            userIdShort={user.id.slice(0, 8)}
-            size='lg'
-         />
+         <ProfileNameHeader initialName={displayName} isAnonymous={false} size='lg' />
 
          {profile?.email && (
             <p className='-mt-3 text-center text-sm text-[color:var(--color-cream-200)]/65'>

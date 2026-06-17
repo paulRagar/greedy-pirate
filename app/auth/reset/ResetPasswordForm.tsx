@@ -119,11 +119,15 @@ export function ResetPasswordForm({ initialError }: Props) {
       setSubmitting(true);
       const supabase = getSupabaseBrowser();
       const { error: updateError } = await supabase.auth.updateUser({ password });
-      setSubmitting(false);
       if (updateError) {
+         setSubmitting(false);
          setFormError(updateError.message);
          return;
       }
+      // Leave submitting=true through the redirect — otherwise the
+      // button flips back to "Set new password" for a beat while
+      // router.push transitions, looking like nothing happened.
+      // Component unmounts on navigation, so the state never resets.
       emitProfileChanged();
       router.push('/profile?auth=password-reset');
       router.refresh();
