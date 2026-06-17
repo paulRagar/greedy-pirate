@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/client/supabase/browser';
-import { markAccountClaimed } from '@/server/actions/markAccountClaimed';
 import { prepareSeatTransfer, claimSeatByToken } from '@/server/actions/seatTransfer';
 import { emitProfileChanged } from '@/client/auth/useCurrentUser';
 import { SKIP_LEAVE_BEACON_KEY } from '@/lib/leaveBeacon';
@@ -107,18 +106,23 @@ export function AccountLinkModal({ open, onClose, initialMode = 'signup' }: Prop
             email: trimmed,
             password,
          });
+         setSubmitting(false);
          if (authError) {
-            setSubmitting(false);
             setError(authError.message);
             return;
          }
-         if (data.user) {
-            await markAccountClaimed();
+         // When the Supabase project requires email confirmation (the prod
+         // default), updateUser succeeds but auth.users.is_anonymous stays
+         // true until the user clicks the link. A DB trigger mirrors that
+         // flag to public.users on confirmation, so we don't write it here.
+         if (data.user && data.user.is_anonymous === false) {
             emitProfileChanged();
             router.refresh();
             onClose();
+            return;
          }
-         setSubmitting(false);
+         setInfo(`Check ${trimmed} for a confirmation link to finish signing up.`);
+         setPassword('');
          return;
       }
 

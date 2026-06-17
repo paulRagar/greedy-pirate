@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { emitProfileChanged } from '@/client/auth/useCurrentUser';
+import { emitProfileChanged, useCurrentUser } from '@/client/auth/useCurrentUser';
 import { getSupabaseBrowser } from '@/client/supabase/browser';
-import { markAccountClaimed } from '@/server/actions/markAccountClaimed';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 
@@ -13,11 +12,16 @@ const MIN_PASSWORD = 8;
 type Mode = 'signup' | 'signin';
 
 /**
- * Guest gate on the profile page: claim the current anonymous account
- * (sign up) or switch to an existing claimed account (sign in).
+ * Guest gate on the profile page. Three branches:
+ *  1. Email confirmation pending → resend / cancel UI.
+ *  2. Idle anonymous → sign up / sign in chooser.
+ *  3. Form open → sign up or sign in form.
  */
 export function AccountUpgrade() {
    const router = useRouter();
+   const { user } = useCurrentUser();
+   const pendingEmail = user?.new_email ?? null;
+
    const [open, setOpen] = useState(false);
    const [mode, setMode] = useState<Mode>('signup');
    const [email, setEmail] = useState('');
@@ -25,6 +29,8 @@ export function AccountUpgrade() {
    const [error, setError] = useState<string | null>(null);
    const [info, setInfo] = useState<string | null>(null);
    const [submitting, setSubmitting] = useState(false);
+   const [resending, setResending] = useState(false);
+   const [override, setOverride] = useState(false);
 
    const openAs = (next: Mode) => {
       setMode(next);
@@ -62,15 +68,19 @@ export function AccountUpgrade() {
             setError(authError.message);
             return;
          }
-         if (data.user) {
-            await markAccountClaimed();
-            // Tell every useCurrentUser instance (TopNav avatar etc.) to refetch
-            // — the server-side claim doesn't fire a browser auth event.
+         // If email confirmation is required (prod default), is_anonymous
+         // stays true until the user clicks the link. A DB trigger mirrors
+         // that flag into public.users on confirmation; the avatar flips
+         // automatically once the confirm callback redirects back.
+         setPassword('');
+         if (data.user && data.user.is_anonymous === false) {
             emitProfileChanged();
-            setInfo('Account claimed! Check yer inbox to confirm the email if Supabase asks for it.');
-            setPassword('');
             router.refresh();
+            setInfo('Account claimed!');
+            return;
          }
+         setInfo(`Check ${trimmed} for a confirmation link to finish claiming yer account.`);
+         router.refresh();
          return;
       }
 
@@ -92,6 +102,61 @@ export function AccountUpgrade() {
       setPassword('');
       router.refresh();
    };
+
+   const resendConfirmation = async () => {
+      if (!pendingEmail) return;
+      setError(null);
+      setInfo(null);
+      setResending(true);
+      const supabase = getSupabaseBrowser();
+      const { error: resendError } = await supabase.auth.resend({
+         type: 'email_change',
+         email: pendingEmail,
+      });
+      setResending(false);
+      if (resendError) {
+         setError(resendError.message);
+         return;
+      }
+      setInfo(`Sent another confirmation link to ${pendingEmail}.`);
+   };
+
+   if (pendingEmail && !override) {
+      return (
+         <PiratePanel variant='deep' className='flex flex-col gap-3'>
+            <h2 className='pirate-display text-2xl text-[color:var(--color-gold-300)]'>Confirm yer email</h2>
+            <p className='text-sm text-[color:var(--color-cream-200)]/80'>
+               Click the link we sent to{' '}
+               <span className='font-mono text-[color:var(--color-gold-200)]'>{pendingEmail}</span> to
+               finish claiming yer account. Til then yer logbook stays sealed.
+            </p>
+            {error && <p className='text-sm text-[color:var(--color-coral-400)]'>{error}</p>}
+            {info && <p className='text-sm text-[color:var(--color-teal-300)]'>{info}</p>}
+            <PirateButton
+               type='button'
+               variant='primary'
+               size='md'
+               fullWidth
+               onClick={resendConfirmation}
+               disabled={resending}
+            >
+               {resending ? 'Sending…' : 'Resend confirmation'}
+            </PirateButton>
+            <button
+               type='button'
+               onClick={() => {
+                  setError(null);
+                  setInfo(null);
+                  setOverride(true);
+                  openAs('signup');
+               }}
+               className='min-h-[44px] text-sm text-[color:var(--color-coral-300)] underline-offset-4 hover:underline'
+            >
+               Use a different email
+            </button>
+         </PiratePanel>
+      );
+   }
 
    if (!open) {
       return (
