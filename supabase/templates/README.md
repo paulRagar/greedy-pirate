@@ -25,21 +25,24 @@ Supabase substitutes these at send time:
 
 ## Deploying changes to the cloud projects
 
-Migrations auto-apply on Vercel build, but **auth config (templates + SMTP) does not**. Push it explicitly with the Supabase CLI:
+Migrations auto-apply on Vercel build, but **auth config (templates) does not**. Push it explicitly with the Supabase CLI:
 
 ```bash
-export SUPABASE_ACCESS_TOKEN=...  # personal access token from app.supabase.com/account/tokens
+# One-time: authenticate the CLI (opens a browser)
+supabase login
+
+# Preview first — verify rendering before touching prod
+supabase link --project-ref iosokzbammerxzyfuboc
+supabase config push
 
 # Production
 supabase link --project-ref fyuasgpjrphxrituofsm
 supabase config push
-
-# Preview
-supabase link --project-ref iosokzbammerxzyfuboc
-supabase config push
 ```
 
-Re-run after any change to the templates or to the `[auth.email.*]` blocks in `config.toml`.
+`supabase config push` only sends what is explicitly set in this repo's `config.toml`. The dashboard-managed SMTP credentials (set up via the Resend ↔ Supabase integration) are left untouched.
+
+Re-run after any change to the templates or to the `[auth.email.template.*]` blocks in `config.toml`.
 
 ## Local testing
 

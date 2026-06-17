@@ -234,21 +234,29 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Custom SMTP via Resend. Free tier = 3,000 emails/mo, 100/day.
-# To enable in prod/preview:
-#   1. Create Resend account, verify a sending domain (DKIM + SPF).
-#   2. Set RESEND_API_KEY as a Vercel + Supabase env var.
-#   3. Uncomment the block below and push config:
-#        supabase config push --project-ref <ref>
-# Until enabled, the default Supabase SMTP (noreply@mail.app.supabase.io,
-# 3/hr rate limit, "Powered by Supabase" footer) is used.
+# SMTP is configured via the Resend ↔ Supabase integration in the
+# Supabase dashboard (Auth → Emails → SMTP). The integration writes the
+# API key + sender details directly into the project's secrets, so
+# nothing about SMTP needs to live in this file. Reference values
+# currently set in the dashboard for both prod + preview projects:
+#   host = "smtp.resend.com"
+#   port = 465
+#   user = "resend"
+#   sender_email = "crewmate@greedypirate.com"
+#   sender_name = "Greedy Pirate"
+# Free tier limits: 3,000 emails/mo, 100/day.
+#
+# Keep this block commented. Uncommenting and pushing would attempt to
+# override the integration-managed config with `env(RESEND_API_KEY)`,
+# which we deliberately do NOT set on Supabase (the integration has
+# its own copy).
 # [auth.email.smtp]
 # enabled = true
 # host = "smtp.resend.com"
 # port = 465
 # user = "resend"
 # pass = "env(RESEND_API_KEY)"
-# admin_email = "noreply@yourdomain.example"
+# admin_email = "crewmate@greedypirate.com"
 # sender_name = "Greedy Pirate"
 
 # Greedy Pirate-themed email templates. Subjects + HTML bodies override
