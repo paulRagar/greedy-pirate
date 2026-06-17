@@ -1,0 +1,28 @@
+src/client/auth/AccountUpgrade.tsx
+  s_85fd88a2dea950::t_8e62cd788ed57f 150
+  s_85fd88a2dea950::t_60cb818f6f129a 71-76,79-80,82
+  s_85fd88a2dea950::t_6f07fe763e7b6c 33
+  s_85fd88a2dea950::t_532e5097a8f646 124
+  s_85fd88a2dea950::t_4cf7b7acc9d9c5 5,15-18,22-24,32,83,106-123,125-146,154,156-159
+  s_85fd88a2dea950::t_aadfe469f597eb 147-149,151-153,155
+src/client/auth/AccountLinkModal.tsx
+  s_85fd88a2dea950::t_927ab393e15a2e 109,114-118,122,124-125
+supabase/migrations/20260617010000_sync_is_anonymous.sql
+  s_85fd88a2dea950::t_a14d3ab34beb73 1-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "4990a511846bfcff929474798a552f6c21b3e3a6",
+  "prompts": {},
+  "sessions": {
+    "s_85fd88a2dea950": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f17d324a-b52b-4d4e-be55-265756e5d86b",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
