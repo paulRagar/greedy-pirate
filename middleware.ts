@@ -1,10 +1,17 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { needsSessionRefresh } from '@/server/auth/sessionRoutes';
 
 const AUTH_TIMEOUT_MS = 2500;
 
 export async function middleware(request: NextRequest) {
    let response = NextResponse.next({ request });
+
+   // Only auth-sensitive routes pay the cost of a session refresh. Public pages
+   // (home, /rules, /play-local, etc.) never read the user, so skip the network
+   // round-trip entirely. Downstream RSC pages and server actions re-verify the
+   // JWT with their own getUser() call, so this cannot weaken auth.
+   if (!needsSessionRefresh(request.nextUrl.pathname)) return response;
 
    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
