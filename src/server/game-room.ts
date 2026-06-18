@@ -30,7 +30,10 @@ export function generateRoomCode(len = CODE_LEN): string {
 }
 
 export class RoomError extends Error {
-   constructor(public code: 'NOT_FOUND' | 'NOT_MEMBER' | 'INVALID_STATE' | 'FORBIDDEN' | 'CONFLICT', message: string) {
+   constructor(
+      public code: 'NOT_FOUND' | 'NOT_MEMBER' | 'INVALID_STATE' | 'FORBIDDEN' | 'CONFLICT' | 'STALE',
+      message: string,
+   ) {
       super(message);
       this.name = 'RoomError';
    }
@@ -154,6 +157,14 @@ type ApplyOptions = {
    actorId?: string;
    code?: string;
    onPlayers?: (tx: Tx, gameId: string, next: GameState) => Promise<void>;
+   /**
+    * Runs against the *locked* current state, before the action is reduced.
+    * Throw a `RoomError` to reject (e.g. turn ownership). This is the
+    * authoritative precondition check — any check done before calling
+    * `applyAction` is advisory only, since the row can change between that
+    * read and the lock being acquired here.
+    */
+   guard?: (current: GameState, row: DbGame) => void;
 };
 
 export async function applyAction(
@@ -163,9 +174,21 @@ export async function applyAction(
    options: ApplyOptions = {},
 ): Promise<{ next: GameState; eventId: number }> {
    const result = await db.transaction(async (tx) => {
-      const row = await tx.query.games.findFirst({ where: eq(games.id, gameId) });
+      // Lock the game row for the whole read-modify-write. Without this,
+      // two concurrent actions on the same room both read the same state,
+      // both reduce, and the second UPDATE clobbers the first (lost update).
+      // FOR UPDATE serializes them: the second waits, then reads the
+      // already-committed state and reduces against fresh data.
+      const [row] = await tx
+         .select()
+         .from(games)
+         .where(eq(games.id, gameId))
+         .for('update')
+         .limit(1);
       if (!row) throw new RoomError('NOT_FOUND', 'Game not found');
       const current = parseEngineState(row);
+      // Authoritative precondition check against the locked state.
+      options.guard?.(current, row);
       let next = reduce(current, action);
 
       const justCompleted = row.status !== 'complete' && next.status === 'complete';

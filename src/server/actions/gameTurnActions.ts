@@ -2,11 +2,28 @@
 
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { applyAction, findGameByCode, isPlayerTurn, parseEngineState } from '@/server/game-room';
+import { applyAction, findGameByCode, isPlayerTurn, parseEngineState, RoomError } from '@/server/game-room';
 import { db } from '@/server/db/client';
 import { gamePlayers } from '@/server/db/schema';
+import { EngineError } from '@/game/engine';
 import type { GameAction } from '@/game/types';
 import { getSupabaseServer } from '@/server/supabase/server';
+
+/**
+ * Map an error thrown out of `applyAction` to a `TurnResult`.
+ * - `RoomError('STALE')` → the action raced and is now a no-op; report success.
+ * - other `RoomError` / `EngineError` → a real precondition failure; surface its message.
+ * - anything else → unexpected; log it and return a generic failure.
+ */
+function toTurnResult(err: unknown, context: string): TurnResult {
+   if (err instanceof RoomError) {
+      if (err.code === 'STALE') return { ok: true };
+      return { ok: false, error: err.message };
+   }
+   if (err instanceof EngineError) return { ok: false, error: err.message };
+   console.error(`${context} failed`, err);
+   return { ok: false, error: 'Action failed' };
+}
 
 const InputSchema = z.object({
    code: z.string().trim().toUpperCase().length(4),
@@ -32,6 +49,9 @@ async function dispatch(code: string, action: GameAction, eventType: Parameters<
    if (!game) return { ok: false, error: 'Room not found' };
    if (game.status !== 'active') return { ok: false, error: 'Game not active' };
 
+   // Advisory fast-path check (avoids opening a transaction for the common
+   // "not your turn" case). The authoritative check is the guard below, which
+   // runs against the locked row inside the transaction.
    const state = parseEngineState(game);
    if (!isPlayerTurn(state, user.id)) return { ok: false, error: 'Not your turn' };
 
@@ -39,6 +59,11 @@ async function dispatch(code: string, action: GameAction, eventType: Parameters<
       await applyAction(game.id, action, eventType, {
          actorId: user.id,
          code: parsed.data.code,
+         guard: (current) => {
+            if (!isPlayerTurn(current, user.id)) {
+               throw new RoomError('FORBIDDEN', 'Not your turn');
+            }
+         },
          onPlayers: async (tx, gameId, next) => {
             for (const player of next.players) {
                await tx
@@ -54,8 +79,7 @@ async function dispatch(code: string, action: GameAction, eventType: Parameters<
          },
       });
    } catch (err) {
-      console.error(`dispatch ${eventType} failed`, err);
-      return { ok: false, error: 'Action failed' };
+      return toTurnResult(err, `dispatch ${eventType}`);
    }
 
    return { ok: true };
@@ -142,6 +166,9 @@ export async function skipAbsentTurn(input: {
    });
    if (!seated) return { ok: false, error: 'Only seated players can skip a turn' };
 
+   // Advisory pre-checks (cheap rejects before opening a transaction). The
+   // authoritative versions run in the guard against the locked row, so two
+   // clients racing to skip the same absent player can't double-advance.
    const state = parseEngineState(game);
    const current = state.players[state.turnIndex];
    if (!current || current.id !== parsed.data.expectedTurnPlayerId) {
@@ -155,13 +182,25 @@ export async function skipAbsentTurn(input: {
    try {
       await applyAction(
          game.id,
-         { type: 'SKIP_TURN', playerId: current.id },
+         { type: 'SKIP_TURN', playerId: parsed.data.expectedTurnPlayerId },
          'SKIP_TURN',
-         { actorId: user.id, code: parsed.data.code },
+         {
+            actorId: user.id,
+            code: parsed.data.code,
+            guard: (locked) => {
+               const holder = locked.players[locked.turnIndex];
+               if (!holder || holder.id !== parsed.data.expectedTurnPlayerId) {
+                  // Another client already skipped/advanced this turn.
+                  throw new RoomError('STALE', 'Turn already advanced');
+               }
+               if (holder.id === user.id) {
+                  throw new RoomError('FORBIDDEN', 'You hold the helm — bank or draw instead');
+               }
+            },
+         },
       );
    } catch (err) {
-      console.error('skipAbsentTurn failed', err);
-      return { ok: false, error: 'Skip failed' };
+      return toTurnResult(err, 'skipAbsentTurn');
    }
 
    return { ok: true };
