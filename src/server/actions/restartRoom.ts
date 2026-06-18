@@ -65,7 +65,7 @@ export async function restartRoom(input: z.input<typeof InputSchema>): Promise<R
       .filter((row) => row.userId !== null)
       .map((row) => ({ id: row.userId as string, name: row.displayName, coins: 0 }));
 
-   const { next, spectators } = await db.transaction(async (tx) => {
+   const { next, spectators, seq } = await db.transaction(async (tx) => {
       // Wipe coins / winner flags on seated players so the lobby restart
       // shows everyone at zero. Also clear continued_at so the next round's
       // continuation window starts fresh.
@@ -124,7 +124,7 @@ export async function restartRoom(input: z.input<typeof InputSchema>): Promise<R
       });
 
       const remainingSpectators = await fetchSpectators(tx, game.id);
-      return { next, spectators: remainingSpectators };
+      return { next, spectators: remainingSpectators, seq };
    });
 
    await broadcastRoomState(parsed.data.code, {
@@ -132,6 +132,7 @@ export async function restartRoom(input: z.input<typeof InputSchema>): Promise<R
       spectators,
       actorId: user.id,
       eventType: 'RESTART',
+      version: seq,
    });
 
    return { ok: true };
@@ -177,7 +178,7 @@ export async function endGameByForfeit(input: z.input<typeof ForfeitSchema>): Pr
       winnerId: winnerSeat.id,
    };
 
-   await db.transaction(async (tx) => {
+   const { seq } = await db.transaction(async (tx) => {
       await tx
          .update(games)
          .set({
@@ -207,15 +208,17 @@ export async function endGameByForfeit(input: z.input<typeof ForfeitSchema>): Pr
          .from(gameEvents)
          .where(eq(gameEvents.gameId, game.id))
          .orderBy(gameEvents.seq);
-      const seq = seqRow.length;
+      const nextEventSeq = seqRow.length;
 
       await tx.insert(gameEvents).values({
          gameId: game.id,
-         seq,
+         seq: nextEventSeq,
          actorId: user.id,
          type: 'FORFEIT_WIN',
          payload: { state: toPublic(next), actorId: user.id },
       });
+
+      return { seq: nextEventSeq };
    });
 
    const spectators = await fetchSpectators(db, game.id);
@@ -224,6 +227,7 @@ export async function endGameByForfeit(input: z.input<typeof ForfeitSchema>): Pr
       spectators,
       actorId: user.id,
       eventType: 'FORFEIT_WIN',
+      version: seq,
    });
 
    return { ok: true };

@@ -4,6 +4,7 @@ import {
    fetchSpectators,
    findCompletedOrActiveGame,
    isUserInGame,
+   latestEventSeq,
    parseEngineState,
 } from '@/server/game-room';
 import { fetchContinuation } from '@/server/continuation';
@@ -76,9 +77,10 @@ export default async function PlayRoomPage({ params }: { params: Promise<{ code:
    }
 
    const engineState = parseEngineState(game);
-   const [spectators, continuation] = await Promise.all([
+   const [spectators, continuation, initialVersion] = await Promise.all([
       fetchSpectators(db, game.id),
       fetchContinuation(db, game.id),
+      latestEventSeq(game.id),
    ]);
    const room: RoomState = {
       ...toPublic(engineState),
@@ -92,6 +94,7 @@ export default async function PlayRoomPage({ params }: { params: Promise<{ code:
          gameId={game.id}
          userId={user.id}
          initial={room}
+         initialVersion={initialVersion}
          isPublic={game.isPublic}
          initialContinuation={
             continuation

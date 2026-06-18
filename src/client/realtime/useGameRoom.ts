@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowser } from '@/client/supabase/browser';
+import { gateStateVersion } from '@/client/realtime/versionGate';
 import type { PublicGameState, RoomSpectatorView } from '@/game/public';
 
 const ROOM_BROADCAST_EVENT = 'state';
@@ -30,6 +31,8 @@ type BroadcastBody = {
    spectators?: ReadonlyArray<RoomSpectatorView>;
    actorId?: string | null;
    eventType?: string;
+   /** Monotonic version (game_events.seq) of a game-advancing broadcast. */
+   version?: number;
    continuation?: ContinuationContext;
    hostId?: string;
 };
@@ -74,13 +77,20 @@ export function useGameRoom(
    options: Options = {},
    initialSpectators: ReadonlyArray<RoomSpectatorView> = [],
    initialContinuation: ContinuationContext = null,
+   initialVersion = 0,
 ) {
    const [state, setState] = useState<PublicGameState>(initial);
    const [spectators, setSpectators] = useState<ReadonlyArray<RoomSpectatorView>>(initialSpectators);
    const [status, setStatus] = useState<RealtimeStatus>('connecting');
    const [onlineIds, setOnlineIds] = useState<ReadonlySet<string>>(() => new Set());
    const [continuation, setContinuation] = useState<ContinuationContext>(initialContinuation);
-   const optimisticVersion = useRef(0);
+   // Highest applied broadcast version (game_events.seq). Out-of-order or late
+   // broadcasts with a version ≤ this are dropped so an older state can't
+   // clobber a newer one. An optimistic local reduce leaves this untouched, so
+   // a late pre-action broadcast (whose version equals the base it reduced
+   // from) is dropped, while the server's confirming broadcast (next seq)
+   // reconciles it.
+   const appliedVersion = useRef(initialVersion);
    const onResumeRef = useRef(options.onResume);
    const userIdRef = useRef(options.userId);
    const onKnockRequestedRef = useRef(options.onKnockRequested);
@@ -108,9 +118,25 @@ export function useGameRoom(
       options.onEvent,
    ]);
 
+   // RSC-provided initial state. On a genuine game switch (new gameId) we
+   // always reset and re-seat the version watermark. On a same-game RSC
+   // refresh — notably the resume after a backgrounded tab — we only apply
+   // the fetched state if its version is newer than what realtime already
+   // delivered, so the refresh can't race-clobber a fresher broadcast.
+   const prevGameId = useRef(gameId);
    useEffect(() => {
-      setState(initial);
-   }, [gameId, initial]);
+      if (prevGameId.current !== gameId) {
+         prevGameId.current = gameId;
+         appliedVersion.current = initialVersion;
+         setState(initial);
+         return;
+      }
+      const gate = gateStateVersion(appliedVersion.current, initialVersion);
+      if (gate.apply) {
+         appliedVersion.current = gate.nextVersion;
+         setState(initial);
+      }
+   }, [gameId, initial, initialVersion]);
 
    useEffect(() => {
       setSpectators(initialSpectators);
@@ -205,8 +231,11 @@ export function useGameRoom(
             (message: { payload?: BroadcastBody }) => {
                const payload = message.payload ?? {};
                if (payload.state) {
-                  optimisticVersion.current += 1;
-                  setState(payload.state);
+                  const gate = gateStateVersion(appliedVersion.current, payload.version);
+                  if (gate.apply) {
+                     appliedVersion.current = gate.nextVersion;
+                     setState(payload.state);
+                  }
                }
                if (payload.spectators) {
                   setSpectators(payload.spectators);

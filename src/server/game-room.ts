@@ -85,6 +85,21 @@ export async function findCompletedOrActiveGame(code: string): Promise<DbGame | 
    return row ?? null;
 }
 
+/**
+ * Highest `game_events.seq` for a game — the version of its latest broadcast.
+ * Returned to the client as `initialVersion` so a resume / RSC refresh only
+ * replaces realtime state when the fetched snapshot is genuinely newer.
+ * Returns -1 when no events exist yet (fresh lobby).
+ */
+export async function latestEventSeq(gameId: string): Promise<number> {
+   const result = await db.execute<{ max_seq: number | null }>(
+      sql`select max(seq) as max_seq from ${gameEvents} where game_id = ${gameId}`,
+   );
+   const row = result[0] as { max_seq: number | string | null } | undefined;
+   if (!row || row.max_seq === null || row.max_seq === undefined) return -1;
+   return Number(row.max_seq);
+}
+
 export async function isUserInGame(gameId: string, userId: string): Promise<boolean> {
    const row = await db.query.gamePlayers.findFirst({
       where: and(eq(gamePlayers.gameId, gameId), eq(gamePlayers.userId, userId)),
@@ -261,6 +276,7 @@ export async function applyAction(
       return {
          next,
          eventId: event.id,
+         seq,
          code: row.code as string | null,
          isPublic: row.isPublic,
          prevStatus: row.status,
@@ -276,6 +292,7 @@ export async function applyAction(
          spectators: result.spectators,
          actorId: options.actorId ?? null,
          eventType,
+         version: result.seq,
          continuation: result.continuation,
       });
       if (result.isPublic) {

@@ -44,6 +44,13 @@ type StatePayload = {
    spectators: ReadonlyArray<RoomSpectator>;
    actorId: string | null;
    eventType: string;
+   /**
+    * Monotonic version of this state — the `game_events.seq` of the step that
+    * produced it. Lets clients drop out-of-order / late broadcasts. Omitted by
+    * auxiliary broadcasts that re-publish current state without advancing the
+    * game (spectator join/leave, knock resolution, host change).
+    */
+   version?: number;
    continuation?: ContinuationState;
    hostId?: string;
 };
