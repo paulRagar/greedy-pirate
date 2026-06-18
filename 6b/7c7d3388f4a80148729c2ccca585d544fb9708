@@ -1,0 +1,44 @@
+supabase/migrations/20260618000000_realtime_private_room_channels.sql
+  s_3045554ac290d0::t_9f753c85a2f59e 1-80
+src/server/realtime/broadcast.ts
+  s_3045554ac290d0::t_86c381a809570e 89
+  s_3045554ac290d0::t_3eacb3bf31a80b 16-24
+  s_3045554ac290d0::t_dfacad898675f8 155-157
+  s_3045554ac290d0::t_58d1727ea12025 165-167
+  s_3045554ac290d0::t_63f5c3254aff98 114
+app/api/cron/cleanup/route.ts
+  s_3045554ac290d0::t_f6386a2df07426 55
+app/play/[code]/KnockWaitingModal.tsx
+  s_3045554ac290d0::t_6e4df59e3e4d02 35,37
+  s_3045554ac290d0::t_9cfd9e1739cbbd 7
+src/server/realtime/broadcast.test.ts
+  s_3045554ac290d0::t_bf472935f7149b 1-2,6-68
+  s_3045554ac290d0::t_599cd287dbc817 3-5
+src/client/realtime/useKnockRequest.ts
+  s_3045554ac290d0::t_f09e99d89f6531 12-13
+  s_3045554ac290d0::t_939641e2b190c6 24
+  s_3045554ac290d0::t_b07e2cbd129983 64,66-72,74-93,96-97,99
+src/server/actions/setRoomVisibility.ts
+  s_3045554ac290d0::t_f6386a2df07426 66
+src/client/realtime/useGameRoom.ts
+  s_3045554ac290d0::t_177ed66214b4fc 175,177-181,184
+  s_3045554ac290d0::t_4a842aae3fcef4 267,273
+src/server/actions/respondToJoinRequest.ts
+  s_3045554ac290d0::t_f6386a2df07426 60,89,110,140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "6b7c7d3388f4a80148729c2ccca585d544fb9708",
+  "prompts": {},
+  "sessions": {
+    "s_3045554ac290d0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "38502ed7-e2b4-42a3-adb6-b496daf35643",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
