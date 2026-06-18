@@ -1,0 +1,25 @@
+app/admin/rooms/RoomsTable.tsx
+  s_bca24a4669fced::t_43257dae44cca6 15,195,198
+app/admin/rooms/page.tsx
+  s_bca24a4669fced::t_43257dae44cca6 6,42
+src/lib/maskEmail.test.ts
+  s_bca24a4669fced::t_43257dae44cca6 1-30
+src/lib/maskEmail.ts
+  s_bca24a4669fced::t_43257dae44cca6 1-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "88ecb0d90ecea431ab8200769e6ef43c8736aab5",
+  "prompts": {},
+  "sessions": {
+    "s_bca24a4669fced": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "843d6449-382e-419c-abb7-bbe56d0833fe",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
