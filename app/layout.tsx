@@ -34,11 +34,19 @@ export const metadata: Metadata = {
    icons: { icon: '/assets/favicon-greedy-pirate.png' },
    alternates: { canonical: 'https://greedypirate.com' },
    openGraph: {
-      title: 'Greedy Pirate',
+      title: 'Greedy Pirate — push-your-luck pirate card game',
       description:
          'Embark on a thrilling voyage with Greedy Pirate, where a treasure of coins awaits, but beware - one wrong card could plunder your loot in this high-stakes, risk-and-reward browser card game!',
       url: 'https://greedypirate.com',
-      images: ['/assets/open-graph-image.svg'],
+      siteName: 'Greedy Pirate',
+      type: 'website',
+      locale: 'en_US',
+   },
+   twitter: {
+      card: 'summary_large_image',
+      title: 'Greedy Pirate — push-your-luck pirate card game',
+      description:
+         'Draw gold, bank your loot, beware the pirates. Free browser card game for 2–10 players. Pass-and-play or online rooms.',
    },
    appleWebApp: {
       capable: true,
@@ -48,10 +56,44 @@ export const metadata: Metadata = {
    formatDetection: { telephone: false },
 };
 
+const STRUCTURED_DATA = {
+   '@context': 'https://schema.org',
+   '@graph': [
+      {
+         '@type': 'WebSite',
+         '@id': 'https://greedypirate.com/#website',
+         url: 'https://greedypirate.com',
+         name: 'Greedy Pirate',
+         description:
+            'Free browser-based push-your-luck pirate card game for 2–10 players. Pass-and-play locally or join online rooms with a 4-character code.',
+         inLanguage: 'en',
+      },
+      {
+         '@type': 'VideoGame',
+         '@id': 'https://greedypirate.com/#game',
+         name: 'Greedy Pirate',
+         url: 'https://greedypirate.com',
+         description:
+            'A risk-and-reward card game. Players draw from a shuffled deck of gold and pirate cards. Build a streak, bank your loot, or push your luck and lose it all to a pirate. Highest coin total when the deck runs out wins.',
+         genre: ['Push-your-luck', 'Card game', 'Party game', 'Multiplayer'],
+         gamePlatform: ['Web browser', 'iOS Safari', 'Android Chrome'],
+         applicationCategory: 'Game',
+         operatingSystem: 'Any',
+         numberOfPlayers: { '@type': 'QuantitativeValue', minValue: 2, maxValue: 10 },
+         playMode: ['MultiPlayer', 'CoOp'],
+         offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      },
+   ],
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
    return (
       <html lang='en' className='dark' suppressHydrationWarning>
          <body>
+            <script
+               type='application/ld+json'
+               dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }}
+            />
             <AmbientSea />
             <AuthBootstrap>
                <RecoveryHashRouter />
