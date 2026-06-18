@@ -1,0 +1,24 @@
+CLAUDE.md
+  s_deb6c0fc512e4c::t_171ef6289db368 48
+.github/pull_request_template.md
+  s_deb6c0fc512e4c::t_a14207670ce414 1-39
+.claude/docs/workflow.md
+  s_deb6c0fc512e4c::t_b13db8601af14d 35-42,45
+  s_deb6c0fc512e4c::t_bb135c0748e5e2 1-34,43-44,46-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "e98b78c88d0cd24f3e54e6cecd65cd8e9dd9bd39",
+  "prompts": {},
+  "sessions": {
+    "s_deb6c0fc512e4c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c52c7468-1d6b-43d1-8507-f68068c2b41b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
