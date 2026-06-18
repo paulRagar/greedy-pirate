@@ -1,0 +1,37 @@
+app/api/cron/cleanup/route.ts
+  s_bca24a4669fced::t_c599629468a1c9 72-75
+  s_bca24a4669fced::t_0b821226453d2e 42-45,48-52,54-58,60-63
+  s_bca24a4669fced::t_166342b9ec1cec 99-102
+  s_bca24a4669fced::t_24ca91b8ad6130 115-116
+  s_bca24a4669fced::t_fb75f04d67ad75 3,5,21-30
+src/server/game-room.ts
+  s_bca24a4669fced::t_66e4bab8c0570b 90-93
+  s_bca24a4669fced::t_a73452809cfe41 4,6
+  s_bca24a4669fced::t_6813da2de5cf61 101-103,105-107
+src/server/db/parseRows.test.ts
+  s_bca24a4669fced::t_30098a2f4e233a 1-33
+src/server/actions/requestJoin.ts
+  s_bca24a4669fced::t_a985ab57c27170 7
+  s_bca24a4669fced::t_4e45689de3990d 129-135
+app/play/lobby/page.tsx
+  s_bca24a4669fced::t_015fc8e4fc0c5b 3,5,12-23
+  s_bca24a4669fced::t_678acc4703b228 32-35,40-41,47
+src/server/db/parseRows.ts
+  s_bca24a4669fced::t_5340b4ce25867a 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "3c5c153c0c0c31b3146e8a9ba3601abc95d1035c",
+  "prompts": {},
+  "sessions": {
+    "s_bca24a4669fced": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "843d6449-382e-419c-abb7-bbe56d0833fe",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
