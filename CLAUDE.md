@@ -10,7 +10,7 @@ A risk-and-reward card game. Players draw from a shuffled deck of gold + pirate 
 Next.js 15 · React 19 · TypeScript 5 · Tailwind 4 · Supabase (Postgres + Auth + Realtime) · Drizzle ORM · Zustand · Zod · Vitest
 
 ## Architecture in one line
-**Pure game engine (`src/game/`) is the single source of truth for rules.** Local mode runs it in the browser. Online mode runs it on the server. Clients never see the deck — only what the server reveals. Realtime sync uses **Supabase Realtime broadcast** (not postgres_changes) — the server publishes the sanitized public state via the REST broadcast endpoint after every action, and clients subscribe to `room:{CODE}` topics.
+**Pure game engine (`src/game/`) is the single source of truth for rules.** Local mode runs it in the browser. Online mode runs it on the server. Clients never see the deck — only what the server reveals. Realtime sync uses **Supabase Realtime broadcast** (not postgres_changes) — the server publishes the sanitized public state via the REST broadcast endpoint after every action, and clients subscribe to **private**, RLS-gated `room:{CODE}` topics (members only). Broadcasts carry a monotonic version (`game_events.seq`) so clients drop stale/out-of-order payloads.
 
 ## Project layout
 ```

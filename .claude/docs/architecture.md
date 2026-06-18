@@ -83,7 +83,17 @@ Authoritative server, optimistic clients, broadcast realtime.
 
 ### Why broadcast, not postgres_changes?
 
-Earlier draft used Postgres-changes feeds on `game_events`. That delivery is gated by the realtime websocket's JWT passing RLS — unreliable for anonymously signed-in users in our setup. We switched to **broadcast**: the server POSTs to `${SUPABASE_URL}/realtime/v1/api/broadcast` with the service-role key after each action. No per-row RLS checks, lower latency, more predictable.
+Earlier draft used Postgres-changes feeds on `game_events`. That delivery is gated by the realtime websocket's JWT passing RLS — unreliable for anonymously signed-in users in our setup. We switched to **broadcast**: the server POSTs to `${SUPABASE_URL}/realtime/v1/api/broadcast` with the service-role key after each action. Server-side delivery bypasses RLS, lower latency, more predictable.
+
+### Channel security: private channels + RLS
+
+Clients no longer subscribe anonymously. Room topics are **private** Supabase channels: the browser calls `supabase.realtime.setAuth()` and subscribes with `config.private: true`, and RLS on `realtime.messages` (`realtime.is_room_member`) restricts read/send to the host, a seated player, or a spectator of that game. A join-requester who isn't a member yet receives the captain's verdict on their own private `knock:{USER_ID}` topic (`realtime.is_own_knock_topic`), not the room topic. The public matchmaking list (`lobby:public`) stays a public channel. The server still publishes via the service-role REST endpoint (bypasses RLS). (GRE-6)
+
+Before resubscribing (on mount or tab-resume), `useGameRoom` awaits removal of any lingering same-topic channel, so a stale already-subscribed channel can't throw a presence-after-subscribe error or resubscribe without the fresh JWT. (GRE-33)
+
+### Broadcast ordering
+
+Broadcasts are independent HTTP POSTs with `ack:false`, so they can arrive late or out of order. Each game-advancing broadcast carries a monotonic `version` (the `game_events.seq`). The client tracks the highest applied version and **drops any `state` broadcast whose version ≤ the last applied**, so an older payload can't clobber newer state. An optimistic local reduce (BANK/END_TURN) leaves the watermark untouched; the server's confirming broadcast (next seq) reconciles it. On resume, the RSC refresh carries the latest seq and is applied only if newer. (GRE-10)
 
 ### Flow: a player draws a card
 
@@ -136,7 +146,9 @@ Long-running tabs + accumulating DB rows = compounding bloat. Mitigations:
 | Player peeks at deck order | Deck stored server-side only. RLS on `games` denies all SELECT to anon/authenticated — only Drizzle's service-role connection reads it. Broadcast payloads carry the sanitized `PublicGameState` (no `deck` field). |
 | Player draws on someone else's turn | Server validates `current_player_id === auth.uid()` before calling the engine. Engine itself is pure — server is the only enforcement point. |
 | Player fakes a high-value card | Server is the only writer to `games.state`. Client deltas are received-only. Server-side `reduce` validates every state transition. |
-| Player spams the cron route | `CRON_SECRET` Bearer check returns `401` for unauthorized callers. |
+| Player subscribes to a foreign room or forges broadcasts | Room channels are **private**; RLS on `realtime.messages` limits subscribe/send to the host, a seated player, or a spectator of that game. Server publishes via service-role. (GRE-6) |
+| Player spams the cron route | `CRON_SECRET` Bearer check returns `401` for unauthorized callers; compared in constant time (`timingSafeEqual`). (GRE-8) |
+| Open redirect via auth-callback `next` | `next` is validated to a same-origin path (rejects `//host`, `/\host`, absolute URLs) before redirect. (GRE-7) |
 | Brute-force join by guessing codes | 4 chars × 30-char alphabet ≈ 810k combos. Rate limit on `joinRoom` can be added if abuse appears. |
 | Multiple anonymous accounts evading caps | Acceptable for now — accounts are free anyway. Add IP-based throttle if abuse appears. |
 
@@ -181,8 +193,9 @@ No custom Node WebSocket server. No Docker in production. Both free tiers cover 
 
 ## Deferred / known gaps
 
-- Presence + disconnect timers in lobby/play. Currently shows `Waiting on X…` if a player drops mid-turn; the host has no recovery action yet.
-- Per-player pirate count and longest-bank stats (engine doesn't expose them yet).
-- Leaderboards.
-- Host-left auto-promote.
-- Playwright E2E.
+- Per-player pirate count and longest-bank stats are still not surfaced (GRE-26).
+- Leaderboards / daily challenge / return reasons (GRE-27).
+- Playwright + server-action/realtime-reducer test coverage (GRE-16).
+- Continuation-finalize atomicity + unified seq generation (GRE-11).
+
+Resolved since this list was first written: presence online/offline tracking with grace timers, host-left auto-promote (cron host migration), and private realtime channels (GRE-6).

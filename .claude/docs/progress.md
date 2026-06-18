@@ -226,6 +226,23 @@ See `.claude/docs/roadmap.md`.
 - The Vercel CLI's `vercel env add ... preview --value '...' --yes` exits 1 in agent contexts because it interactively asks "all preview branches?" — use the dashboard for preview-scope vars.
 - `app/api/cron/cleanup` (via `src/server/db/client.ts:7`) throws at module-load if `DATABASE_URL` is unset, which fails local `npm run build` when `.env.local` was overwritten by `vercel env pull` without a re-paste of the Supabase keys. Restore from `supabase status` output.
 
+## Security & architecture hardening ✅ IN PROGRESS (2026-06-18)
+
+Working the audit backlog filed in Linear (GRE-5…33). Shipped to `main` (each its own PR, server-authoritative + RLS principles intact):
+
+- **GRE-5** — lock the `games` row during `applyAction` so concurrent actions can't lose updates (#21).
+- **GRE-6** — realtime moved to **private channels** + RLS on `realtime.messages` (`is_room_member` / `is_own_knock_topic`); knock verdicts on per-user `knock:{USER_ID}` topic; `lobby:public` stays public.
+- **GRE-7** — auth-callback `next` validated to a same-origin path (open-redirect fix).
+- **GRE-8** — `CRON_SECRET` compared in constant time (`timingSafeEqual`).
+- **GRE-9** — admin rooms page masks host emails server-side (PII); raw email never sent to client.
+- **GRE-10** — broadcasts carry a monotonic `version` (`game_events.seq`); client version-gates and drops stale/out-of-order payloads; resume applies RSC state only if newer.
+- **GRE-13** — raw-SQL `db.execute` results validated with Zod via `parseRows` (no more `as unknown as T[]`).
+- **GRE-14** — middleware session refresh scoped to auth-sensitive routes (`needsSessionRefresh`); `getUser()` kept where it matters, so auth isn't weakened.
+- **GRE-18** — screen-reader announcements: always-mounted polite/assertive live regions, parallel text for visual-only effects, accessible names on modals.
+- **GRE-33** — channel-lifecycle hotfix: drop any stale same-topic realtime channel before resubscribe (fixes presence-after-subscribe + RLS-denied-read on resume; a GRE-6 regression).
+
+**Still open (Linear):** GRE-11 (atomic continuation-finalize) → unblocks GRE-12/16; GRE-15 (latent nits); GRE-17 (modal focus trap); GRE-19 (contrast); GRE-20/21/22 (UI/a11y, unblocked by GRE-18); GRE-23 (core bank-vs-push loop) → gates 24–32. See Linear for the live board.
+
 ## Phase 5 — Stretch goals ⏳
 
 See `.claude/docs/roadmap.md`.
