@@ -1,7 +1,9 @@
 import 'server-only';
 import { and, eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 import { db } from './db/client';
+import { parseRows } from './db/parseRows';
 import { gameEvents, gamePlayers, games } from './db/schema';
 import type { DbGame } from './db/schema';
 import { bumpUserStats } from './stats';
@@ -85,6 +87,10 @@ export async function findCompletedOrActiveGame(code: string): Promise<DbGame | 
    return row ?? null;
 }
 
+// `max(seq)` is null on an empty event log; postgres-js may hand back a
+// bigint aggregate as a string, so accept both before the Number() coercion.
+const MaxSeqRow = z.object({ max_seq: z.union([z.number(), z.string(), z.null()]) });
+
 /**
  * Highest `game_events.seq` for a game — the version of its latest broadcast.
  * Returned to the client as `initialVersion` so a resume / RSC refresh only
@@ -92,12 +98,13 @@ export async function findCompletedOrActiveGame(code: string): Promise<DbGame | 
  * Returns -1 when no events exist yet (fresh lobby).
  */
 export async function latestEventSeq(gameId: string): Promise<number> {
-   const result = await db.execute<{ max_seq: number | null }>(
-      sql`select max(seq) as max_seq from ${gameEvents} where game_id = ${gameId}`,
+   const rows = parseRows(
+      await db.execute(sql`select max(seq) as max_seq from ${gameEvents} where game_id = ${gameId}`),
+      MaxSeqRow,
    );
-   const row = result[0] as { max_seq: number | string | null } | undefined;
-   if (!row || row.max_seq === null || row.max_seq === undefined) return -1;
-   return Number(row.max_seq);
+   const maxSeq = rows[0]?.max_seq;
+   if (maxSeq === null || maxSeq === undefined) return -1;
+   return Number(maxSeq);
 }
 
 export async function isUserInGame(gameId: string, userId: string): Promise<boolean> {
