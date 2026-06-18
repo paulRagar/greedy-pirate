@@ -4,6 +4,7 @@ import 'server-only';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/server/db/client';
+import { parseRows } from '@/server/db/parseRows';
 import {
    gameJoinRequests,
    gamePlayers,
@@ -125,10 +126,13 @@ export async function requestJoin(
 
    // Rate-limit: cap total knocks per user over a rolling window.
    const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
-   const recentRows = (await db.execute<{ count: number }>(
-      sql`select count(*)::int as count from public.game_join_requests where user_id = ${user.id} and created_at > ${since.toISOString()}`,
-   )) as unknown as Array<{ count: number }>;
-   const recentCount = Number(recentRows[0]?.count ?? 0);
+   const recentRows = parseRows(
+      await db.execute(
+         sql`select count(*)::int as count from public.game_join_requests where user_id = ${user.id} and created_at > ${since.toISOString()}`,
+      ),
+      z.object({ count: z.number() }),
+   );
+   const recentCount = recentRows[0]?.count ?? 0;
    if (recentCount >= RATE_LIMIT_MAX) {
       return { ok: false, error: 'Easy, sailor — too many hails. Wait a minute.' };
    }

@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { eq, sql } from 'drizzle-orm';
+import { z } from 'zod';
 import { db } from '@/server/db/client';
+import { parseRows } from '@/server/db/parseRows';
 import { games } from '@/server/db/schema';
 import {
    broadcastKnockResolved,
@@ -16,9 +18,16 @@ import { toPublic } from '@/game/public';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type AbandonRow = { abandoned_lobbies: number; abandoned_active: number };
-type ExpireRow = { game_code: string; request_id: string; requester_id: string };
-type MigrateRow = { game_code: string; new_host_id: string };
+const AbandonRow = z.object({ abandoned_lobbies: z.number(), abandoned_active: z.number() });
+const PruneRow = z.object({ prune_old_events: z.number() });
+const PurgeRow = z.object({ purge_old_games: z.number() });
+const ExpireRow = z.object({
+   game_code: z.string(),
+   request_id: z.string(),
+   requester_id: z.string(),
+});
+const MigrateRow = z.object({ game_code: z.string(), new_host_id: z.string() });
+const ContinuationRow = z.object({ game_code: z.string() });
 
 function authorize(req: NextRequest): boolean {
    return isValidBearer(req.headers.get('authorization'), process.env.CRON_SECRET);
@@ -30,24 +39,28 @@ export async function GET(req: NextRequest) {
    }
 
    try {
-      const abandonRows = (await db.execute<AbandonRow>(
-         sql`select * from public.abandon_stale_games()`,
-      )) as unknown as AbandonRow[];
+      const abandonRows = parseRows(
+         await db.execute(sql`select * from public.abandon_stale_games()`),
+         AbandonRow,
+      );
       const abandon = abandonRows[0] ?? { abandoned_lobbies: 0, abandoned_active: 0 };
 
-      const pruneRows = (await db.execute<{ prune_old_events: number }>(
-         sql`select public.prune_old_events() as prune_old_events`,
-      )) as unknown as Array<{ prune_old_events: number }>;
-      const prunedEvents = Number(pruneRows[0]?.prune_old_events ?? 0);
+      const pruneRows = parseRows(
+         await db.execute(sql`select public.prune_old_events() as prune_old_events`),
+         PruneRow,
+      );
+      const prunedEvents = pruneRows[0]?.prune_old_events ?? 0;
 
-      const purgeRows = (await db.execute<{ purge_old_games: number }>(
-         sql`select public.purge_old_games() as purge_old_games`,
-      )) as unknown as Array<{ purge_old_games: number }>;
-      const purgedGames = Number(purgeRows[0]?.purge_old_games ?? 0);
+      const purgeRows = parseRows(
+         await db.execute(sql`select public.purge_old_games() as purge_old_games`),
+         PurgeRow,
+      );
+      const purgedGames = purgeRows[0]?.purge_old_games ?? 0;
 
-      const expiredRows = (await db.execute<ExpireRow>(
-         sql`select * from public.expire_pending_join_requests()`,
-      )) as unknown as ExpireRow[];
+      const expiredRows = parseRows(
+         await db.execute(sql`select * from public.expire_pending_join_requests()`),
+         ExpireRow,
+      );
       for (const row of expiredRows) {
          await broadcastKnockResolved({
             requestId: row.request_id,
@@ -56,9 +69,10 @@ export async function GET(req: NextRequest) {
          });
       }
 
-      const migratedRows = (await db.execute<MigrateRow>(
-         sql`select * from public.migrate_orphan_hosts()`,
-      )) as unknown as MigrateRow[];
+      const migratedRows = parseRows(
+         await db.execute(sql`select * from public.migrate_orphan_hosts()`),
+         MigrateRow,
+      );
       for (const row of migratedRows) {
          const game = await findGameByCode(row.game_code);
          if (!game) continue;
@@ -82,9 +96,10 @@ export async function GET(req: NextRequest) {
 
       // Safety net for the post-game continuation window — if no client
       // fired finalize before its tab closed, sweep it here.
-      const staleContinuations = (await db.execute<{ game_code: string }>(
-         sql`select * from public.find_expired_continuations()`,
-      )) as unknown as Array<{ game_code: string }>;
+      const staleContinuations = parseRows(
+         await db.execute(sql`select * from public.find_expired_continuations()`),
+         ContinuationRow,
+      );
       let finalizedContinuations = 0;
       for (const row of staleContinuations) {
          const game = await db.query.games.findFirst({
@@ -97,8 +112,8 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.json({
          ok: true,
-         abandonedLobbies: Number(abandon.abandoned_lobbies ?? 0),
-         abandonedActive: Number(abandon.abandoned_active ?? 0),
+         abandonedLobbies: abandon.abandoned_lobbies,
+         abandonedActive: abandon.abandoned_active,
          prunedEvents,
          purgedGames,
          expiredKnocks: expiredRows.length,
