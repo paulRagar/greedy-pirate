@@ -1,0 +1,53 @@
+src/ui/toast/PirateToast.tsx
+  s_bca24a4669fced::t_e99e2cc1fe0602 49-69,71
+src/ui/pirate-modal/PirateModal.test.tsx
+  s_bca24a4669fced::t_fd07bab8dee098 1-39
+vitest.config.ts
+  s_bca24a4669fced::t_e7941d5b603b63 2,6,20-22,24
+src/types/vitest-dom.d.ts
+  s_bca24a4669fced::t_596dd9991396d7 1-3
+src/ui/game-room/VictoryModal.tsx
+  s_bca24a4669fced::t_f54b240dae473e 33
+app/play-local/PlayLocalClient.tsx
+  s_bca24a4669fced::t_abc5c89d69a523 155
+  s_bca24a4669fced::t_404b4f77d92f11 140
+  s_bca24a4669fced::t_a94bb418de7c88 98-110
+  s_bca24a4669fced::t_cc3c269ba51bcc 7-8
+src/client/a11y/gameAnnouncement.ts
+  s_bca24a4669fced::t_73f0b775df8b4e 1-62
+src/client/hooks/useGameAnnouncer.tsx
+  s_bca24a4669fced::t_87f2a151d5c6d8 1-49
+src/ui/pirate-modal/PirateModal.tsx
+  s_bca24a4669fced::t_9a5b228e550f85 80-84
+  s_bca24a4669fced::t_f11eb136a420ec 70-71
+  s_bca24a4669fced::t_2024952350aa8c 3,11,13-18,23-36
+src/client/a11y/gameAnnouncement.test.ts
+  s_bca24a4669fced::t_753bdf50e21109 1-58
+package.json
+  s_bca24a4669fced::t_8844993e5a67f5 41-43,52
+src/client/hooks/useGameAnnouncer.test.tsx
+  s_bca24a4669fced::t_3afa1497afac02 1-48
+app/play/[code]/OnlineRoomClient.tsx
+  s_bca24a4669fced::t_e3ada1eed8389c 1164-1176
+  s_bca24a4669fced::t_01553d3905dc96 1296
+  s_bca24a4669fced::t_c76d1731917097 12-13
+tests/setup/dom.ts
+  s_bca24a4669fced::t_15750e704f6b31 1-4,21-25
+  s_bca24a4669fced::t_86f541c985e24e 5-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "6a0d25b8a2bb8a9e4ec4f1b7c5b3429d52ac53d9",
+  "prompts": {},
+  "sessions": {
+    "s_bca24a4669fced": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "843d6449-382e-419c-abb7-bbe56d0833fe",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
