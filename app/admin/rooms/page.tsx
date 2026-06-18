@@ -3,6 +3,7 @@ import { desc } from 'drizzle-orm';
 import { db } from '@/server/db/client';
 import { games } from '@/server/db/schema';
 import { getAdminUser } from '@/server/auth/admin';
+import { maskEmail } from '@/lib/maskEmail';
 import RoomsTable, { type AdminRoomRow } from './RoomsTable';
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +39,7 @@ export default async function AdminRoomsPage() {
       status: g.status,
       deckVariant: g.deckVariant,
       hostName: hosts.get(g.hostId)?.name ?? '—',
-      hostEmail: hosts.get(g.hostId)?.email ?? null,
+      hostEmailMasked: maskEmail(hosts.get(g.hostId)?.email),
       seatedPlayers: seatedByGame.get(g.id) ?? 0,
       createdAt:
          typeof g.createdAt === 'string'
