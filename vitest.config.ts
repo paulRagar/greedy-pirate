@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
 export default defineConfig({
+   plugins: [react()],
    resolve: {
       alias: {
          '@/game': path.resolve(__dirname, './src/game'),
@@ -15,7 +17,11 @@ export default defineConfig({
       },
    },
    test: {
+      // Default node for the pure engine/lib/server tests. Component smoke
+      // tests opt into jsdom per-file via a `// @vitest-environment jsdom`
+      // docblock so we don't pay DOM setup cost on the pure suites.
       environment: 'node',
+      setupFiles: ['./tests/setup/dom.ts'],
       include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
    },
 });

@@ -9,6 +9,8 @@ import {
    type KnockRequestedEvent,
 } from '@/client/realtime/useGameRoom';
 import { useGameJuice, type JuiceSnapshot } from '@/client/hooks/useGameJuice';
+import { useGameAnnouncer } from '@/client/hooks/useGameAnnouncer';
+import type { AnnounceSnapshot } from '@/client/a11y/gameAnnouncement';
 import type { PublicGameState, RoomState, RoomSpectatorView } from '@/game/public';
 import {
    bankOnline,
@@ -1162,6 +1164,19 @@ function Play({
    );
    const { bankFx, clearBankFx, shakeKey } = useGameJuice(snap);
 
+   const announceSnap = useMemo<AnnounceSnapshot>(
+      () => ({
+         status: state.status,
+         turnIndex: state.turnIndex,
+         currentCardKind: state.currentCard?.kind ?? null,
+         currentName: currentPlayer?.name ?? null,
+         winnerName: winner?.name ?? null,
+         isMyTurn: isCurrent,
+      }),
+      [state.status, state.turnIndex, state.currentCard, currentPlayer?.name, winner?.name, isCurrent],
+   );
+   const { announcer } = useGameAnnouncer(announceSnap);
+
    const [shaking, setShaking] = useState(false);
    useEffect(() => {
       if (shakeKey > 0) setShaking(true);
@@ -1281,6 +1296,7 @@ function Play({
             if (e.animationName === 'bust-shake') setShaking(false);
          }}
       >
+         {announcer}
          {isPirate && !isComplete && <BustVignette />}
          {toastElement}
          {bankFx && <ChestBurst key={bankFx.key} amount={bankFx.amount} onDone={clearBankFx} />}

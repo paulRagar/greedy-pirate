@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/client/stores/gameStore';
 import { useGameJuice, type JuiceSnapshot } from '@/client/hooks/useGameJuice';
+import { useGameAnnouncer } from '@/client/hooks/useGameAnnouncer';
+import type { AnnounceSnapshot } from '@/client/a11y/gameAnnouncement';
 import { DEFAULT_VARIANT } from '@/game/rules';
 import type { DeckVariant, PlayerInit } from '@/game/types';
 import { persistLocalGame } from '@/server/actions/persistLocalGame';
@@ -93,6 +95,19 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
    );
    const { bankFx, clearBankFx, shakeKey } = useGameJuice(snap);
 
+   const announceSnap = useMemo<AnnounceSnapshot>(
+      () => ({
+         status: state.status,
+         turnIndex: state.turnIndex,
+         currentCardKind: state.currentCard?.kind ?? null,
+         currentName: currentPlayer?.name ?? null,
+         winnerName: winner?.name ?? null,
+         isMyTurn: true, // hot-seat — every turn is "yours"
+      }),
+      [state.status, state.turnIndex, state.currentCard, currentPlayer?.name, winner?.name],
+   );
+   const { announcer } = useGameAnnouncer(announceSnap);
+
    const [shaking, setShaking] = useState(false);
    useEffect(() => {
       if (shakeKey > 0) setShaking(true);
@@ -122,6 +137,7 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
    if (isBootstrapping) {
       return (
          <main className='flex flex-1 items-center justify-center px-5 py-10'>
+            {announcer}
             <p className='pirate-display animate-pulse text-2xl text-[color:var(--color-gold-300)]'>
                Shuffling the deck…
             </p>
@@ -136,6 +152,7 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
             if (e.animationName === 'bust-shake') setShaking(false);
          }}
       >
+         {announcer}
          {isPirate && !isComplete && <BustVignette />}
          {toastElement}
          {bankFx && <ChestBurst key={bankFx.key} amount={bankFx.amount} onDone={clearBankFx} />}
