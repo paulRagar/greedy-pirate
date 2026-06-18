@@ -48,9 +48,16 @@ Small set of rules. Followed everywhere unless there's a documented reason not t
 
 ## Error handling
 
-- **At the boundary, not in the middle.** Internal code trusts its callers. Validate at: user input, server action entry, realtime payload receipt.
+- **At the boundary, not in the middle.** Internal code trusts its callers. Validate at: user input, server action entry, realtime payload receipt, and **raw-SQL result rows**.
+- **Raw SQL is a boundary too.** Never cast `db.execute<T>()` results with `as unknown as T[]` — the generic isn't checked against returned columns, so a renamed column silently yields `undefined`/`NaN`. Parse every raw-SQL result through `parseRows(result, zodRowSchema)` (`src/server/db/parseRows.ts`) so a shape mismatch fails loudly (GRE-13).
 - **Throw on invariant violations** (engine, internal helpers). Catch only where you can recover meaningfully.
 - **Don't swallow errors.** If you catch, log via the project logger AND re-throw or convert to a user-facing message.
+
+## Accessibility
+
+- **Announce dynamic game events to screen readers.** Visual-only feedback (toast, shake, vignette, chest-burst, turn change, bust, win) must have a parallel text announcement. Use the always-mounted polite/assertive live regions (`useGameAnnouncer` / `gameAnnouncement.ts`) — never conditionally mount the live-region node, or the announcement won't fire (GRE-18).
+- **Every modal needs a non-empty accessible name** — a `title`, `aria-label`, or `aria-labelledby` pointing at its visible heading. `PirateModal` warns in dev if none is set.
+- Mobile-first still holds: touch targets ≥44px, no hover-only affordances, tested at 360–414px.
 
 ## Comments
 

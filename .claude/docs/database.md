@@ -7,7 +7,7 @@ Postgres on Supabase. Schema managed with Drizzle. All times in UTC (`timestampt
 - **Game state as JSONB.** The active game state (deck, current card, streak, etc.) lives in a single JSONB column on `games`. Cheap to read/write, evolves without migrations.
 - **Events as separate rows.** Every action (draw, bank, end turn, join, start, end) writes a `game_events` row carrying the sanitized `PublicGameState`. Enables replay, audit, debugging — does NOT replace the JSONB state on `games` (that is the source of truth for "now"; events are the journal).
 - **Stats are projected.** `user_stats` is updated incrementally on game completion via `bumpUserStats` (Drizzle UPSERT). Don't rely on it for forensic accuracy — re-derive from `games` + `game_players` if you suspect drift.
-- **RLS as defense in depth, not delivery channel.** Anon/authenticated clients are denied direct SELECT on `games`. Server code reads via Drizzle (service-role) and broadcasts sanitized state through Supabase Realtime broadcast — RLS is not what gates message delivery.
+- **RLS as defense in depth.** Anon/authenticated clients are denied direct SELECT on `games`. Server code reads via Drizzle (service-role) and broadcasts sanitized state through Supabase Realtime broadcast. The **server** publish path bypasses RLS (service-role REST), but **client** subscribe/send is now RLS-gated: room/knock topics are private channels with policies on `realtime.messages` (GRE-6, see below).
 - **Secure IDs.** All primary keys use `gen_random_uuid()` (pgcrypto). Room codes use `crypto.getRandomValues` from a 30-char alphabet.
 
 ---
@@ -71,7 +71,7 @@ Append-only log of actions. Drives replay and audit. **Not** the delivery channe
 |---|---|---|
 | `id` | `bigserial` PK | |
 | `game_id` | `uuid` not null | FK → `games.id` on delete cascade. Indexed. |
-| `seq` | `int` not null | Monotonic per-game sequence. |
+| `seq` | `int` not null | Monotonic per-game sequence. Also the broadcast **version**: clients drop any `state` broadcast with `version ≤` the last applied (GRE-10). Always derive via `max(seq)+1`, never `COUNT(*)`. |
 | `actor_id` | `uuid` nullable | User who performed the action (null for system events). |
 | `type` | `text` not null | `'PLAYER_JOIN' \| 'PLAYER_LEAVE' \| 'START_GAME' \| 'DRAW' \| 'BANK' \| 'END_TURN' \| 'GAME_ENDED'`. |
 | `payload` | `jsonb` not null default `'{}'` | Carries `{ state: PublicGameState, actorId, eventType }`. |
@@ -146,9 +146,29 @@ create policy game_events_co_member_read on public.game_events   for select usin
 -- No public write policies are needed.
 ```
 
+**Realtime (`realtime.messages`)** — added in `20260618000000_realtime_private_room_channels.sql` (GRE-6). Private channels are deny-by-default; two permissive policies open them to the right members:
+
+```sql
+-- room:{CODE} — host / seated (not-left) player / spectator of a lobby|active game.
+--   SECURITY DEFINER helper realtime.is_room_member(topic) reads games/game_players/
+--   game_spectators (the authenticated role has no SELECT grant on those).
+create policy "room members access their room topic" on realtime.messages
+   for all to authenticated
+   using (realtime.is_room_member(realtime.topic()))
+   with check (realtime.is_room_member(realtime.topic()));
+
+-- knock:{USER_ID} — only the user whose id matches the topic suffix
+--   (realtime.is_own_knock_topic), so a pending join-requester learns the verdict
+--   without seeing room state.
+create policy "users access their own knock topic" on realtime.messages
+   for all to authenticated
+   using (realtime.is_own_knock_topic(realtime.topic()))
+   with check (realtime.is_own_knock_topic(realtime.topic()));
+```
+
 Notes:
 - The `games_member_read` policy that earlier drafts included was **dropped** in `20260610200000_tighten_games_rls.sql` to harden deck secrecy.
-- If we ever expose direct realtime subscriptions on `games` to clients, split the deck into a separate `games_private` table with service-role-only access.
+- `lobby:public` is a public channel (no RLS consulted) — it carries only the sanitized matchmaking list.
 
 ---
 
@@ -161,7 +181,7 @@ Defined in `20260611100000_cleanup_functions.sql`. Invoked daily by `/api/cron/c
 | `abandon_stale_games()` | Lobbies older than 2h → `abandoned`. Active games with no `game_events` in 6h → `abandoned` (sets `completed_at`). Returns `(abandoned_lobbies, abandoned_active)`. |
 | `prune_old_events()` | Deletes `game_events` rows older than 30 days. Returns count. |
 
-Both granted `execute` on `service_role` (service role bypasses RLS anyway; explicit for clarity).
+Later migrations add more maintenance functions the same cron route invokes (room-lifecycle revamp, `purge_old_games`, expired join-request cleanup, host migration, and continuation-window expiry/finalize). Each returns only freshly-changed rows so the route can fire one-shot broadcasts (e.g. host migration, knock expiry) for them. All granted `execute` on `service_role` (service role bypasses RLS anyway; explicit for clarity).
 
 Local invocation:
 ```bash
