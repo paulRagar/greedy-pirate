@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 
@@ -8,12 +8,32 @@ interface Props {
    open: boolean;
    onClose?: () => void;
    dismissible?: boolean;
+   /** Visible heading. When set, it labels the dialog via aria-labelledby. */
    title?: string;
+   /**
+    * Accessible name for dialogs with no visible `title` (e.g. the Victory
+    * modal, whose heading is custom styled). Required when `title` is absent so
+    * every dialog has a non-empty accessible name (WCAG 4.1.2).
+    */
+   ariaLabel?: string;
    children: React.ReactNode;
    className?: string;
 }
 
-export function PirateModal({ open, onClose, dismissible = true, title, children, className }: Props) {
+export function PirateModal({
+   open,
+   onClose,
+   dismissible = true,
+   title,
+   ariaLabel,
+   children,
+   className,
+}: Props) {
+   const headingId = useId();
+
+   if (process.env.NODE_ENV !== 'production' && !title && !ariaLabel) {
+      console.warn('PirateModal: provide `title` or `ariaLabel` so the dialog has an accessible name.');
+   }
    // Portal target. Set after mount so SSR returns null instead of rendering
    // a stray overlay before hydration.
    const [mounted, setMounted] = useState(false);
@@ -47,7 +67,8 @@ export function PirateModal({ open, onClose, dismissible = true, title, children
          onClick={dismissible ? onClose : undefined}
          role='dialog'
          aria-modal='true'
-         aria-label={title}
+         aria-labelledby={title ? headingId : undefined}
+         aria-label={title ? undefined : ariaLabel}
       >
          <div
             className={cn(
@@ -56,7 +77,11 @@ export function PirateModal({ open, onClose, dismissible = true, title, children
             )}
             onClick={(e) => e.stopPropagation()}
          >
-            {title && <h2 className='pirate-display text-2xl text-[color:var(--color-gold-300)]'>{title}</h2>}
+            {title && (
+               <h2 id={headingId} className='pirate-display text-2xl text-[color:var(--color-gold-300)]'>
+                  {title}
+               </h2>
+            )}
             {children}
          </div>
       </div>,

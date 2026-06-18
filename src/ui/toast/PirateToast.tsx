@@ -46,19 +46,29 @@ export function useGameToast(duration = 1600) {
       };
    }, []);
 
-   const element = toast ? (
-      <div className='pointer-events-none fixed inset-x-0 top-20 z-50 flex justify-center px-4' aria-live='polite'>
-         <div
-            key={toast.id}
-            className={cn(
-               'animate-toast-in pirate-display rounded-full border-2 px-6 py-2.5 text-xl tracking-wider shadow-card-deep',
-               TONE[toast.tone],
-            )}
-         >
-            {toast.message}
-         </div>
+   // The live region is ALWAYS mounted so assistive tech registers it before
+   // its text changes; only the inner toast toggles. Mounting the region and
+   // its content in the same tick (the old `toast ? … : null`) meant the
+   // announcement frequently never fired.
+   const element = (
+      <div
+         className='pointer-events-none fixed inset-x-0 top-20 z-50 flex justify-center px-4'
+         aria-live='polite'
+         aria-atomic='true'
+      >
+         {toast && (
+            <div
+               key={toast.id}
+               className={cn(
+                  'animate-toast-in pirate-display rounded-full border-2 px-6 py-2.5 text-xl tracking-wider shadow-card-deep',
+                  TONE[toast.tone],
+               )}
+            >
+               {toast.message}
+            </div>
+         )}
       </div>
-   ) : null;
+   );
 
    return { toastElement: element, showToast: show };
 }

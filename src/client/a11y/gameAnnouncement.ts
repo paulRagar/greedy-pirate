@@ -1,0 +1,62 @@
+import type { GameStatus } from '@/game/types';
+
+/**
+ * Minimal view of game state needed to narrate the core feedback loop to
+ * screen readers. Both play clients map their state into this shape; the
+ * announcement is then derived purely by diffing the previous snapshot.
+ */
+export type AnnounceSnapshot = {
+   status: GameStatus;
+   turnIndex: number;
+   currentCardKind: 'gold' | 'pirate' | null;
+   /** Name of the player whose turn it currently is. */
+   currentName: string | null;
+   /** Name of the winner once the game is complete. */
+   winnerName: string | null;
+   /** True when the local viewer holds the current turn (hot-seat = always). */
+   isMyTurn: boolean;
+};
+
+export type Announcement = {
+   message: string;
+   /** Bust + game-over interrupt; routine turn changes are polite. */
+   assertive: boolean;
+};
+
+/**
+ * Derive the screen-reader announcement for the transition from `prev` to
+ * `next`, or `null` when nothing noteworthy changed. Pure so it can be unit
+ * tested without a DOM and reused identically across local + online clients.
+ */
+export function deriveAnnouncement(
+   prev: AnnounceSnapshot | null,
+   next: AnnounceSnapshot,
+): Announcement | null {
+   // Game over takes priority over everything else.
+   if (next.status === 'complete' && (prev === null || prev.status !== 'complete')) {
+      const winner = next.winnerName ?? 'Nobody';
+      return { message: `Deck empty. ${winner} wins.`, assertive: true };
+   }
+
+   if (next.status !== 'active') return null;
+
+   // First active snapshot or a fresh restart: announce whose turn it is.
+   const becameActive = prev === null || prev.status !== 'active';
+
+   const bust =
+      next.currentCardKind === 'pirate' &&
+      (becameActive || prev === null || prev.currentCardKind !== 'pirate');
+   if (bust) {
+      return { message: 'Pirate! Streak lost.', assertive: true };
+   }
+
+   const turnChanged = becameActive || (prev !== null && next.turnIndex !== prev.turnIndex);
+   if (turnChanged) {
+      const message = next.isMyTurn
+         ? 'Your turn.'
+         : `${next.currentName ?? 'The next player'} is at the helm.`;
+      return { message, assertive: false };
+   }
+
+   return null;
+}
