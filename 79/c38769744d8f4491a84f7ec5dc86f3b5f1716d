@@ -1,0 +1,33 @@
+.claude/docs/database.md
+  s_bca24a4669fced::t_012a3d732ae0ae 149-168,171
+  s_bca24a4669fced::t_3a38a9a6bea5eb 10
+  s_bca24a4669fced::t_482ee36e7b5079 74
+  s_bca24a4669fced::t_634f57f942dff0 184
+.claude/docs/architecture.md
+  s_bca24a4669fced::t_a3a424ce90331c 149-151
+  s_bca24a4669fced::t_8e90f891bbbe9d 86-96
+  s_bca24a4669fced::t_2f37f004d828b4 196-201
+.claude/docs/conventions.md
+  s_bca24a4669fced::t_b840302c9cf11b 56-61
+  s_bca24a4669fced::t_e77ea03e7cf935 51-52
+.claude/docs/progress.md
+  s_bca24a4669fced::t_5b70ac0191d44e 229-245
+CLAUDE.md
+  s_bca24a4669fced::t_0ce6dd6abe1d46 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "79c38769744d8f4491a84f7ec5dc86f3b5f1716d",
+  "prompts": {},
+  "sessions": {
+    "s_bca24a4669fced": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "843d6449-382e-419c-abb7-bbe56d0833fe",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
