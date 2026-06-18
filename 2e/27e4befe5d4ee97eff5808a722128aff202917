@@ -1,0 +1,23 @@
+src/server/auth/bearerToken.test.ts
+  s_bca24a4669fced::t_2400849bc4fd14 1-34
+src/server/auth/bearerToken.ts
+  s_bca24a4669fced::t_2400849bc4fd14 1-28
+app/api/cron/cleanup/route.ts
+  s_bca24a4669fced::t_2400849bc4fd14 13,24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "2e27e4befe5d4ee97eff5808a722128aff202917",
+  "prompts": {},
+  "sessions": {
+    "s_bca24a4669fced": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "843d6449-382e-419c-abb7-bbe56d0833fe",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
