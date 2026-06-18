@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/server/supabase/server';
+import { safeNextPath } from '@/lib/safeNext';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -41,5 +42,5 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${origin}/profile?auth=email-changed`);
    }
 
-   return NextResponse.redirect(`${origin}${next ?? '/profile'}`);
+   return NextResponse.redirect(`${origin}${safeNextPath(next)}`);
 }
