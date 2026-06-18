@@ -10,6 +10,7 @@ import {
 import { findGameByCode, parseEngineState } from '@/server/game-room';
 import { fetchSpectators } from '@/server/spectators';
 import { finalizeContinuationCore } from '@/server/actions/finalizeContinuation';
+import { isValidBearer } from '@/server/auth/bearerToken';
 import { toPublic } from '@/game/public';
 
 export const runtime = 'nodejs';
@@ -20,11 +21,7 @@ type ExpireRow = { game_code: string; request_id: string; requester_id: string }
 type MigrateRow = { game_code: string; new_host_id: string };
 
 function authorize(req: NextRequest): boolean {
-   const secret = process.env.CRON_SECRET;
-   if (!secret) return false;
-   const header = req.headers.get('authorization');
-   if (!header) return false;
-   return header === `Bearer ${secret}`;
+   return isValidBearer(req.headers.get('authorization'), process.env.CRON_SECRET);
 }
 
 export async function GET(req: NextRequest) {
