@@ -1,0 +1,38 @@
+app/sitemap.ts
+  s_37e3f0aa4ddc56::t_b04e2a9e0d6203 1-14
+app/robots.ts
+  s_37e3f0aa4ddc56::t_e4eb38f1b3ed5c 1-17
+app/opengraph-image.tsx
+  s_37e3f0aa4ddc56::t_27518b52a014d7 1-69
+app/play/join/page.tsx
+  s_37e3f0aa4ddc56::t_457d56473ca224 1,4-9
+.claude/docs/seo-followups.md
+  s_37e3f0aa4ddc56::t_51d684bc34a58a 1-218
+app/play-local/page.tsx
+  s_37e3f0aa4ddc56::t_0420f3c64ff5b1 1,6-11
+app/rules/page.tsx
+  s_37e3f0aa4ddc56::t_d4f2b5606ba97a 1-234
+app/setup/page.tsx
+  s_37e3f0aa4ddc56::t_a09443e21e17ed 1,4-8
+app/choose-game/page.tsx
+  s_37e3f0aa4ddc56::t_2b993aa792dcb3 1,4-9
+app/layout.tsx
+  s_37e3f0aa4ddc56::t_83b00d38be7b3a 37,41-49
+  s_37e3f0aa4ddc56::t_010d27349de2bd 59-88,93-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "11c8ca13fd89a4bde46dbec4dfe5485eef98cc50",
+  "prompts": {},
+  "sessions": {
+    "s_37e3f0aa4ddc56": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6b12cfef-86e3-42eb-b9a3-2433a976225e",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
