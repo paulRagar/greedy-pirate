@@ -179,6 +179,18 @@ export function useGameRoom(
          // current session JWT to the realtime socket before subscribing.
          await supabase.realtime.setAuth();
          if (channel) return; // a concurrent resume may have beaten us here
+         // Drop any same-topic channel left over from a prior mount or a
+         // backgrounded-tab resume whose fire-and-forget removeChannel hasn't
+         // finished. Otherwise supabase collides with an already-subscribed
+         // channel: .on('presence', …) throws "after subscribe()", or it
+         // resubscribes without the freshly-set JWT and RLS denies the read.
+         const fullTopic = `realtime:${topic}`;
+         await Promise.all(
+            (supabase.getChannels() as Array<ReturnType<typeof supabase.channel>>)
+               .filter((c) => c.topic === fullTopic)
+               .map((c) => supabase.removeChannel(c)),
+         );
+         if (channel) return;
          channel = supabase.channel(topic, {
             config: {
                private: true,

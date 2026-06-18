@@ -74,6 +74,16 @@ export function useKnockRequest({ userId, requestId, expiresAt }: Params) {
       const subscribe = async () => {
          await supabase.realtime.setAuth();
          if (cancelled) return;
+         // Drop any same-topic channel left over from a prior mount whose
+         // fire-and-forget removeChannel hasn't finished, so we don't resubscribe
+         // on a stale channel without the freshly-set JWT (RLS would deny it).
+         const fullTopic = `realtime:${topic}`;
+         await Promise.all(
+            (supabase.getChannels() as Array<ReturnType<typeof supabase.channel>>)
+               .filter((c) => c.topic === fullTopic)
+               .map((c) => supabase.removeChannel(c)),
+         );
+         if (cancelled) return;
          channel = supabase.channel(topic, {
             config: { private: true, broadcast: { self: false, ack: false } },
          });
