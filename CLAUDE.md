@@ -45,6 +45,7 @@ vercel.json                 Vercel cron schedule
 - **Code conventions** → `.claude/docs/conventions.md`
 - **Supabase local + prod setup** → `.claude/docs/supabase-setup.md`
 - **Phase status** → `.claude/docs/progress.md`
+- **Dev workflow (Linear → branch → PR → merge) + ticket/PR templates** → `.claude/docs/workflow.md`
 
 Sub-directories with their own `CLAUDE.md`: `src/game/`, `src/server/`, `src/client/`.
 
