@@ -13,7 +13,12 @@ import {
 // Minimal state stand-in — postBroadcast only JSON-stringifies the payload.
 const fakeState = {} as PublicGameState;
 
-type BroadcastMessage = { topic: string; event: string; private: boolean };
+type BroadcastMessage = {
+   topic: string;
+   event: string;
+   private: boolean;
+   payload: { version?: number };
+};
 
 function lastMessage(fetchMock: ReturnType<typeof vi.fn>): BroadcastMessage {
    const [, init] = fetchMock.mock.calls.at(-1)!;
@@ -45,6 +50,27 @@ describe('realtime broadcast privacy', () => {
       const msg = lastMessage(fetchMock);
       expect(msg.topic).toBe('room:ABCD');
       expect(msg.private).toBe(true);
+   });
+
+   it('forwards a monotonic version when supplied (game-advancing step)', async () => {
+      await broadcastRoomState('abcd', {
+         state: fakeState,
+         spectators: [],
+         actorId: null,
+         eventType: 'DRAW',
+         version: 7,
+      });
+      expect(lastMessage(fetchMock).payload.version).toBe(7);
+   });
+
+   it('omits version for auxiliary broadcasts that do not advance the game', async () => {
+      await broadcastRoomState('abcd', {
+         state: fakeState,
+         spectators: [],
+         actorId: null,
+         eventType: 'SPECTATOR_JOIN',
+      });
+      expect(lastMessage(fetchMock).payload.version).toBeUndefined();
    });
 
    it('publishes knock resolution on the requester PRIVATE per-user topic', async () => {

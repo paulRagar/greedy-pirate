@@ -55,6 +55,7 @@ interface Props {
    initial: RoomState;
    isPublic: boolean;
    initialContinuation: ContinuationContext;
+   initialVersion: number;
 }
 
 export default function OnlineRoomClient({
@@ -63,6 +64,7 @@ export default function OnlineRoomClient({
    initial,
    isPublic,
    initialContinuation,
+   initialVersion,
 }: Props) {
    const router = useRouter();
    const [leaving, startLeave] = useTransition();
@@ -131,6 +133,7 @@ export default function OnlineRoomClient({
       },
       initial.spectators,
       initialContinuation,
+      initialVersion,
    );
 
    const [hostId, setHostId] = useState<string>(initial.hostId);

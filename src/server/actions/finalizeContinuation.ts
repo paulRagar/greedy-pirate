@@ -186,6 +186,7 @@ export async function finalizeContinuationCore(
       return {
          kind: 'restarted' as const,
          next: fresh,
+         seq,
          spectators,
          hostId,
          hostChanged: hostId !== game.hostId,
@@ -221,6 +222,7 @@ export async function finalizeContinuationCore(
       spectators: result.spectators,
       actorId,
       eventType: 'CONTINUATION_FINALIZED',
+      version: result.seq,
       continuation: null,
       hostId: result.hostId,
    });
