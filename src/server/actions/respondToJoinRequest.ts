@@ -57,7 +57,7 @@ export async function respondToJoinRequest(
          .update(gameJoinRequests)
          .set({ status: 'denied', resolvedAt: new Date() })
          .where(eq(gameJoinRequests.id, request.id));
-      await broadcastKnockResolved(game.code, {
+      await broadcastKnockResolved({
          requestId: request.id,
          requesterId: request.userId,
          outcome: 'denied',
@@ -86,7 +86,7 @@ export async function respondToJoinRequest(
             .update(gameJoinRequests)
             .set({ status: 'denied', resolvedAt: new Date() })
             .where(eq(gameJoinRequests.id, request.id));
-         await broadcastKnockResolved(game.code, {
+         await broadcastKnockResolved({
             requestId: request.id,
             requesterId: request.userId,
             outcome: 'denied',
@@ -107,7 +107,7 @@ export async function respondToJoinRequest(
          .update(gameJoinRequests)
          .set({ status: 'approved', resolvedAt: new Date() })
          .where(and(eq(gameJoinRequests.id, request.id), eq(gameJoinRequests.status, 'pending')));
-      await broadcastKnockResolved(game.code, {
+      await broadcastKnockResolved({
          requestId: request.id,
          requesterId: request.userId,
          outcome: 'approved',
@@ -137,7 +137,7 @@ export async function respondToJoinRequest(
       actorId: user.id,
       eventType: 'SPECTATOR_JOIN',
    });
-   await broadcastKnockResolved(game.code, {
+   await broadcastKnockResolved({
       requestId: request.id,
       requesterId: request.userId,
       outcome: 'approved',

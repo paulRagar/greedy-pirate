@@ -5,12 +5,12 @@ import { getSupabaseBrowser } from '@/client/supabase/browser';
 import { cancelJoinRequest } from '@/server/actions/cancelJoinRequest';
 
 const KNOCK_RESOLVED_EVENT = 'knock:resolved';
-const KNOCK_CANCELLED_EVENT = 'knock:cancelled';
 
 export type KnockStatus = 'pending' | 'approved' | 'denied' | 'expired' | 'cancelled';
 
 type Params = {
-   code: string;
+   /** The knocker's own user id — names the private topic we listen on. */
+   userId: string | null;
    requestId: string | null;
    expiresAt: string | null;
 };
@@ -21,7 +21,7 @@ type Params = {
  * expiry fires. Calling `cancel()` rescinds the hail and removes the
  * host's toast.
  */
-export function useKnockRequest({ code, requestId, expiresAt }: Params) {
+export function useKnockRequest({ userId, requestId, expiresAt }: Params) {
    const [status, setStatus] = useState<KnockStatus>('pending');
    const [secondsLeft, setSecondsLeft] = useState<number>(() =>
       expiresAt ? Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 1000)) : 0,
@@ -61,37 +61,42 @@ export function useKnockRequest({ code, requestId, expiresAt }: Params) {
    }, [requestId, expiresAt]);
 
    useEffect(() => {
-      if (!requestId) return;
+      if (!requestId || !userId) return;
       const supabase = getSupabaseBrowser();
-      const topic = `room:${code.toUpperCase()}`;
-      const channel = supabase.channel(topic, {
-         config: { broadcast: { self: false, ack: false } },
-      });
+      // Private per-user topic: the knocker isn't a room member yet, so they
+      // can't subscribe to `room:{CODE}`. The captain's verdict is delivered
+      // here instead, gated by RLS to this user. Self-cancellation is handled
+      // locally in `cancel()`, so we only listen for the resolution.
+      const topic = `knock:${userId}`;
+      let channel: ReturnType<typeof supabase.channel> | null = null;
+      let cancelled = false;
 
-      channel.on(
-         'broadcast',
-         { event: KNOCK_RESOLVED_EVENT },
-         (message: { payload?: { requestId: string; outcome: KnockStatus } }) => {
-            const p = message.payload;
-            if (!p) return;
-            if (p.requestId !== requestId) return;
-            setStatus(p.outcome);
-         },
-      );
-      channel.on(
-         'broadcast',
-         { event: KNOCK_CANCELLED_EVENT },
-         (message: { payload?: { requestId: string } }) => {
-            if (message.payload?.requestId !== requestId) return;
-            setStatus('cancelled');
-         },
-      );
-      channel.subscribe();
+      const subscribe = async () => {
+         await supabase.realtime.setAuth();
+         if (cancelled) return;
+         channel = supabase.channel(topic, {
+            config: { private: true, broadcast: { self: false, ack: false } },
+         });
+         channel.on(
+            'broadcast',
+            { event: KNOCK_RESOLVED_EVENT },
+            (message: { payload?: { requestId: string; outcome: KnockStatus } }) => {
+               const p = message.payload;
+               if (!p) return;
+               if (p.requestId !== requestId) return;
+               setStatus(p.outcome);
+            },
+         );
+         channel.subscribe();
+      };
+
+      void subscribe();
 
       return () => {
-         void supabase.removeChannel(channel);
+         cancelled = true;
+         if (channel) void supabase.removeChannel(channel);
       };
-   }, [code, requestId]);
+   }, [userId, requestId]);
 
    // Auto-rescind if the knocker navigates away while still pending.
    useEffect(() => {

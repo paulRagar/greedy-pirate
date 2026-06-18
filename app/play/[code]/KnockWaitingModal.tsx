@@ -4,9 +4,9 @@ import { useEffect } from 'react';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PirateModal } from '@/ui/pirate-modal/PirateModal';
 import { useKnockRequest, type KnockStatus } from '@/client/realtime/useKnockRequest';
+import { useCurrentUser } from '@/client/auth/useCurrentUser';
 
 type Props = {
-   code: string;
    kind: 'player' | 'spectator';
    request: { requestId: string; expiresAt: string } | null;
    onResolved: (outcome: KnockStatus) => void;
@@ -26,15 +26,15 @@ type Props = {
 };
 
 export default function KnockWaitingModal({
-   code,
    kind,
    request,
    onResolved,
    showPreliminary = false,
    boarding = false,
 }: Props) {
+   const { user } = useCurrentUser();
    const { status, secondsLeft, cancel } = useKnockRequest({
-      code,
+      userId: user?.id ?? null,
       requestId: request?.requestId ?? null,
       expiresAt: request?.expiresAt ?? null,
    });
