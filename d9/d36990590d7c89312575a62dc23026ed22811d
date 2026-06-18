@@ -1,0 +1,25 @@
+src/server/game-room.ts
+  s_deb6c0fc512e4c::t_8c4104f1bfee3f 160-167
+  s_deb6c0fc512e4c::t_7ba507dad7fa0f 177-187,190-191
+  s_deb6c0fc512e4c::t_334e18ba38321e 33-36
+src/server/actions/gameTurnActions.ts
+  s_deb6c0fc512e4c::t_d1782a64d111f0 169-171,185,187-200,203
+  s_deb6c0fc512e4c::t_2a3bd4ec8e3803 52-54,62-66,82
+  s_deb6c0fc512e4c::t_ab4b692b2eb6a6 5,8,12-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "d9d36990590d7c89312575a62dc23026ed22811d",
+  "prompts": {},
+  "sessions": {
+    "s_deb6c0fc512e4c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c52c7468-1d6b-43d1-8507-f68068c2b41b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
