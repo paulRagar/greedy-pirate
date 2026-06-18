@@ -63,7 +63,7 @@ export async function setRoomVisibility(
          )
          .returning({ id: gameJoinRequests.id, userId: gameJoinRequests.userId });
       for (const row of denied) {
-         await broadcastKnockResolved(game.code, {
+         await broadcastKnockResolved({
             requestId: row.id,
             requesterId: row.userId,
             outcome: 'denied',

@@ -94,7 +94,6 @@ export default function SpectateGate({
          </PiratePanel>
 
          <KnockWaitingModal
-            code={code}
             kind='spectator'
             request={pending}
             onResolved={(outcome) => {

@@ -172,10 +172,16 @@ export function useGameRoom(
          });
       };
 
-      const subscribe = () => {
+      const subscribe = async () => {
          if (channel) return;
+         // Room topics are private channels — RLS on realtime.messages only
+         // lets seated players / host / spectators read or send. Attach the
+         // current session JWT to the realtime socket before subscribing.
+         await supabase.realtime.setAuth();
+         if (channel) return; // a concurrent resume may have beaten us here
          channel = supabase.channel(topic, {
             config: {
+               private: true,
                broadcast: { self: true, ack: false },
                presence: { key: userIdRef.current ?? `anon-${Math.random().toString(36).slice(2, 10)}` },
             },
@@ -258,13 +264,13 @@ export function useGameRoom(
             setStatus('paused');
             unsubscribe();
          } else {
-            subscribe();
+            void subscribe();
             onResumeRef.current?.();
          }
       };
 
       if (typeof document === 'undefined' || !document.hidden) {
-         subscribe();
+         void subscribe();
       } else {
          setStatus('paused');
       }

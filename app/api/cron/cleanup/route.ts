@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
          sql`select * from public.expire_pending_join_requests()`,
       )) as unknown as ExpireRow[];
       for (const row of expiredRows) {
-         await broadcastKnockResolved(row.game_code, {
+         await broadcastKnockResolved({
             requestId: row.request_id,
             requesterId: row.requester_id,
             outcome: 'expired',

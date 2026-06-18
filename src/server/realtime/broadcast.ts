@@ -13,6 +13,15 @@ export function roomTopic(code: string): string {
    return `${TOPIC_PREFIX}:${code.toUpperCase()}`;
 }
 
+/**
+ * Per-user topic used to deliver a join-request verdict to a knocker who is
+ * not yet a room member (so they can't subscribe to `room:{CODE}`). Gated by
+ * RLS to the user whose id matches the suffix.
+ */
+export function userKnockTopic(userId: string): string {
+   return `knock:${userId}`;
+}
+
 export const ROOM_BROADCAST_EVENT = BROADCAST_EVENT;
 export const LOBBY_BROADCAST_TOPIC = LOBBY_TOPIC;
 export const ROOM_KNOCK_REQUESTED_EVENT = KNOCK_REQUESTED_EVENT;
@@ -77,6 +86,7 @@ async function postBroadcast(
    topic: string,
    event: string,
    payload: unknown,
+   isPrivate = true,
 ): Promise<void> {
    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -101,7 +111,7 @@ async function postBroadcast(
                   topic,
                   event,
                   payload,
-                  private: false,
+                  private: isPrivate,
                },
             ],
          }),
@@ -140,10 +150,11 @@ export async function broadcastKnockCancelled(
 }
 
 export async function broadcastKnockResolved(
-   code: string,
    payload: KnockResolvedPayload,
 ): Promise<void> {
-   await postBroadcast(roomTopic(code), KNOCK_RESOLVED_EVENT, payload);
+   // Delivered on the requester's own private topic — they are not yet a room
+   // member and so cannot subscribe to `room:{CODE}`.
+   await postBroadcast(userKnockTopic(payload.requesterId), KNOCK_RESOLVED_EVENT, payload);
 }
 
 export async function broadcastLobbyEvent(event: LobbyEvent): Promise<void> {
@@ -151,5 +162,7 @@ export async function broadcastLobbyEvent(event: LobbyEvent): Promise<void> {
    // fresh counts/status. Realtime broadcasts handle live viewers; this
    // covers the "navigated away then back" case.
    revalidatePath('/play/lobby');
-   await postBroadcast(LOBBY_TOPIC, event.type, event);
+   // The lobby is a public matchmaking list — published on a public channel so
+   // anyone browsing can see it without being a member of any room.
+   await postBroadcast(LOBBY_TOPIC, event.type, event, false);
 }

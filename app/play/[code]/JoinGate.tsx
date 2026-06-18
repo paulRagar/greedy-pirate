@@ -58,7 +58,6 @@ export default function JoinGate({ code, isPublic }: { code: string; isPublic: b
          <>
             <main className='flex flex-1' aria-label={`Hailing room ${code}`} />
             <KnockWaitingModal
-               code={code}
                kind='player'
                request={pending}
                showPreliminary={!pending && !error && !boarding}
