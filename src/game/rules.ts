@@ -16,9 +16,9 @@ export const DEFAULT_VARIANT: DeckVariant = 'even_greedier';
 export const TURN_CLOCK_MS = 10_000;
 
 /**
- * Shortened shot clock applied while a pirate is revealed online. There's no
- * decision to make once you're robbed, so the turn auto-passes after a brief
- * beat (shake + vignette) instead of waiting on a tap. Server stamps it as the
- * turn deadline; the client uses it as the countdown total when a pirate shows.
+ * Length of the "helm passes to X" hand-off beat online. Used two ways: as the
+ * shortened turn deadline while a pirate is revealed (no decision once you're
+ * robbed), and as the brief pause shown after the shot clock expires before the
+ * turn actually advances — so a pirate pass and a timeout forfeit feel the same.
  */
-export const PIRATE_PASS_MS = 2_000;
+export const PIRATE_PASS_MS = 1_500;
