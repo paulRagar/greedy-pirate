@@ -1,0 +1,21 @@
+app/play/[code]/OnlineRoomClient.tsx
+  s_4d6d35ac66b468::t_8729ebdec7b270 1405-1407,1410,1426-1431
+  s_4d6d35ac66b468::t_b94268fb7247ce 1174-1187
+  s_4d6d35ac66b468::t_517f6b4902e3d9 45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "81dc333a8b1eb1b44a0d5fdaa2d351eb9f16d53b",
+  "prompts": {},
+  "sessions": {
+    "s_4d6d35ac66b468": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "701e5f55-a442-4a8f-9b06-92abbec5c3e4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
