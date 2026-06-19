@@ -1,0 +1,20 @@
+scripts/ci-migrate.mjs
+  s_a9d5705db96371::t_89753695131bbb 14-23
+  s_a9d5705db96371::t_b7f9291d7a5d3b 74-75,78-102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "a9690b9a4eb9edde1d22d29c1d46f2bca83200a5",
+  "prompts": {},
+  "sessions": {
+    "s_a9d5705db96371": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51e0f64a-2890-4331-9237-0973b4790829",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
