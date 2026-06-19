@@ -1,0 +1,21 @@
+src/game/rules.ts
+  s_4d6d35ac66b468::t_89f7a15f16efd1 16
+.claude/docs/game-rules.md
+  s_4d6d35ac66b468::t_e4a61de2dc6d7a 136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "70a58f086372458fd934073c8d19a30975f6187f",
+  "prompts": {},
+  "sessions": {
+    "s_4d6d35ac66b468": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "701e5f55-a442-4a8f-9b06-92abbec5c3e4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
