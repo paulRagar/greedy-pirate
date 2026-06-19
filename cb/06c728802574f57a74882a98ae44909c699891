@@ -1,0 +1,27 @@
+.claude/docs/architecture.md
+  s_4d6d35ac66b468::t_604810b23e368a 134
+  s_4d6d35ac66b468::t_76d10b6a049012 113,115
+CLAUDE.md
+  s_4d6d35ac66b468::t_6f7cc2fe6c62e4 60
+src/client/realtime/useGameRoom.ts
+  s_4d6d35ac66b468::t_9a2596dbcfa7b0 166-173
+  s_4d6d35ac66b468::t_1253559dbb5715 23-33
+  s_4d6d35ac66b468::t_2d22051811e913 367
+  s_4d6d35ac66b468::t_d3895fad5f564a 338-346,348-351
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "cb06c728802574f57a74882a98ae44909c699891",
+  "prompts": {},
+  "sessions": {
+    "s_4d6d35ac66b468": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "701e5f55-a442-4a8f-9b06-92abbec5c3e4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
