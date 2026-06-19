@@ -1,0 +1,28 @@
+src/game/rules.ts
+  s_4d6d35ac66b468::t_5ffee17f8ef4f6 17-24
+.claude/docs/game-rules.md
+  s_4d6d35ac66b468::t_513b6ac5d6f7ce 128,130-132
+src/server/game-room.ts
+  s_4d6d35ac66b468::t_2b302331ea8c1b 234-237,242-243
+  s_4d6d35ac66b468::t_328f96a27d4ea9 17
+app/play/[code]/OnlineRoomClient.tsx
+  s_4d6d35ac66b468::t_a9af8ab640eec3 45
+  s_4d6d35ac66b468::t_328116441ce81f 1415-1419
+  s_4d6d35ac66b468::t_d3c985c48b8e1f 1394
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "ac45bdc6ccb4a858573385d200d5270962f9b259",
+  "prompts": {},
+  "sessions": {
+    "s_4d6d35ac66b468": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "701e5f55-a442-4a8f-9b06-92abbec5c3e4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
