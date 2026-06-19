@@ -3,6 +3,7 @@ import {
    bigint,
    bigserial,
    boolean,
+   check,
    index,
    integer,
    jsonb,
@@ -27,6 +28,11 @@ export const users = pgTable('users', {
       .references(() => authUsers.id, { onDelete: 'cascade' }),
    displayName: text('display_name').notNull(),
    email: text('email'),
+   // Short, shareable, unambiguous code (e.g. "7K2QF8MN") used to add a friend
+   // without exposing email (PII). Generated + backfilled in SQL (see the
+   // friends-graph migration); enforced NOT NULL there once populated. Nullable
+   // in the Drizzle type only because the column is added before the backfill.
+   friendCode: text('friend_code').unique(),
    isAnonymous: boolean('is_anonymous').notNull().default(true),
    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -250,6 +256,90 @@ export const voyagePlayers = pgTable(
    }),
 );
 
+/**
+ * Accepted friendship edges. Stored as a single canonical row per pair with
+ * `user_low < user_high` (enforced by a CHECK in the friends-graph migration),
+ * so a friendship is one row, not two mirrored rows. "List my friends" unions
+ * the two columns. The request/approve lifecycle (separate issue) inserts here
+ * on accept; blocking removes the row.
+ */
+export const friendships = pgTable(
+   'friendships',
+   {
+      id: uuid('id').primaryKey().defaultRandom(),
+      userLow: uuid('user_low')
+         .notNull()
+         .references(() => users.id, { onDelete: 'cascade' }),
+      userHigh: uuid('user_high')
+         .notNull()
+         .references(() => users.id, { onDelete: 'cascade' }),
+      createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+   },
+   (t) => ({
+      uniquePair: unique('friendships_pair_unique').on(t.userLow, t.userHigh),
+      canonicalOrder: check('friendships_canonical_order', sql`user_low < user_high`),
+      userLowIdx: index('friendships_user_low_idx').on(t.userLow),
+      userHighIdx: index('friendships_user_high_idx').on(t.userHigh),
+   }),
+);
+
+/**
+ * Friend requests. Unlike knock requests (`game_join_requests`) these are
+ * persistent — no TTL — and drive a durable inbox. A partial unique index keeps
+ * at most one `pending` row per ordered (from, to) pair; the reverse-pending
+ * auto-accept and block guards live in the lifecycle server actions.
+ */
+export const friendRequests = pgTable(
+   'friend_requests',
+   {
+      id: uuid('id').primaryKey().defaultRandom(),
+      fromUserId: uuid('from_user_id')
+         .notNull()
+         .references(() => users.id, { onDelete: 'cascade' }),
+      toUserId: uuid('to_user_id')
+         .notNull()
+         .references(() => users.id, { onDelete: 'cascade' }),
+      status: text('status', {
+         enum: ['pending', 'accepted', 'declined', 'cancelled'],
+      })
+         .notNull()
+         .default('pending'),
+      createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+      resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+   },
+   (t) => ({
+      onePendingPerPair: uniqueIndex('friend_requests_one_pending_idx')
+         .on(t.fromUserId, t.toUserId)
+         .where(sql`status = 'pending'`),
+      toStatusIdx: index('friend_requests_to_status_idx').on(t.toUserId, t.status),
+      fromStatusIdx: index('friend_requests_from_status_idx').on(t.fromUserId, t.status),
+   }),
+);
+
+/**
+ * Directed blocks. `blocker_id` no longer receives requests/invites/notices
+ * from `blocked_id`. Enforcement (reject sends, drop notices, hide from search)
+ * lives in the block/lifecycle server actions; this table is just the record.
+ */
+export const userBlocks = pgTable(
+   'user_blocks',
+   {
+      id: uuid('id').primaryKey().defaultRandom(),
+      blockerId: uuid('blocker_id')
+         .notNull()
+         .references(() => users.id, { onDelete: 'cascade' }),
+      blockedId: uuid('blocked_id')
+         .notNull()
+         .references(() => users.id, { onDelete: 'cascade' }),
+      createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+   },
+   (t) => ({
+      uniquePair: unique('user_blocks_pair_unique').on(t.blockerId, t.blockedId),
+      noSelfBlock: check('user_blocks_no_self', sql`blocker_id <> blocked_id`),
+      blockerIdx: index('user_blocks_blocker_idx').on(t.blockerId),
+   }),
+);
+
 export type DbUser = typeof users.$inferSelect;
 export type DbUserInsert = typeof users.$inferInsert;
 export type DbGame = typeof games.$inferSelect;
@@ -269,3 +359,9 @@ export type DbVoyage = typeof voyages.$inferSelect;
 export type DbVoyageInsert = typeof voyages.$inferInsert;
 export type DbVoyagePlayer = typeof voyagePlayers.$inferSelect;
 export type DbVoyagePlayerInsert = typeof voyagePlayers.$inferInsert;
+export type DbFriendship = typeof friendships.$inferSelect;
+export type DbFriendshipInsert = typeof friendships.$inferInsert;
+export type DbFriendRequest = typeof friendRequests.$inferSelect;
+export type DbFriendRequestInsert = typeof friendRequests.$inferInsert;
+export type DbUserBlock = typeof userBlocks.$inferSelect;
+export type DbUserBlockInsert = typeof userBlocks.$inferInsert;

@@ -4,10 +4,12 @@ import type { PublicGameState } from '@/game/public';
 // broadcastLobbyEvent calls revalidatePath, which needs a Next request context.
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 import {
+   broadcastFriendRequest,
    broadcastKnockResolved,
    broadcastLobbyEvent,
    broadcastRoomState,
    userKnockTopic,
+   userTopic,
 } from './broadcast';
 
 // Minimal state stand-in — postBroadcast only JSON-stringifies the payload.
@@ -82,6 +84,18 @@ describe('realtime broadcast privacy', () => {
       const msg = lastMessage(fetchMock);
       expect(msg.topic).toBe(userKnockTopic('user-123'));
       expect(msg.topic).toBe('knock:user-123');
+      expect(msg.private).toBe(true);
+   });
+
+   it('publishes a friend request on the recipient PRIVATE per-user topic', async () => {
+      await broadcastFriendRequest('user-456', {
+         requestId: 'fr-1',
+         fromUserId: 'user-123',
+         fromDisplayName: 'Blackbeard',
+      });
+      const msg = lastMessage(fetchMock);
+      expect(msg.topic).toBe(userTopic('user-456'));
+      expect(msg.topic).toBe('user:user-456');
       expect(msg.private).toBe(true);
    });
 
