@@ -34,7 +34,7 @@ This means:
 │  Server (src/server/) — server only                     │
 │  - Drizzle + Postgres via Supabase (service-role conn)  │
 │  - Server Actions: createRoom, joinRoom, startGame,     │
-│    draw/bank/endTurn, persistLocalGame, setDisplayName  │
+│    draw/bank/endTurn, setDisplayName                    │
 │  - applyAction(): transactional reduce + broadcast      │
 │  - realtime/broadcast.ts: POSTs to Supabase Realtime    │
 │    REST endpoint with service-role auth                 │

@@ -41,7 +41,6 @@ import { ScoreRibbon } from '@/ui/game-room/ScoreRibbon';
 import { StreakStrip } from '@/ui/game-room/StreakStrip';
 import { VictoryModal } from '@/ui/game-room/VictoryModal';
 import { useGameToast } from '@/ui/toast/PirateToast';
-import { ACHIEVEMENTS } from '@/lib/achievements';
 import { MAX_PLAYERS, MIN_PLAYERS } from '@/game/rules';
 import { cn } from '@/lib/cn';
 import KnockInbox, { type KnockEntry } from './KnockInbox';
@@ -133,20 +132,14 @@ export default function OnlineRoomClient({
             }
             if (eventType === 'ROOM_ABANDONED') router.push('/play/lobby');
             // Achievements unlocked by this game's completion. Everyone in the
-            // room gets the payload; each player toasts only their own unlocks,
-            // and we badge every achiever on the scoreboard. Guarded so a
-            // reconnect that replays the completion event doesn't re-toast.
+            // room gets the payload; we badge every achiever on the scoreboard
+            // and surface the local player's own unlocks inside the victory
+            // modal (a toast would render behind the modal backdrop).
             if (body.unlocks) {
                const achievers = Object.keys(body.unlocks);
                if (achievers.length > 0) setAchieverIds(new Set(achievers));
                const mine = body.unlocks[userId];
-               if (mine && mine.length > 0 && !unlockToastedRef.current) {
-                  unlockToastedRef.current = true;
-                  const titles = mine
-                     .map((code) => ACHIEVEMENTS.find((a) => a.code === code)?.title ?? code)
-                     .join(' · ');
-                  showToast(`Achievement unlocked: ${titles}`, 'gold');
-               }
+               if (mine && mine.length > 0) setMyUnlocks(mine);
             }
          },
       },
@@ -157,10 +150,17 @@ export default function OnlineRoomClient({
 
    const [hostId, setHostId] = useState<string>(initial.hostId);
    const prevHostId = useRef<string>(initial.hostId);
-   // User ids who unlocked an achievement this game (badged on the scoreboard),
-   // plus a guard so the local player's toast fires at most once per game.
+   // User ids who unlocked an achievement this game (badged on the scoreboard)
+   // and the local player's own newly-unlocked codes (shown in the victory
+   // modal). Cleared when a new round starts.
    const [achieverIds, setAchieverIds] = useState<ReadonlySet<string>>(() => new Set());
-   const unlockToastedRef = useRef(false);
+   const [myUnlocks, setMyUnlocks] = useState<readonly string[]>([]);
+   useEffect(() => {
+      if (live.status !== 'complete') {
+         setAchieverIds(new Set());
+         setMyUnlocks([]);
+      }
+   }, [live.status]);
    useEffect(() => {
       if (initial.hostId !== prevHostId.current) {
          if (initial.hostId === userId && prevHostId.current !== userId) {
@@ -718,6 +718,7 @@ export default function OnlineRoomClient({
             onContinue={handleContinue}
             onJumpShip={handleJumpShip}
             achieverIds={achieverIds}
+            yourUnlocks={myUnlocks}
          />
          {sharedModals}
       </>
@@ -1131,6 +1132,7 @@ function Play({
    onContinue,
    onJumpShip,
    achieverIds,
+   yourUnlocks,
 }: {
    state: RoomState;
    userId: string;
@@ -1146,6 +1148,7 @@ function Play({
    onContinue: () => void | Promise<void>;
    onJumpShip: () => void | Promise<void>;
    achieverIds: ReadonlySet<string>;
+   yourUnlocks: readonly string[];
 }) {
    const [pending, setPending] = useState<null | 'draw' | 'bank' | 'end'>(null);
    const [error, setError] = useState<string | null>(null);
@@ -1422,6 +1425,7 @@ function Play({
             ranked={ranked}
             youId={userId}
             achieverIds={achieverIds}
+            yourUnlocks={yourUnlocks}
             actions={
                isSpectator ? (
                   <>
