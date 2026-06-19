@@ -54,7 +54,11 @@ jobs:
          - name: Install Supabase CLI
            uses: supabase/setup-cli@v1
            with:
-              version: latest
+              # Pinned (not `latest`): resolving the latest release hits
+              # Supabase's API, which intermittently 504s and fails the job
+              # before any test runs. Pinning skips that lookup and is
+              # reproducible. Matches the version used in local dev.
+              version: 2.105.0
 
          - name: Start local Supabase (without applying SQL migrations)
            # `supabase start` auto-applies anything under supabase/migrations,

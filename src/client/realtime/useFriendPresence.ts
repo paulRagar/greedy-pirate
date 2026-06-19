@@ -56,6 +56,14 @@ export function useOwnPresence(userId: string | null, isAnonymous: boolean): voi
          channel = supabase.channel(topic, {
             config: { private: true, presence: { key: userId } },
          });
+         // A concurrent invocation (StrictMode dev double-effect) may get the
+         // same cached, already-subscribed channel back — re-subscribing is a
+         // no-op error. Only subscribe a brand-new channel; otherwise just
+         // (re)track our state on the live one.
+         if (channel.state !== 'closed') {
+            track();
+            return;
+         }
          channel.subscribe((status: string) => {
             if (status === 'SUBSCRIBED') track();
          });
@@ -138,12 +146,19 @@ export function useFriendsPresence(
             const channel = supabase.channel(presenceTopic(id), {
                config: { private: true, presence: { key: id } },
             });
+            channels.push(channel);
+            // Skip wiring a reused, already-subscribed channel (StrictMode
+            // double-effect): .on('presence') after subscribe() throws. Read its
+            // current state once instead.
+            if (channel.state !== 'closed') {
+               sync(id, channel);
+               continue;
+            }
             channel
                .on('presence', { event: 'sync' }, () => sync(id, channel))
                .on('presence', { event: 'join' }, () => sync(id, channel))
                .on('presence', { event: 'leave' }, () => sync(id, channel))
                .subscribe();
-            channels.push(channel);
          }
       };
 
