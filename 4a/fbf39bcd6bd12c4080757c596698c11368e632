@@ -1,0 +1,30 @@
+src/ui/friends/FriendsDrawer.test.tsx
+  s_a9d5705db96371::t_1765e9cd2c2d18 109-129
+  s_a9d5705db96371::t_dc7793b658e0df 10-12,19-21
+  s_a9d5705db96371::t_512cfc3aafc025 48-50
+src/ui/friends/FriendsDrawer.tsx
+  s_a9d5705db96371::t_d05ecf4710eb48 7,12-13,16
+  s_a9d5705db96371::t_67be025235d6e6 406-495,497-569,574-619
+  s_a9d5705db96371::t_8a6cfc67363eba 195
+  s_a9d5705db96371::t_39a83a02dc0da8 37,43-44
+src/ui/friends/FriendsButton.tsx
+  s_a9d5705db96371::t_04c93d3043603b 3
+  s_a9d5705db96371::t_de3f0fc4564a5b 25-45,51
+  s_a9d5705db96371::t_ffb7398c1c6cea 96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "4afbf39bcd6bd12c4080757c596698c11368e632",
+  "prompts": {},
+  "sessions": {
+    "s_a9d5705db96371": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51e0f64a-2890-4331-9237-0973b4790829",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
