@@ -1,0 +1,1 @@
+ALTER TABLE "games" ADD COLUMN "turn_deadline" timestamp with time zone;

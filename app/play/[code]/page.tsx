@@ -95,6 +95,7 @@ export default async function PlayRoomPage({ params }: { params: Promise<{ code:
          userId={user.id}
          initial={room}
          initialVersion={initialVersion}
+         initialTurnDeadline={game.turnDeadline ? game.turnDeadline.toISOString() : null}
          isPublic={game.isPublic}
          initialContinuation={
             continuation

@@ -61,6 +61,8 @@ export function reduce(state: GameState, action: GameAction): GameState {
          return handleSkipTurn(state, action.playerId);
       case 'MARK_PRESENT':
          return handleMarkPresent(state, action.playerId);
+      case 'TIMEOUT_TURN':
+         return handleTimeoutTurn(state, action.playerId);
    }
 }
 
@@ -174,6 +176,26 @@ function handleSkipTurn(state: GameState, playerId: string): GameState {
       ? state.absentIds
       : [...state.absentIds, playerId];
    return advanceTurn({ ...state, currentCard: null, currentStreak: [], absentIds });
+}
+
+/**
+ * The turn shot clock expired on the current player. Resolve their turn the
+ * gentle way and hand off — WITHOUT marking them absent (that's SKIP_TURN's
+ * job, reserved for a true disconnect). A standing gold streak is banked
+ * (mirrors BANK); a revealed pirate or an untouched turn just passes with no
+ * coins. The player keeps their seat and their next turn gets a fresh clock.
+ * Idempotent at the caller: a stale playerId is rejected so two racing clients
+ * can't double-advance.
+ */
+function handleTimeoutTurn(state: GameState, playerId: string): GameState {
+   assert(state.status === 'active', 'game not active');
+   const current = state.players[state.turnIndex];
+   assert(current?.id === playerId, 'turn has already advanced');
+   // bankToCurrentPlayer is a no-op when the streak is empty (pirate showing
+   // already wiped it, or the player never drew), so this one path covers all
+   // three cases: bank-and-pass, pirate-pass, and empty-pass.
+   const banked = bankToCurrentPlayer(state);
+   return advanceTurn({ ...banked, currentCard: null, currentStreak: [] });
 }
 
 function handleMarkPresent(state: GameState, playerId: string): GameState {

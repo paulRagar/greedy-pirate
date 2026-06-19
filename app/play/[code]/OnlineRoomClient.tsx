@@ -18,6 +18,7 @@ import {
    endTurnOnline,
    markPresentOnline,
    skipAbsentTurn,
+   timeoutTurn,
 } from '@/server/actions/gameTurnActions';
 import { startOnlineGame } from '@/server/actions/startOnlineGame';
 import { endGameByForfeit } from '@/server/actions/restartRoom';
@@ -39,9 +40,10 @@ import { ChestBurst } from '@/ui/effects/ChestBurst';
 import { CrewGrid } from '@/ui/game-room/CrewGrid';
 import { ScoreRibbon } from '@/ui/game-room/ScoreRibbon';
 import { StreakStrip } from '@/ui/game-room/StreakStrip';
+import { TurnClock } from '@/ui/game-room/TurnClock';
 import { VictoryModal } from '@/ui/game-room/VictoryModal';
 import { useGameToast } from '@/ui/toast/PirateToast';
-import { MAX_PLAYERS, MIN_PLAYERS } from '@/game/rules';
+import { MAX_PLAYERS, MIN_PLAYERS, TURN_CLOCK_MS } from '@/game/rules';
 import { cn } from '@/lib/cn';
 import KnockInbox, { type KnockEntry } from './KnockInbox';
 import HostLeaveModal, { type Candidate } from './HostLeaveModal';
@@ -58,6 +60,7 @@ interface Props {
    isPublic: boolean;
    initialContinuation: ContinuationContext;
    initialVersion: number;
+   initialTurnDeadline: string | null;
 }
 
 export default function OnlineRoomClient({
@@ -67,6 +70,7 @@ export default function OnlineRoomClient({
    isPublic,
    initialContinuation,
    initialVersion,
+   initialTurnDeadline,
 }: Props) {
    const router = useRouter();
    const [leaving, startLeave] = useTransition();
@@ -102,6 +106,7 @@ export default function OnlineRoomClient({
       applyOptimistic,
       onlineIds,
       continuation,
+      turnDeadline,
    } = useGameRoom(
       gameId,
       initial.code,
@@ -146,6 +151,7 @@ export default function OnlineRoomClient({
       initial.spectators,
       initialContinuation,
       initialVersion,
+      initialTurnDeadline,
    );
 
    const [hostId, setHostId] = useState<string>(initial.hostId);
@@ -711,6 +717,7 @@ export default function OnlineRoomClient({
             realtimeStatus={status}
             applyOptimistic={applyOptimistic}
             onlineIds={onlineIds}
+            turnDeadline={turnDeadline}
             isSpectator={isSpectator}
             onLeave={goToLobby}
                navLeaving={leaving}
@@ -1125,6 +1132,7 @@ function Play({
    realtimeStatus,
    applyOptimistic,
    onlineIds,
+   turnDeadline,
    isSpectator,
    onLeave,
    navLeaving,
@@ -1141,6 +1149,7 @@ function Play({
    realtimeStatus: RealtimeStatus;
    applyOptimistic: (mutator: (prev: PublicGameState) => PublicGameState) => void;
    onlineIds: ReadonlySet<string>;
+   turnDeadline: string | null;
    isSpectator: boolean;
    onLeave: () => void;
    navLeaving: boolean;
@@ -1258,6 +1267,37 @@ function Play({
       return () => clearTimeout(handle);
    }, [turnHolderOffline, iAmSkipLeader, turnHolderId, code]);
 
+   // Shot clock: when the helm-holder is online but idle, their turn
+   // auto-resolves at the deadline so the table isn't stuck waiting. A single
+   // designated firer — the lowest-seat online player who is NOT the holder,
+   // so an away-but-connected holder still gets timed out — schedules the
+   // call. The server enforces the deadline (rejecting an early call) and
+   // dedupes racing clients, so this is best-effort. An OFFLINE holder is
+   // handled by the faster skipAbsentTurn path above instead.
+   const deadlineMs = turnDeadline ? Date.parse(turnDeadline) : null;
+   const timeoutFirerId =
+      (seatedOnline.find((pl) => pl.id !== turnHolderId) ?? seatedOnline[0])?.id ?? null;
+   const clockHolderId =
+      !isSpectator &&
+      state.status === 'active' &&
+      !isComplete &&
+      turnHolderId !== null &&
+      onlineIds.has(turnHolderId) &&
+      timeoutFirerId === userId
+         ? turnHolderId
+         : null;
+   useEffect(() => {
+      if (clockHolderId === null || deadlineMs === null) return;
+      // Fire just past the deadline; the server rejects an early call as STALE.
+      const delay = Math.max(0, deadlineMs - Date.now()) + 300;
+      const handle = setTimeout(() => {
+         void timeoutTurn({ code, expectedTurnPlayerId: clockHolderId }).catch((err) => {
+            console.error('timeoutTurn failed', err);
+         });
+      }, delay);
+      return () => clearTimeout(handle);
+   }, [clockHolderId, deadlineMs, code]);
+
    // I just reconnected after being skipped — clear my absent flag so
    // the table stops jumping over my seat.
    const iAmAbsent = !isSpectator && state.absentIds.includes(userId);
@@ -1365,7 +1405,14 @@ function Play({
 
          {error && <p className='text-center text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
 
-         <div className='z-20 mt-auto pt-2 safe-bottom'>
+         <div className='z-20 mt-auto flex flex-col gap-2 pt-2 safe-bottom'>
+            {!isComplete && deadlineMs !== null && (
+               <TurnClock
+                  deadlineMs={deadlineMs}
+                  totalMs={TURN_CLOCK_MS}
+                  mine={isCurrent && !isSpectator}
+               />
+            )}
             {isComplete ? null : isSpectator ? (
                <div className='flex items-center justify-between gap-3 rounded-2xl border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-3 py-2 text-sm'>
                   <span className='text-[color:var(--color-cream-200)]/75'>Spectating the voyage</span>

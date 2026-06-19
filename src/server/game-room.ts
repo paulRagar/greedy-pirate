@@ -14,6 +14,7 @@ import { CONTINUATION_WINDOW_MS, fetchContinuation } from './continuation';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 import { initialState, reduce } from '@/game/engine';
+import { TURN_CLOCK_MS } from '@/game/rules';
 import { toPublic } from '@/game/public';
 import type { PublicGameState } from '@/game/public';
 import type { DeckVariant, GameAction, GameState } from '@/game/types';
@@ -68,6 +69,7 @@ export type EventType =
    | 'END_TURN'
    | 'SKIP_TURN'
    | 'MARK_PRESENT'
+   | 'TIMEOUT_TURN'
    | 'GAME_ENDED';
 
 export type EventPayload = {
@@ -217,6 +219,25 @@ export async function applyAction(
       let next = reduce(current, action);
 
       const justCompleted = row.status !== 'complete' && next.status === 'complete';
+
+      // Stamp a fresh shot-clock deadline whenever the helm changes hands or
+      // the holder draws (a draw keeps the turn but resets the clock). Other
+      // actions preserve the running deadline so an unrelated broadcast (a
+      // reconnect, a spectator join) can't silently extend the current
+      // player's clock. Null whenever the game isn't active.
+      const prevHolderId =
+         row.status === 'active' ? (current.players[current.turnIndex]?.id ?? null) : null;
+      const nextHolderId =
+         next.status === 'active' ? (next.players[next.turnIndex]?.id ?? null) : null;
+      const resetClock =
+         next.status === 'active' && (nextHolderId !== prevHolderId || action.type === 'DRAW');
+      const turnDeadline =
+         next.status !== 'active'
+            ? null
+            : resetClock
+              ? new Date(Date.now() + TURN_CLOCK_MS)
+              : (row.turnDeadline ?? new Date(Date.now() + TURN_CLOCK_MS));
+
       let unlocks: Record<string, string[]> = {};
       await tx
          .update(games)
@@ -233,6 +254,7 @@ export async function applyAction(
                next.status === 'active'
                   ? (next.players[next.turnIndex]?.id ?? null)
                   : null,
+            turnDeadline,
          })
          .where(eq(games.id, gameId));
 
@@ -310,6 +332,7 @@ export async function applyAction(
          spectators,
          continuation,
          unlocks,
+         turnDeadline,
       };
    });
 
@@ -322,6 +345,7 @@ export async function applyAction(
          eventType,
          version: result.seq,
          continuation: result.continuation,
+         turnDeadline: result.turnDeadline ? result.turnDeadline.toISOString() : null,
          ...(Object.keys(result.unlocks).length > 0 ? { unlocks: result.unlocks } : {}),
       });
       if (result.isPublic) {

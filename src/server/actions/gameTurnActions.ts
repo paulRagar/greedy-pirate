@@ -206,3 +206,74 @@ export async function skipAbsentTurn(input: {
 
    return { ok: true };
 }
+
+/**
+ * The shot clock expired on the current turn — auto-resolve it (bank a
+ * standing streak, otherwise pass with no coins) and advance. Unlike
+ * {@link skipAbsentTurn} this does NOT mark the player absent: a slow but
+ * connected player keeps their seat and gets a fresh clock next turn.
+ *
+ * Any seated player (including the current holder's own client) may call it,
+ * so multiple clients racing on the same expiry is fine — the action is
+ * idempotent on the holder match. Crucially, the server re-checks the deadline
+ * against the *locked* row: a client cannot end someone's turn early, only
+ * after the clock has genuinely run out.
+ */
+export async function timeoutTurn(input: {
+   code: string;
+   expectedTurnPlayerId: string;
+}): Promise<TurnResult> {
+   const parsed = SkipSchema.safeParse(input);
+   if (!parsed.success) return { ok: false, error: 'Invalid input' };
+
+   const supabase = await getSupabaseServer();
+   const {
+      data: { user },
+   } = await supabase.auth.getUser();
+   if (!user) return { ok: false, error: 'Not signed in' };
+
+   const game = await findGameByCode(parsed.data.code);
+   if (!game) return { ok: false, error: 'Room not found' };
+   if (game.status !== 'active') return { ok: false, error: 'Game not active' };
+
+   const seated = await db.query.gamePlayers.findFirst({
+      where: and(eq(gamePlayers.gameId, game.id), eq(gamePlayers.userId, user.id)),
+   });
+   if (!seated) return { ok: false, error: 'Only seated players can time out a turn' };
+
+   // Advisory pre-check (cheap reject). The authoritative holder + deadline
+   // checks run in the guard against the locked row.
+   const state = parseEngineState(game);
+   const current = state.players[state.turnIndex];
+   if (!current || current.id !== parsed.data.expectedTurnPlayerId) {
+      // Turn already moved on — idempotent no-op.
+      return { ok: true };
+   }
+
+   try {
+      await applyAction(
+         game.id,
+         { type: 'TIMEOUT_TURN', playerId: parsed.data.expectedTurnPlayerId },
+         'TIMEOUT_TURN',
+         {
+            actorId: user.id,
+            code: parsed.data.code,
+            guard: (locked, row) => {
+               const holder = locked.players[locked.turnIndex];
+               if (!holder || holder.id !== parsed.data.expectedTurnPlayerId) {
+                  throw new RoomError('STALE', 'Turn already advanced');
+               }
+               // Enforce the clock server-side — refuse to cut a turn short
+               // before its deadline. A null deadline means no clock is armed.
+               if (!row.turnDeadline || row.turnDeadline.getTime() > Date.now()) {
+                  throw new RoomError('STALE', 'Turn clock has not expired');
+               }
+            },
+         },
+      );
+   } catch (err) {
+      return toTurnResult(err, 'timeoutTurn');
+   }
+
+   return { ok: true };
+}

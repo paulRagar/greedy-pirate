@@ -53,6 +53,10 @@ export const games = pgTable(
       isPublic: boolean('is_public').notNull().default(false),
       state: jsonb('state').notNull().default(sql`'{}'::jsonb`),
       currentPlayerId: uuid('current_player_id'),
+      // Absolute wall-clock deadline for the current turn's shot clock. Reset
+      // server-side on every turn advance + DRAW; null while not active. Clients
+      // render the countdown from this and fire the auto-resolve at expiry.
+      turnDeadline: timestamp('turn_deadline', { withTimezone: true }),
       hostLeftAt: timestamp('host_left_at', { withTimezone: true }),
       continuationDeadline: timestamp('continuation_deadline', { withTimezone: true }),
       continuationFinalized: boolean('continuation_finalized').notNull().default(false),

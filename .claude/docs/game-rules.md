@@ -107,7 +107,10 @@ type GameAction =
    | { type: 'END_TURN' }
    | { type: 'START_GAME'; seed: string; variant?: DeckVariant }
    | { type: 'PLAYER_JOIN'; player: PlayerInit }
-   | { type: 'PLAYER_LEAVE'; playerId: string };
+   | { type: 'PLAYER_LEAVE'; playerId: string }
+   | { type: 'SKIP_TURN'; playerId: string }      // disconnect: skip + mark absent
+   | { type: 'MARK_PRESENT'; playerId: string }   // reconnect: clear absent flag
+   | { type: 'TIMEOUT_TURN'; playerId: string };  // shot clock: auto-resolve, stay present
 
 function reduce(state: GameState, action: GameAction): GameState;
 ```
@@ -125,6 +128,10 @@ function reduce(state: GameState, action: GameAction): GameState;
 A pirate ends the streak but we want a beat — the UI shows the pirate card, animates the shake, and the player taps "Pass the Helm" to advance. Explicit dispatch keeps the UI from racing the state.
 
 Alternative: have `DRAW` (when it reveals a pirate) auto-advance. We chose the explicit version for UI clarity.
+
+### Turn shot clock (online)
+
+Online turns carry a server-stamped `turn_deadline` (`TURN_CLOCK_MS`, 12s), reset on every turn advance and on each `DRAW`. The engine stays time-free — the deadline lives on the `games` row, rides each broadcast, and clients render the countdown. At expiry a designated client fires `TIMEOUT_TURN` and the server (after re-checking the deadline against the locked row, so a turn can't be cut short early) auto-resolves it: a standing streak is banked, otherwise the turn passes with no coins. `TIMEOUT_TURN` never marks the player absent — a slow-but-connected player keeps their seat and gets a fresh clock next turn. Contrast `SKIP_TURN`, fired only when a player truly disconnects, which *does* flag them absent so future turns bypass their seat until they reconnect (`MARK_PRESENT`).
 
 ---
 
