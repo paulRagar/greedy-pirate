@@ -92,7 +92,7 @@ export function TopNav() {
          </Link>
 
          <span className='flex items-center justify-end gap-1.5'>
-            <FriendsButton isAnonymous={profile?.isAnonymous ?? true} />
+            <FriendsButton userId={profile?.id ?? null} isAnonymous={profile?.isAnonymous ?? true} />
             <AccountMenu
                displayName={profile?.displayName}
                isAnonymous={profile?.isAnonymous ?? true}
