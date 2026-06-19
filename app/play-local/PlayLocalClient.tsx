@@ -8,7 +8,6 @@ import { useGameAnnouncer } from '@/client/hooks/useGameAnnouncer';
 import type { AnnounceSnapshot } from '@/client/a11y/gameAnnouncement';
 import { DEFAULT_VARIANT } from '@/game/rules';
 import type { DeckVariant, PlayerInit } from '@/game/types';
-import { persistLocalGame } from '@/server/actions/persistLocalGame';
 import { cn } from '@/lib/cn';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PirateCard } from '@/ui/pirate-card/PirateCard';
@@ -36,20 +35,9 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
    const { toastElement, showToast } = useGameToast();
 
    const startedFor = useRef<string | null>(null);
-   const persistedFor = useRef<string | null>(null);
 
-   useEffect(() => {
-      if (state.status !== 'complete' || !state.winnerId) return;
-      const key = `${state.players.map((p) => p.id).join(',')}:${state.winnerId}`;
-      if (persistedFor.current === key) return;
-      persistedFor.current = key;
-      void persistLocalGame({
-         deckVariant: state.variant,
-         players: state.players.map((p) => ({ id: p.id, name: p.name, coins: p.coins })),
-         winnerSeatId: state.winnerId,
-         pirateCount: state.pirateCount,
-      }).catch((err) => console.error('persistLocalGame error', err));
-   }, [state.status, state.winnerId, state.players, state.variant, state.pirateCount]);
+   // Local pass-and-play is intentionally ephemeral — nothing is persisted to
+   // the server, and it never touches the signed-in user's stats/achievements.
 
    useEffect(() => {
       if (state.status !== 'lobby') return;
@@ -130,7 +118,6 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
 
    const playAgain = () => {
       startedFor.current = null;
-      persistedFor.current = null;
       reset();
    };
 

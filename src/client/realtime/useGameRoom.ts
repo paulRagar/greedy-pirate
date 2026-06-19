@@ -35,6 +35,8 @@ type BroadcastBody = {
    version?: number;
    continuation?: ContinuationContext;
    hostId?: string;
+   /** Achievements unlocked by this game's completion, keyed by user id. */
+   unlocks?: Record<string, string[]>;
 };
 
 export type KnockRequestedEvent = {

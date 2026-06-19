@@ -90,13 +90,25 @@ One row per user. Materialized aggregates updated incrementally.
 | `games_played` | `int` default 0 | |
 | `games_won` | `int` default 0 | |
 | `total_coins_collected` | `bigint` default 0 | Sum of `coins` across completed games. |
-| `total_pirates_encountered` | `int` default 0 | Reserved; not populated yet. |
-| `longest_streak_value` | `int` default 0 | Reserved; not populated yet. |
+| `total_pirates_encountered` | `int` default 0 | Sum of pirates drawn on the user's own turns (GRE-26). |
+| `longest_streak_value` | `int` default 0 | GREATEST single-game max streak length, in cards (GRE-26). |
+| `biggest_single_bank` | `int` default 0 | GREATEST single banked streak value, in doubloons (GRE-26). |
 | `updated_at` | `timestamptz` default now() | |
 
-Populated by `bumpUserStats(tx, rows[])` (UPSERT with column increments) called from:
-- `applyAction` on `lobby|active → complete` (online mode: all seated users).
-- `persistLocalGame` (local mode: host only, matched by `displayName`).
+Populated by `bumpUserStats(tx, rows[])` (UPSERT with column increments / `greatest()` for bests), called **only** from `applyAction` on `lobby|active → complete` (online mode, all seated users). **Local pass-and-play never touches `user_stats`** — local games use entered names rather than the signed-in user's identity, so stats and achievements are online-only by construction.
+
+After each upsert, `bumpUserStats` evaluates the `src/lib/achievements.ts` catalog against the new totals, insert-or-ignores unlocked rows into `user_achievements`, and returns the codes unlocked *for the first time* (keyed by user id) so the completion broadcast can notify each player.
+
+### `user_achievements`
+One row per unlocked achievement per user (GRE-26).
+
+| Column | Type | Notes |
+|---|---|---|
+| `user_id` | `uuid` | FK → `users.id` on delete cascade. PK part. |
+| `code` | `text` | Achievement code from the `src/lib/achievements.ts` catalog. PK part. |
+| `unlocked_at` | `timestamptz` default now() | First unlock time; preserved via insert-or-ignore. |
+
+PK `(user_id, code)`. RLS: self-read only; the server writes via the direct (service-role) connection.
 
 ---
 
@@ -113,10 +125,12 @@ type GameStateJSON = {
    currentStreak: GoldCard[]; // gold cards in this turn's streak
    pirateCount: number;
    winnerId: string | null;
+   absentIds: string[];       // seats skipped by turn advance
+   telemetry: Record<string, { maxStreakLength: number; biggestBank: number; piratesEncountered: number }>;
 };
 ```
 
-`deck` is **never sent to clients**. The server reads `deck[0]`, calls `reduce`, and broadcasts a `PublicGameState` that omits `deck` entirely (only `deckCount` is exposed).
+`deck` and `telemetry` are **never sent to clients** (`toPublic()` omits both). The server reads `deck[0]`, calls `reduce`, and broadcasts a `PublicGameState` that omits `deck` entirely (only `deckCount` is exposed).
 
 ---
 

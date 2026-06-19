@@ -22,6 +22,7 @@
       "db:migrate:all": "drizzle-kit migrate && supabase db push --local"
    },
    "dependencies": {
+      "@floating-ui/react": "^0.27.19",
       "@supabase/ssr": "^0.12.0",
       "@supabase/supabase-js": "^2.108.1",
       "@vercel/analytics": "^1.3.1",

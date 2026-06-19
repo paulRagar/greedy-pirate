@@ -22,6 +22,13 @@
       "when": 1781579630900,
       "tag": "0002_hesitant_killraven",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781835692214,
+      "tag": "0003_achievements_and_biggest_bank",
+      "breakpoints": true
     }
   ]
 }

@@ -131,6 +131,16 @@ export default function OnlineRoomClient({
                router.refresh();
             }
             if (eventType === 'ROOM_ABANDONED') router.push('/play/lobby');
+            // Achievements unlocked by this game's completion. Everyone in the
+            // room gets the payload; we badge every achiever on the scoreboard
+            // and surface the local player's own unlocks inside the victory
+            // modal (a toast would render behind the modal backdrop).
+            if (body.unlocks) {
+               const achievers = Object.keys(body.unlocks);
+               if (achievers.length > 0) setAchieverIds(new Set(achievers));
+               const mine = body.unlocks[userId];
+               if (mine && mine.length > 0) setMyUnlocks(mine);
+            }
          },
       },
       initial.spectators,
@@ -140,6 +150,17 @@ export default function OnlineRoomClient({
 
    const [hostId, setHostId] = useState<string>(initial.hostId);
    const prevHostId = useRef<string>(initial.hostId);
+   // User ids who unlocked an achievement this game (badged on the scoreboard)
+   // and the local player's own newly-unlocked codes (shown in the victory
+   // modal). Cleared when a new round starts.
+   const [achieverIds, setAchieverIds] = useState<ReadonlySet<string>>(() => new Set());
+   const [myUnlocks, setMyUnlocks] = useState<readonly string[]>([]);
+   useEffect(() => {
+      if (live.status !== 'complete') {
+         setAchieverIds(new Set());
+         setMyUnlocks([]);
+      }
+   }, [live.status]);
    useEffect(() => {
       if (initial.hostId !== prevHostId.current) {
          if (initial.hostId === userId && prevHostId.current !== userId) {
@@ -696,6 +717,8 @@ export default function OnlineRoomClient({
             continuationDeadline={continuation?.deadlineAt ?? null}
             onContinue={handleContinue}
             onJumpShip={handleJumpShip}
+            achieverIds={achieverIds}
+            yourUnlocks={myUnlocks}
          />
          {sharedModals}
       </>
@@ -1108,6 +1131,8 @@ function Play({
    continuationDeadline,
    onContinue,
    onJumpShip,
+   achieverIds,
+   yourUnlocks,
 }: {
    state: RoomState;
    userId: string;
@@ -1122,6 +1147,8 @@ function Play({
    continuationDeadline: string | null;
    onContinue: () => void | Promise<void>;
    onJumpShip: () => void | Promise<void>;
+   achieverIds: ReadonlySet<string>;
+   yourUnlocks: readonly string[];
 }) {
    const [pending, setPending] = useState<null | 'draw' | 'bank' | 'end'>(null);
    const [error, setError] = useState<string | null>(null);
@@ -1397,6 +1424,8 @@ function Play({
             winner={winner}
             ranked={ranked}
             youId={userId}
+            achieverIds={achieverIds}
+            yourUnlocks={yourUnlocks}
             actions={
                isSpectator ? (
                   <>

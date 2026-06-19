@@ -54,6 +54,7 @@ export function parseEngineState(row: DbGame): GameState {
       variant: row.deckVariant as DeckVariant,
       winnerId: raw.winnerId ?? null,
       absentIds: (raw.absentIds ?? []) as GameState['absentIds'],
+      telemetry: (raw.telemetry ?? {}) as GameState['telemetry'],
    };
 }
 
@@ -172,6 +173,7 @@ function serializeState(state: GameState): Record<string, unknown> {
       pirateCount: state.pirateCount,
       winnerId: state.winnerId,
       absentIds: state.absentIds,
+      telemetry: state.telemetry,
    };
 }
 
@@ -214,6 +216,7 @@ export async function applyAction(
       let next = reduce(current, action);
 
       const justCompleted = row.status !== 'complete' && next.status === 'complete';
+      let unlocks: Record<string, string[]> = {};
       await tx
          .update(games)
          .set({
@@ -238,13 +241,19 @@ export async function applyAction(
       // Compute these BEFORE promoting spectators so freshly seated folks
       // don't get a games_played++ for a round they didn't play.
       if (justCompleted) {
-         const contributions = next.players.map((p) => ({
-            userId: p.id,
-            coins: p.coins,
-            isWinner: next.winnerId === p.id,
-         }));
+         const contributions = next.players.map((p) => {
+            const t = next.telemetry[p.id];
+            return {
+               userId: p.id,
+               coins: p.coins,
+               isWinner: next.winnerId === p.id,
+               maxStreakLength: t?.maxStreakLength ?? 0,
+               biggestBank: t?.biggestBank ?? 0,
+               piratesEncountered: t?.piratesEncountered ?? 0,
+            };
+         });
          if (contributions.length > 0) {
-            await bumpUserStats(tx, contributions);
+            unlocks = await bumpUserStats(tx, contributions);
          }
 
          // Promote FIFO spectators into open seats so they get a chance to
@@ -272,6 +281,7 @@ export async function applyAction(
             payload: {
                state: toPublic(next),
                actorId: options.actorId ?? null,
+               ...(Object.keys(unlocks).length > 0 ? { unlocks } : {}),
             },
          })
          .returning({ id: gameEvents.id });
@@ -289,6 +299,7 @@ export async function applyAction(
          prevStatus: row.status,
          spectators,
          continuation,
+         unlocks,
       };
    });
 
@@ -301,6 +312,7 @@ export async function applyAction(
          eventType,
          version: result.seq,
          continuation: result.continuation,
+         ...(Object.keys(result.unlocks).length > 0 ? { unlocks: result.unlocks } : {}),
       });
       if (result.isPublic) {
          revalidatePath('/play/lobby');

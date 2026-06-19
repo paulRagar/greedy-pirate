@@ -1,6 +1,7 @@
 import 'server-only';
 import { sql } from 'drizzle-orm';
-import { userStats } from './db/schema';
+import { unlockedAchievementCodes } from '@/lib/achievements';
+import { userAchievements, userStats } from './db/schema';
 
 type Tx = Parameters<Parameters<(typeof import('./db/client'))['db']['transaction']>[0]>[0];
 
@@ -8,21 +9,43 @@ type ContributionRow = {
    userId: string;
    coins: number;
    isWinner: boolean;
+   /** Longest gold streak this player reached this game (cards). */
+   maxStreakLength: number;
+   /** Largest single banked streak this player made this game (doubloons). */
+   biggestBank: number;
+   /** Pirates this player drew on their own turns this game. */
+   piratesEncountered: number;
 };
 
 /**
- * Upsert a player's contribution into user_stats. Increments games_played by 1,
- * games_won by 1 if they won, and total_coins_collected by their final coins.
+ * Upsert each player's contribution into user_stats, then unlock any newly
+ * earned achievements. Cumulative counters (games, coins, pirates) are
+ * incremented; personal bests (longest streak, biggest bank) take the GREATEST
+ * of the existing value and this game's. Achievement rows are insert-or-ignore,
+ * so the earliest unlock time is preserved across replays.
+ *
+ * Only online games call this — local pass-and-play never touches user_stats —
+ * so the stats (and therefore achievements) are inherently online-only.
+ *
+ * Returns the achievement codes unlocked *for the first time* this call, keyed
+ * by user id (empty arrays omitted), so callers can notify those players.
  */
-export async function bumpUserStats(tx: Tx, rows: ContributionRow[]): Promise<void> {
+export async function bumpUserStats(
+   tx: Tx,
+   rows: ContributionRow[],
+): Promise<Record<string, string[]>> {
+   const newlyUnlocked: Record<string, string[]> = {};
    for (const row of rows) {
-      await tx
+      const [updated] = await tx
          .insert(userStats)
          .values({
             userId: row.userId,
             gamesPlayed: 1,
             gamesWon: row.isWinner ? 1 : 0,
             totalCoinsCollected: row.coins,
+            totalPiratesEncountered: row.piratesEncountered,
+            longestStreakValue: row.maxStreakLength,
+            biggestSingleBank: row.biggestBank,
          })
          .onConflictDoUpdate({
             target: userStats.userId,
@@ -32,8 +55,37 @@ export async function bumpUserStats(tx: Tx, rows: ContributionRow[]): Promise<vo
                   ? sql`${userStats.gamesWon} + 1`
                   : sql`${userStats.gamesWon}`,
                totalCoinsCollected: sql`${userStats.totalCoinsCollected} + ${row.coins}`,
+               totalPiratesEncountered: sql`${userStats.totalPiratesEncountered} + ${row.piratesEncountered}`,
+               longestStreakValue: sql`greatest(${userStats.longestStreakValue}, ${row.maxStreakLength})`,
+               biggestSingleBank: sql`greatest(${userStats.biggestSingleBank}, ${row.biggestBank})`,
                updatedAt: sql`now()`,
             },
-         });
+         })
+         .returning();
+
+      if (!updated) continue;
+
+      const codes = unlockedAchievementCodes({
+         gamesPlayed: updated.gamesPlayed,
+         gamesWon: updated.gamesWon,
+         totalCoinsCollected: Number(updated.totalCoinsCollected),
+         totalPiratesEncountered: updated.totalPiratesEncountered,
+         longestStreakValue: updated.longestStreakValue,
+         biggestSingleBank: updated.biggestSingleBank,
+      });
+      if (codes.length === 0) continue;
+
+      // RETURNING after ON CONFLICT DO NOTHING yields only the rows that were
+      // actually inserted — i.e. the achievements unlocked for the first time.
+      const inserted = await tx
+         .insert(userAchievements)
+         .values(codes.map((code) => ({ userId: row.userId, code })))
+         .onConflictDoNothing()
+         .returning({ code: userAchievements.code });
+
+      if (inserted.length > 0) {
+         newlyUnlocked[row.userId] = inserted.map((r) => r.code);
+      }
    }
+   return newlyUnlocked;
 }

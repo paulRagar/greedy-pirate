@@ -194,24 +194,40 @@ function AccountMenu({
                )}
 
                {isAnonymous ? (
-                  <button
-                     type='button'
-                     role='menuitem'
-                     data-testid='account-menu-auth'
-                     onClick={() => {
-                        setOpen(false);
-                        setAuthModalOpen(true);
-                     }}
-                     className='flex min-h-[48px] w-full items-center gap-3 px-4 text-left text-sm font-semibold text-[color:var(--color-gold-300)] transition-colors hover:bg-white/5'
-                  >
-                     <SignInIcon />
-                     <span>
-                        Sign up / Sign in
-                        <span className='block text-xs font-normal text-[color:var(--color-cream-200)]/55'>
-                           Save yer logbook
+                  <>
+                     <Link
+                        href='/profile'
+                        role='menuitem'
+                        onClick={() => setOpen(false)}
+                        className='flex min-h-[48px] items-center gap-3 px-4 text-sm font-semibold text-[color:var(--color-cream-100)] transition-colors hover:bg-white/5'
+                     >
+                        <LogbookIcon />
+                        <span>
+                           View profile
+                           <span className='block text-xs font-normal text-[color:var(--color-cream-200)]/55'>
+                              Yer voyages so far
+                           </span>
                         </span>
-                     </span>
-                  </button>
+                     </Link>
+                     <button
+                        type='button'
+                        role='menuitem'
+                        data-testid='account-menu-auth'
+                        onClick={() => {
+                           setOpen(false);
+                           setAuthModalOpen(true);
+                        }}
+                        className='flex min-h-[48px] w-full items-center gap-3 border-t border-[color:var(--color-surface-border)] px-4 text-left text-sm font-semibold text-[color:var(--color-gold-300)] transition-colors hover:bg-white/5'
+                     >
+                        <SignInIcon />
+                        <span>
+                           Sign up / Sign in
+                           <span className='block text-xs font-normal text-[color:var(--color-cream-200)]/55'>
+                              Save yer logbook
+                           </span>
+                        </span>
+                     </button>
+                  </>
                ) : (
                   <>
                      <Link

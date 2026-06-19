@@ -71,6 +71,7 @@ async function dispatch(code: string, action: GameAction, eventType: Parameters<
                   .set({
                      coins: player.coins,
                      isWinner: next.winnerId === player.id,
+                     piratesEncountered: next.telemetry[player.id]?.piratesEncountered ?? 0,
                   })
                   .where(
                      sql`${gamePlayers.gameId} = ${gameId} and ${gamePlayers.userId} = ${player.id}`,

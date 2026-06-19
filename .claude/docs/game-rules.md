@@ -46,11 +46,15 @@ Defined as data in `src/game/deck.ts`. Three variants:
 ## Winning
 
 Highest `coins` when the deck empties. Ties broken by:
-1. Highest single banked streak (`max_single_bank`) — _not yet tracked; reserved for a later engine telemetry pass._
-2. Fewest pirates encountered — _not yet tracked per-player._
+1. Highest single banked streak (`max_single_bank`) — _now tracked per-player as `GameState.telemetry[id].biggestBank` (GRE-26); not yet wired into the winner sort._
+2. Fewest pirates encountered — _now tracked per-player as `GameState.telemetry[id].piratesEncountered` (GRE-26); not yet wired into the winner sort._
 3. Coin flip (random tiebreaker, persisted in `game_events`) — _not yet implemented._
 
 Current tie behavior: lexicographic by `coins` then whoever sort happens to land first. Acceptable for MVP.
+
+### Per-player telemetry (GRE-26)
+
+The engine accrues `GameState.telemetry`, a `Record<playerId, { maxStreakLength, biggestBank, piratesEncountered }>`, updated in the DRAW/BANK reducers and reset on `START_GAME`. It is **server/internal only** — `toPublic()` does not expose it. At **online** game completion the server rolls it into `user_stats` (`longest_streak_value`, `biggest_single_bank`, `total_pirates_encountered`) and into the per-seat `game_players.pirates_encountered`, then unlocks achievements and notifies each player via the completion broadcast's `unlocks` map. `maxStreakLength` is the high-water mark of consecutive gold held (counts even if the run later busts). Local games run the same engine (so the telemetry exists) but intentionally do not persist stats or achievements.
 
 ## End-of-game UI
 

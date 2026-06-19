@@ -68,8 +68,8 @@ Tracks where the overhaul stands. Update at the end of each phase.
 - Supabase clients: `getSupabaseServer()` (cookie-aware, RLS-respecting), `supabaseAdmin` (service-role), `getSupabaseBrowser()`.
 - Next middleware refreshes Supabase session on every request.
 - `AuthBootstrap` + `useCurrentUser` + `NamePromptModal` — anonymous sign-in on first visit, name capture with `setDisplayName` server action (Zod-validated).
-- `persistLocalGame` server action — saves completed local games (game + game_players + GAME_ENDED event) in a transaction. Fires from `PlayLocalClient` on completion, idempotent via `useRef` key.
-- `/profile` page — RSC, lists hosted games + win count + recent games. Mobile-first layout (single column, ≥44px touch targets).
+- Local pass-and-play is ephemeral — it is **not** persisted to the server and never touches `user_stats`/achievements (GRE-26: local uses entered names, not the player's identity). The former `persistLocalGame` action was removed.
+- `/profile` page — RSC, lists games the player participated in + stats + achievements. Stats/achievements are online-only. Mobile-first layout (single column, ≥44px touch targets).
 - "My Logbook" link added to home.
 - `.env.example` (committed) + `.env.local` (committed for shared local dev defaults — these aren't secret in dev context).
 - npm scripts: `db:generate`, `db:migrate`, `db:push`, `db:studio`, `supabase:start`, `supabase:stop`, `supabase:reset`.
@@ -166,9 +166,7 @@ See `.claude/docs/roadmap.md`.
 
 **Shipped**
 - **Deck secrecy hardened.** `supabase/migrations/20260610200000_tighten_games_rls.sql` drops the `games_member_read` RLS policy. Clients can no longer SELECT from `games` (and therefore cannot read `state.deck`). Server reads go through Drizzle which bypasses RLS. Realtime broadcasts use the sanitized `PublicGameState` in `game_events.payload`.
-- **`user_stats` populated.** New `src/server/stats.ts` exports `bumpUserStats(tx, rows[])` using Drizzle UPSERT with column increments. Hooked from two places:
-  - `applyAction` detects the `lobby|active → complete` transition and bumps every player.
-  - `persistLocalGame` bumps stats for the host when their `displayName` matches a seat (the only persisted user in local mode).
+- **`user_stats` populated.** New `src/server/stats.ts` exports `bumpUserStats(tx, rows[])` using Drizzle UPSERT with column increments / `greatest()` for personal bests. Hooked from **online completion only** — `applyAction` detects the `lobby|active → complete` transition and bumps every seated player, then unlocks achievements (GRE-26). Local games are not persisted and never bump stats.
 - **Profile page** now reads from `user_stats` rather than re-deriving. Adds a third stat row for total doubloons collected and a win-rate suffix. Differentiates `local` vs `online` mode in the recent voyages list.
 - **Account upgrade (anonymous → email).** `src/client/auth/AccountUpgrade.tsx`: collapsible card on `/profile` shown only to anonymous users. Uses browser `supabase.auth.updateUser({email, password})` to convert the anon JWT into a permanent email account. Server action `markAccountClaimed` mirrors `auth.users.is_anonymous` into `public.users.is_anonymous` and revalidates the profile path. Stats and game history carry over because the underlying `user_id` is unchanged.
 
