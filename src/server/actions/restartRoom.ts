@@ -13,6 +13,7 @@ import {
    parseEngineState,
 } from '@/server/game-room';
 import { promoteSpectators } from '@/server/spectators';
+import { CONTINUATION_WINDOW_MS, fetchContinuation } from '@/server/continuation';
 import { getSupabaseServer } from '@/server/supabase/server';
 import { initialState } from '@/game/engine';
 import { toPublic } from '@/game/public';
@@ -195,6 +196,11 @@ export async function endGameByForfeit(input: z.input<typeof ForfeitSchema>): Pr
             },
             completedAt: new Date(),
             currentPlayerId: null,
+            // Open the same continuation window a normal finish gets, so the
+            // forfeit winner can Continue back into a fresh lobby (or wait for
+            // crew) instead of being forced to jump ship.
+            continuationDeadline: new Date(Date.now() + CONTINUATION_WINDOW_MS),
+            continuationFinalized: false,
          })
          .where(eq(games.id, game.id));
 
@@ -222,12 +228,14 @@ export async function endGameByForfeit(input: z.input<typeof ForfeitSchema>): Pr
    });
 
    const spectators = await fetchSpectators(db, game.id);
+   const continuation = await fetchContinuation(db, game.id);
    await broadcastRoomState(parsed.data.code, {
       state: toPublic(next),
       spectators,
       actorId: user.id,
       eventType: 'FORFEIT_WIN',
       version: seq,
+      continuation,
    });
 
    return { ok: true };

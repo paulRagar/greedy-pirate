@@ -15,6 +15,7 @@ import type { PublicGameState, RoomState, RoomSpectatorView } from '@/game/publi
 import {
    bankOnline,
    drawOnline,
+   leaveActiveGame,
    markPresentOnline,
    skipAbsentTurn,
    timeoutTurn,
@@ -492,6 +493,11 @@ export default function OnlineRoomClient({
                setLeaveConfirm((prev) => (prev ? { ...prev, submitting: false } : null));
                return;
             }
+         } else if (state.status === 'active') {
+            // Mark ourselves absent immediately so the table skips our seat
+            // without waiting out the presence grace. The seat persists for
+            // the scoreboard; we just navigate away.
+            await leaveActiveGame({ code: initial.code });
          } else {
             await leaveRoom(initial.code);
          }
@@ -1409,13 +1415,21 @@ function Play({
    // the winner so the game ends cleanly. Presence already includes the
    // 15s grace window, so this only fires after the timeout completes.
    const seatedOnline = state.players.filter((p) => onlineIds.has(p.id));
+   // Players actually able to play: online AND not flagged absent. Counting
+   // absent (explicitly-left) seats here means a forfeit fires the instant the
+   // other player leaves, instead of waiting out their presence grace.
+   const seatedActive = state.players.filter(
+      (p) => onlineIds.has(p.id) && !state.absentIds.includes(p.id),
+   );
    const aloneInActiveGame =
       !isSpectator &&
       state.status === 'active' &&
+      !isComplete &&
+      !state.absentIds.includes(userId) &&
       onlineIds.has(userId) &&
-      seatedOnline.length === 1 &&
-      state.players.length > 1 &&
-      state.players.some((p) => p.id === userId);
+      seatedActive.length === 1 &&
+      seatedActive[0]?.id === userId &&
+      state.players.length > 1;
    useEffect(() => {
       if (!aloneInActiveGame) return;
       let cancelled = false;

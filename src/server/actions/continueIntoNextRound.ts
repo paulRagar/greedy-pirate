@@ -62,7 +62,7 @@ export async function continueIntoNextRound(
    const spectators = await fetchSpectators(db, game.id);
    const continuation = await fetchContinuation(db, game.id);
 
-   // Every seated player has opted in — skip the rest of the 60s wait
+   // Every seated player has opted in — skip the rest of the wait
    // and finalize now. Atomic claim inside finalizeContinuationCore makes
    // concurrent last-clickers safe.
    const allIn =
