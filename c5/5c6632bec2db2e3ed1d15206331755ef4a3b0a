@@ -1,0 +1,26 @@
+src/server/friends.ts
+  s_a9d5705db96371::t_e2a5ca07860d40 1-68
+src/server/actions/friendActions.ts
+  s_a9d5705db96371::t_c62445a707da3c 1-3,5-294,297,299-340,342-356
+  s_a9d5705db96371::t_71bf34510c2337 341
+  s_a9d5705db96371::t_b7b5641a0fb319 4
+  s_a9d5705db96371::t_cc2314c22138dd 295-296,298
+src/server/friends.test.ts
+  s_a9d5705db96371::t_d5f3747b63697e 1-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "c55c6632bec2db2e3ed1d15206331755ef4a3b0a",
+  "prompts": {},
+  "sessions": {
+    "s_a9d5705db96371": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51e0f64a-2890-4331-9237-0973b4790829",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
