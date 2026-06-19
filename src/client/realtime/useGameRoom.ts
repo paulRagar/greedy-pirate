@@ -104,6 +104,15 @@ export function useGameRoom(
 
    const graceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
+   // The live channel + an in-flight-subscribe lock, held in refs so they
+   // survive React StrictMode's double-invoke of the subscribe effect. A
+   // per-closure `let channel` can't coordinate the two concurrent mounts:
+   // both pass their guards and the second hits an already-subscribed channel
+   // (supabase.channel() returns the existing instance), throwing "cannot add
+   // presence callbacks after subscribe()".
+   const channelRef = useRef<ReturnType<ReturnType<typeof getSupabaseBrowser>['channel']> | null>(null);
+   const subscribingRef = useRef<Promise<void> | null>(null);
+
    useEffect(() => {
       onResumeRef.current = options.onResume;
       userIdRef.current = options.userId;
@@ -151,7 +160,6 @@ export function useGameRoom(
    useEffect(() => {
       const supabase = getSupabaseBrowser();
       const topic = `room:${code.toUpperCase()}`;
-      let channel: ReturnType<typeof supabase.channel> | null = null;
 
       const clearGraceTimer = (uid: string) => {
          const timer = graceTimers.current.get(uid);
@@ -177,6 +185,7 @@ export function useGameRoom(
       };
 
       const syncPresence = () => {
+         const channel = channelRef.current;
          if (!channel) return;
          const presence = channel.presenceState() as Record<string, PresenceMeta[]>;
          const liveIds = new Set<string>();
@@ -201,104 +210,125 @@ export function useGameRoom(
       };
 
       const subscribe = async () => {
-         if (channel) return;
-         // Room topics are private channels — RLS on realtime.messages only
-         // lets seated players / host / spectators read or send. Attach the
-         // current session JWT to the realtime socket before subscribing.
-         await supabase.realtime.setAuth();
-         if (channel) return; // a concurrent resume may have beaten us here
-         // Drop any same-topic channel left over from a prior mount or a
-         // backgrounded-tab resume whose fire-and-forget removeChannel hasn't
-         // finished. Otherwise supabase collides with an already-subscribed
-         // channel: .on('presence', …) throws "after subscribe()", or it
-         // resubscribes without the freshly-set JWT and RLS denies the read.
-         const fullTopic = `realtime:${topic}`;
-         await Promise.all(
-            (supabase.getChannels() as Array<ReturnType<typeof supabase.channel>>)
-               .filter((c) => c.topic === fullTopic)
-               .map((c) => supabase.removeChannel(c)),
-         );
-         if (channel) return;
-         channel = supabase.channel(topic, {
-            config: {
-               private: true,
-               broadcast: { self: true, ack: false },
-               presence: { key: userIdRef.current ?? `anon-${Math.random().toString(36).slice(2, 10)}` },
-            },
-         });
+         if (channelRef.current) return;
+         // A concurrent invocation (StrictMode double-mount, or a resume that
+         // raced the initial mount) is already building the channel — wait for
+         // it instead of racing to create a second same-topic channel.
+         if (subscribingRef.current) {
+            await subscribingRef.current;
+            return;
+         }
 
-         channel.on(
-            'broadcast',
-            { event: ROOM_BROADCAST_EVENT },
-            (message: { payload?: BroadcastBody }) => {
-               const payload = message.payload ?? {};
-               if (payload.state) {
-                  const gate = gateStateVersion(appliedVersion.current, payload.version);
-                  if (gate.apply) {
-                     appliedVersion.current = gate.nextVersion;
-                     setState(payload.state);
+         const run = (async () => {
+            // Room topics are private channels — RLS on realtime.messages only
+            // lets seated players / host / spectators read or send. Attach the
+            // current session JWT to the realtime socket before subscribing.
+            await supabase.realtime.setAuth();
+            if (channelRef.current) return;
+            // Drop any same-topic channel left over from a prior mount or a
+            // backgrounded-tab resume whose fire-and-forget removeChannel hasn't
+            // finished. Otherwise supabase collides with an already-subscribed
+            // channel: .on('presence', …) throws "after subscribe()", or it
+            // resubscribes without the freshly-set JWT and RLS denies the read.
+            const fullTopic = `realtime:${topic}`;
+            await Promise.all(
+               (supabase.getChannels() as Array<ReturnType<typeof supabase.channel>>)
+                  .filter((c) => c.topic === fullTopic)
+                  .map((c) => supabase.removeChannel(c)),
+            );
+            if (channelRef.current) return;
+
+            const channel = supabase.channel(topic, {
+               config: {
+                  private: true,
+                  broadcast: { self: true, ack: false },
+                  presence: { key: userIdRef.current ?? `anon-${Math.random().toString(36).slice(2, 10)}` },
+               },
+            });
+
+            channel.on(
+               'broadcast',
+               { event: ROOM_BROADCAST_EVENT },
+               (message: { payload?: BroadcastBody }) => {
+                  const payload = message.payload ?? {};
+                  if (payload.state) {
+                     const gate = gateStateVersion(appliedVersion.current, payload.version);
+                     if (gate.apply) {
+                        appliedVersion.current = gate.nextVersion;
+                        setState(payload.state);
+                     }
                   }
-               }
-               if (payload.spectators) {
-                  setSpectators(payload.spectators);
-               }
-               // continuation explicitly null means the window closed.
-               // undefined means the sender didn't address it — keep current.
-               if (payload.continuation !== undefined) {
-                  setContinuation(payload.continuation);
-               }
-               if (payload.eventType) {
-                  onEventRef.current?.(payload.eventType, payload);
-               }
-            },
-         );
+                  if (payload.spectators) {
+                     setSpectators(payload.spectators);
+                  }
+                  // continuation explicitly null means the window closed.
+                  // undefined means the sender didn't address it — keep current.
+                  if (payload.continuation !== undefined) {
+                     setContinuation(payload.continuation);
+                  }
+                  if (payload.eventType) {
+                     onEventRef.current?.(payload.eventType, payload);
+                  }
+               },
+            );
 
-         channel.on(
-            'broadcast',
-            { event: KNOCK_REQUESTED_EVENT },
-            (message: { payload?: KnockRequestedEvent }) => {
-               if (message.payload) onKnockRequestedRef.current?.(message.payload);
-            },
-         );
-         channel.on(
-            'broadcast',
-            { event: KNOCK_CANCELLED_EVENT },
-            (message: { payload?: KnockCancelledEvent }) => {
-               if (message.payload) onKnockCancelledRef.current?.(message.payload);
-            },
-         );
-         channel.on(
-            'broadcast',
-            { event: KNOCK_RESOLVED_EVENT },
-            (message: { payload?: KnockResolvedEvent }) => {
-               if (message.payload) onKnockResolvedRef.current?.(message.payload);
-            },
-         );
+            channel.on(
+               'broadcast',
+               { event: KNOCK_REQUESTED_EVENT },
+               (message: { payload?: KnockRequestedEvent }) => {
+                  if (message.payload) onKnockRequestedRef.current?.(message.payload);
+               },
+            );
+            channel.on(
+               'broadcast',
+               { event: KNOCK_CANCELLED_EVENT },
+               (message: { payload?: KnockCancelledEvent }) => {
+                  if (message.payload) onKnockCancelledRef.current?.(message.payload);
+               },
+            );
+            channel.on(
+               'broadcast',
+               { event: KNOCK_RESOLVED_EVENT },
+               (message: { payload?: KnockResolvedEvent }) => {
+                  if (message.payload) onKnockResolvedRef.current?.(message.payload);
+               },
+            );
 
-         channel.on('presence', { event: 'sync' }, syncPresence);
-         channel.on('presence', { event: 'join' }, syncPresence);
-         channel.on('presence', { event: 'leave' }, syncPresence);
+            channel.on('presence', { event: 'sync' }, syncPresence);
+            channel.on('presence', { event: 'join' }, syncPresence);
+            channel.on('presence', { event: 'leave' }, syncPresence);
 
-         channel.subscribe(async (subStatus: string, err?: Error) => {
-            if (subStatus === 'SUBSCRIBED') {
-               setStatus('connected');
-               if (userIdRef.current && channel) {
-                  await channel.track({
-                     user_id: userIdRef.current,
-                     online_at: new Date().toISOString(),
-                  } satisfies PresenceMeta);
-               }
-            } else if (subStatus === 'CHANNEL_ERROR') setStatus('error');
-            else if (subStatus === 'TIMED_OUT' || subStatus === 'CLOSED') setStatus('reconnecting');
-            if (err) console.error('[useGameRoom] subscribe error', err);
-         });
+            channel.subscribe(async (subStatus: string, err?: Error) => {
+               if (subStatus === 'SUBSCRIBED') {
+                  setStatus('connected');
+                  if (userIdRef.current && channelRef.current) {
+                     await channelRef.current.track({
+                        user_id: userIdRef.current,
+                        online_at: new Date().toISOString(),
+                     } satisfies PresenceMeta);
+                  }
+               } else if (subStatus === 'CHANNEL_ERROR') setStatus('error');
+               else if (subStatus === 'TIMED_OUT' || subStatus === 'CLOSED') setStatus('reconnecting');
+               if (err) console.error('[useGameRoom] subscribe error', err);
+            });
+
+            channelRef.current = channel;
+         })();
+
+         subscribingRef.current = run;
+         try {
+            await run;
+         } finally {
+            subscribingRef.current = null;
+         }
       };
 
       const unsubscribe = () => {
+         const channel = channelRef.current;
          if (!channel) return;
+         channelRef.current = null;
          void channel.untrack().catch(() => {});
          void supabase.removeChannel(channel);
-         channel = null;
       };
 
       const handleVisibility = () => {
