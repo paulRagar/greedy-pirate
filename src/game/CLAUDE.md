@@ -38,6 +38,9 @@ function reduce(state: GameState, action: GameAction): GameState;
 | `DRAW` | status='active', deck non-empty, no pirate currently revealed | Reveal top card. Gold → append to streak. Pirate → wipe streak, increment pirate count. Last card → auto-complete (gold auto-banks). |
 | `BANK` | status='active', streak non-empty, no pirate revealed | Sum streak → current player coins. Advance turn. |
 | `END_TURN` | status='active', pirate currently revealed | Advance turn. |
+| `SKIP_TURN` | status='active', names current holder | Disconnect: drop streak, mark player absent, advance (future turns bypass them). |
+| `MARK_PRESENT` | — | Reconnect: clear the absent flag. No-op if not absent. |
+| `TIMEOUT_TURN` | status='active', names current holder | Shot clock expired: bank a standing streak else pass with 0, advance. Never marks absent. |
 
 ## What the engine does NOT know about
 

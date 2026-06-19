@@ -45,6 +45,8 @@ type BroadcastBody = {
    /** Monotonic version (game_events.seq) of a game-advancing broadcast. */
    version?: number;
    continuation?: ContinuationContext;
+   /** Absolute ISO deadline for the current turn's shot clock, or null. */
+   turnDeadline?: string | null;
    hostId?: string;
    /** Achievements unlocked by this game's completion, keyed by user id. */
    unlocks?: Record<string, string[]>;
@@ -91,12 +93,14 @@ export function useGameRoom(
    initialSpectators: ReadonlyArray<RoomSpectatorView> = [],
    initialContinuation: ContinuationContext = null,
    initialVersion = 0,
+   initialTurnDeadline: string | null = null,
 ) {
    const [state, setState] = useState<PublicGameState>(initial);
    const [spectators, setSpectators] = useState<ReadonlyArray<RoomSpectatorView>>(initialSpectators);
    const [status, setStatus] = useState<RealtimeStatus>('connecting');
    const [onlineIds, setOnlineIds] = useState<ReadonlySet<string>>(() => new Set());
    const [continuation, setContinuation] = useState<ContinuationContext>(initialContinuation);
+   const [turnDeadline, setTurnDeadline] = useState<string | null>(initialTurnDeadline);
    // Highest applied broadcast version (game_events.seq). Out-of-order or late
    // broadcasts with a version ≤ this are dropped so an older state can't
    // clobber a newer one. An optimistic local reduce leaves this untouched, so
@@ -142,14 +146,16 @@ export function useGameRoom(
          prevGameId.current = gameId;
          appliedVersion.current = initialVersion;
          setState(initial);
+         setTurnDeadline(initialTurnDeadline);
          return;
       }
       const gate = gateStateVersion(appliedVersion.current, initialVersion);
       if (gate.apply) {
          appliedVersion.current = gate.nextVersion;
          setState(initial);
+         setTurnDeadline(initialTurnDeadline);
       }
-   }, [gameId, initial, initialVersion]);
+   }, [gameId, initial, initialVersion, initialTurnDeadline]);
 
    useEffect(() => {
       setSpectators(initialSpectators);
@@ -268,6 +274,12 @@ export function useGameRoom(
                   if (gate.apply) {
                      appliedVersion.current = gate.nextVersion;
                      setState(payload.state);
+                     // turnDeadline rides with game-advancing broadcasts (string
+                     // or null). Auxiliary refreshes omit it (undefined) — keep
+                     // the running clock rather than wiping it.
+                     if (payload.turnDeadline !== undefined) {
+                        setTurnDeadline(payload.turnDeadline);
+                     }
                   }
                }
                if (payload.spectators) {
@@ -378,5 +390,5 @@ export function useGameRoom(
       [],
    );
 
-   return { state, spectators, status, applyOptimistic, onlineIds, continuation };
+   return { state, spectators, status, applyOptimistic, onlineIds, continuation, turnDeadline };
 }

@@ -253,6 +253,61 @@ describe('SKIP_TURN', () => {
    });
 });
 
+describe('TIMEOUT_TURN', () => {
+   it('banks a standing gold streak and advances, leaving the player present', () => {
+      let s = startGame(buildLobby(p('a'), p('b'), p('c')), 'gold-seed-1');
+      s = drawUntilGold(s);
+      s = reduce(s, { type: 'DRAW' });
+      const holder = s.players[s.turnIndex]!;
+      const sum = s.currentStreak.reduce((acc, c) => acc + c.value, 0);
+      expect(sum).toBeGreaterThan(0);
+      const coinsBefore = findPlayer(s, holder.id).coins;
+      s = reduce(s, { type: 'TIMEOUT_TURN', playerId: holder.id });
+      expect(findPlayer(s, holder.id).coins).toBe(coinsBefore + sum);
+      expect(s.currentStreak).toEqual([]);
+      expect(s.currentCard).toBeNull();
+      expect(s.players[s.turnIndex]!.id).not.toBe(holder.id);
+      // Shot clock never removes — the player keeps their seat in rotation.
+      expect(s.absentIds).not.toContain(holder.id);
+   });
+
+   it('passes with no coins on an untouched turn', () => {
+      const s = startGame(buildLobby(p('a'), p('b')), 'any');
+      const holder = s.players[s.turnIndex]!;
+      const next = reduce(s, { type: 'TIMEOUT_TURN', playerId: holder.id });
+      expect(findPlayer(next, holder.id).coins).toBe(0);
+      expect(next.players[next.turnIndex]!.id).not.toBe(holder.id);
+      expect(next.absentIds).not.toContain(holder.id);
+   });
+
+   it('passes after a pirate has been revealed (no coins)', () => {
+      let s = startGame(buildLobby(p('a'), p('b')), 'pirate-seed');
+      while (s.deck.length > 0 && s.currentCard?.kind !== 'pirate') {
+         s = reduce(s, { type: 'DRAW' });
+      }
+      expect(s.currentCard?.kind).toBe('pirate');
+      const holder = s.players[s.turnIndex]!;
+      const coinsBefore = findPlayer(s, holder.id).coins;
+      s = reduce(s, { type: 'TIMEOUT_TURN', playerId: holder.id });
+      expect(findPlayer(s, holder.id).coins).toBe(coinsBefore);
+      expect(s.currentCard).toBeNull();
+      expect(s.players[s.turnIndex]!.id).not.toBe(holder.id);
+   });
+
+   it('rejects when the named player no longer holds the helm', () => {
+      const s = startGame(buildLobby(p('a'), p('b')), 'any');
+      const wrongId = s.players[(s.turnIndex + 1) % s.players.length]!.id;
+      expect(() => reduce(s, { type: 'TIMEOUT_TURN', playerId: wrongId })).toThrow(
+         /already advanced/,
+      );
+   });
+
+   it('rejects when game not active', () => {
+      const s = buildLobby(p('a'), p('b'));
+      expect(() => reduce(s, { type: 'TIMEOUT_TURN', playerId: 'a' })).toThrow(/not active/);
+   });
+});
+
 describe('MARK_PRESENT', () => {
    it('removes a player from the absent list', () => {
       let s = startGame(buildLobby(p('a'), p('b'), p('c')), 'gold-seed-1');

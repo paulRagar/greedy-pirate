@@ -15,9 +15,9 @@ import type { PublicGameState, RoomState, RoomSpectatorView } from '@/game/publi
 import {
    bankOnline,
    drawOnline,
-   endTurnOnline,
    markPresentOnline,
    skipAbsentTurn,
+   timeoutTurn,
 } from '@/server/actions/gameTurnActions';
 import { startOnlineGame } from '@/server/actions/startOnlineGame';
 import { endGameByForfeit } from '@/server/actions/restartRoom';
@@ -39,9 +39,10 @@ import { ChestBurst } from '@/ui/effects/ChestBurst';
 import { CrewGrid } from '@/ui/game-room/CrewGrid';
 import { ScoreRibbon } from '@/ui/game-room/ScoreRibbon';
 import { StreakStrip } from '@/ui/game-room/StreakStrip';
+import { TurnClock, useCountdown } from '@/ui/game-room/TurnClock';
 import { VictoryModal } from '@/ui/game-room/VictoryModal';
 import { useGameToast } from '@/ui/toast/PirateToast';
-import { MAX_PLAYERS, MIN_PLAYERS } from '@/game/rules';
+import { MAX_PLAYERS, MIN_PLAYERS, PIRATE_PASS_MS, TURN_CLOCK_MS } from '@/game/rules';
 import { cn } from '@/lib/cn';
 import KnockInbox, { type KnockEntry } from './KnockInbox';
 import HostLeaveModal, { type Candidate } from './HostLeaveModal';
@@ -58,6 +59,7 @@ interface Props {
    isPublic: boolean;
    initialContinuation: ContinuationContext;
    initialVersion: number;
+   initialTurnDeadline: string | null;
 }
 
 export default function OnlineRoomClient({
@@ -67,6 +69,7 @@ export default function OnlineRoomClient({
    isPublic,
    initialContinuation,
    initialVersion,
+   initialTurnDeadline,
 }: Props) {
    const router = useRouter();
    const [leaving, startLeave] = useTransition();
@@ -102,6 +105,7 @@ export default function OnlineRoomClient({
       applyOptimistic,
       onlineIds,
       continuation,
+      turnDeadline,
    } = useGameRoom(
       gameId,
       initial.code,
@@ -146,6 +150,7 @@ export default function OnlineRoomClient({
       initial.spectators,
       initialContinuation,
       initialVersion,
+      initialTurnDeadline,
    );
 
    const [hostId, setHostId] = useState<string>(initial.hostId);
@@ -711,6 +716,7 @@ export default function OnlineRoomClient({
             realtimeStatus={status}
             applyOptimistic={applyOptimistic}
             onlineIds={onlineIds}
+            turnDeadline={turnDeadline}
             isSpectator={isSpectator}
             onLeave={goToLobby}
                navLeaving={leaving}
@@ -801,15 +807,6 @@ function optimisticBank(prev: PublicGameState, actorId: string): PublicGameState
       ...prev,
       players,
       currentStreak: [],
-      currentCard: null,
-      turnIndex,
-   };
-}
-
-function optimisticEndTurn(prev: PublicGameState): PublicGameState {
-   const turnIndex = prev.players.length === 0 ? 0 : (prev.turnIndex + 1) % prev.players.length;
-   return {
-      ...prev,
       currentCard: null,
       turnIndex,
    };
@@ -1125,6 +1122,7 @@ function Play({
    realtimeStatus,
    applyOptimistic,
    onlineIds,
+   turnDeadline,
    isSpectator,
    onLeave,
    navLeaving,
@@ -1141,6 +1139,7 @@ function Play({
    realtimeStatus: RealtimeStatus;
    applyOptimistic: (mutator: (prev: PublicGameState) => PublicGameState) => void;
    onlineIds: ReadonlySet<string>;
+   turnDeadline: string | null;
    isSpectator: boolean;
    onLeave: () => void;
    navLeaving: boolean;
@@ -1172,6 +1171,29 @@ function Play({
    const isCurrent = currentPlayer?.id === userId;
    const isPirate = state.currentCard?.kind === 'pirate';
    const isComplete = state.status === 'complete';
+   // Who the helm passes to once this turn ends — mirrors the engine's
+   // advanceTurn (skip past absent seats). Used to name the next player during
+   // the pirate hand-off beat.
+   const nextHolder = (() => {
+      const n = state.players.length;
+      if (n === 0) return null;
+      let i = (state.turnIndex + 1) % n;
+      for (let k = 0; k < n; k++) {
+         const candidate = state.players[i];
+         if (candidate && !state.absentIds.includes(candidate.id)) return candidate;
+         i = (i + 1) % n;
+      }
+      return state.players[(state.turnIndex + 1) % n] ?? null;
+   })();
+   const deadlineMs = turnDeadline ? Date.parse(turnDeadline) : null;
+   const clockRemaining = useCountdown(deadlineMs);
+   // The "helm passes to X" hand-off beat: a revealed pirate (short deadline,
+   // no decision) OR the shot clock having just run out. Both pause briefly on
+   // the hand-off line before the turn advances, so they feel the same.
+   const handingOff =
+      !isComplete &&
+      state.status === 'active' &&
+      (isPirate || (deadlineMs !== null && clockRemaining <= 0));
    const winner = state.winnerId ? (state.players.find((p) => p.id === state.winnerId) ?? null) : null;
    const ranked = isComplete ? [...state.players].sort((a, b) => b.coins - a.coins) : [];
    const streakSum = state.currentStreak.reduce((sum, c) => sum + c.value, 0);
@@ -1258,6 +1280,40 @@ function Play({
       return () => clearTimeout(handle);
    }, [turnHolderOffline, iAmSkipLeader, turnHolderId, code]);
 
+   // Shot clock: when the helm-holder is online but idle, their turn
+   // auto-resolves at the deadline so the table isn't stuck waiting. A single
+   // designated firer — the lowest-seat online player who is NOT the holder,
+   // so an away-but-connected holder still gets timed out — schedules the
+   // call. The server enforces the deadline (rejecting an early call) and
+   // dedupes racing clients, so this is best-effort. An OFFLINE holder is
+   // handled by the faster skipAbsentTurn path above instead.
+   const timeoutFirerId =
+      (seatedOnline.find((pl) => pl.id !== turnHolderId) ?? seatedOnline[0])?.id ?? null;
+   const clockHolderId =
+      !isSpectator &&
+      state.status === 'active' &&
+      !isComplete &&
+      turnHolderId !== null &&
+      onlineIds.has(turnHolderId) &&
+      timeoutFirerId === userId
+         ? turnHolderId
+         : null;
+   useEffect(() => {
+      if (clockHolderId === null || deadlineMs === null) return;
+      // A pirate's deadline IS its hand-off beat, so advance right after it.
+      // A regular timeout shows the "helm passes to X" beat AFTER the clock
+      // runs out, so hold the advance one beat longer so everyone sees it.
+      // The 300ms cushion keeps us safely past the server's deadline guard.
+      const beatMs = isPirate ? 0 : PIRATE_PASS_MS;
+      const delay = Math.max(0, deadlineMs - Date.now()) + beatMs + 300;
+      const handle = setTimeout(() => {
+         void timeoutTurn({ code, expectedTurnPlayerId: clockHolderId }).catch((err) => {
+            console.error('timeoutTurn failed', err);
+         });
+      }, delay);
+      return () => clearTimeout(handle);
+   }, [clockHolderId, deadlineMs, isPirate, code]);
+
    // I just reconnected after being skipped — clear my absent flag so
    // the table stops jumping over my seat.
    const iAmAbsent = !isSpectator && state.absentIds.includes(userId);
@@ -1305,14 +1361,6 @@ function Play({
          'bank',
          () => bankOnline(code),
          () => applyOptimistic((prev) => optimisticBank(prev, userId)),
-      );
-   };
-
-   const handleEndTurn = () => {
-      void wrap(
-         'end',
-         () => endTurnOnline(code),
-         () => applyOptimistic(optimisticEndTurn),
       );
    };
 
@@ -1365,7 +1413,16 @@ function Play({
 
          {error && <p className='text-center text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
 
-         <div className='z-20 mt-auto pt-2 safe-bottom'>
+         <div className='z-20 mt-auto flex flex-col gap-2 pt-2 safe-bottom'>
+            {/* Fuse only while there's a live decision — during a hand-off
+                (pirate or expired clock) we show the hand-off line instead. */}
+            {!isComplete && !handingOff && deadlineMs !== null && (
+               <TurnClock
+                  deadlineMs={deadlineMs}
+                  totalMs={TURN_CLOCK_MS}
+                  mine={isCurrent && !isSpectator}
+               />
+            )}
             {isComplete ? null : isSpectator ? (
                <div className='flex items-center justify-between gap-3 rounded-2xl border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-3 py-2 text-sm'>
                   <span className='text-[color:var(--color-cream-200)]/75'>Spectating the voyage</span>
@@ -1378,21 +1435,16 @@ function Play({
                      Leave room
                   </PirateButton>
                </div>
+            ) : handingOff ? (
+               // Pirate revealed or the shot clock ran out — no decision left.
+               // Name who's up next instead of a timer, then auto-advance.
+               <p className='animate-pulse text-center text-sm font-semibold text-[color:var(--color-gold-300)]'>
+                  The helm passes to {nextHolder?.name ?? 'the next pirate'}…
+               </p>
             ) : !isCurrent ? (
                <p className='animate-pulse text-center text-sm text-[color:var(--color-cream-200)]/70'>
                   Waiting on {currentPlayer?.name ?? 'the helm'}…
                </p>
-            ) : isPirate ? (
-               <PirateButton
-                  variant='tertiary'
-                  size='lg'
-                  fullWidth
-                  loading={pending === 'end'}
-                  disabled={pending !== null}
-                  onClick={handleEndTurn}
-               >
-                  Pass the Helm
-               </PirateButton>
             ) : (
                <div className='flex gap-3'>
                   <PirateButton

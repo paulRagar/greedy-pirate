@@ -68,6 +68,12 @@ type StatePayload = {
     */
    version?: number;
    continuation?: ContinuationState;
+   /**
+    * Absolute ISO deadline for the current turn's shot clock, or null when the
+    * game isn't active. Travels with each game-advancing broadcast so clients
+    * render the countdown and fire the auto-resolve at expiry.
+    */
+   turnDeadline?: string | null;
    hostId?: string;
    /**
     * Achievements unlocked for the first time by the completion of this game,

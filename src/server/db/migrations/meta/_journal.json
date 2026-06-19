@@ -50,6 +50,13 @@
       "when": 1781893566202,
       "tag": "0006_clammy_ser_duncan",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781904623550,
+      "tag": "0007_shallow_molly_hayes",
+      "breakpoints": true
     }
   ]
 }

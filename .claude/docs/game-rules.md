@@ -107,7 +107,10 @@ type GameAction =
    | { type: 'END_TURN' }
    | { type: 'START_GAME'; seed: string; variant?: DeckVariant }
    | { type: 'PLAYER_JOIN'; player: PlayerInit }
-   | { type: 'PLAYER_LEAVE'; playerId: string };
+   | { type: 'PLAYER_LEAVE'; playerId: string }
+   | { type: 'SKIP_TURN'; playerId: string }      // disconnect: skip + mark absent
+   | { type: 'MARK_PRESENT'; playerId: string }   // reconnect: clear absent flag
+   | { type: 'TIMEOUT_TURN'; playerId: string };  // shot clock: auto-resolve, stay present
 
 function reduce(state: GameState, action: GameAction): GameState;
 ```
@@ -122,9 +125,15 @@ function reduce(state: GameState, action: GameAction): GameState;
 
 ### Why an explicit `END_TURN` after a pirate?
 
-A pirate ends the streak but we want a beat — the UI shows the pirate card, animates the shake, and the player taps "Pass the Helm" to advance. Explicit dispatch keeps the UI from racing the state.
+`END_TURN` exists so a pirate gets a beat rather than snapping straight to the next player — the UI shows the pirate card and animates the shake before advancing.
 
-Alternative: have `DRAW` (when it reveals a pirate) auto-advance. We chose the explicit version for UI clarity.
+**Online**, the player no longer taps anything: a revealed pirate is given a short `PIRATE_PASS_MS` (2s) deadline and the shot-clock auto-resolve passes the turn for them (see "Turn shot clock" below). The "Pass the Helm" button is gone — there's no decision once you're robbed. `END_TURN` / `endTurnOnline` remain valid engine/server operations but are no longer triggered by the online UI.
+
+**Local** mode still uses an explicit `END_TURN` (no server clock there).
+
+### Turn shot clock (online)
+
+Online turns carry a server-stamped `turn_deadline` (`TURN_CLOCK_MS`, 10s), reset on every turn advance and on each `DRAW`. The engine stays time-free — the deadline lives on the `games` row, rides each broadcast, and clients render the countdown. At expiry a designated client fires `TIMEOUT_TURN` and the server (after re-checking the deadline against the locked row, so a turn can't be cut short early) auto-resolves it: a standing streak is banked, otherwise the turn passes with no coins. `TIMEOUT_TURN` never marks the player absent — a slow-but-connected player keeps their seat and gets a fresh clock next turn. Contrast `SKIP_TURN`, fired only when a player truly disconnects, which *does* flag them absent so future turns bypass their seat until they reconnect (`MARK_PRESENT`).
 
 ---
 

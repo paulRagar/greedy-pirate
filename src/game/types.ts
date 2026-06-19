@@ -54,4 +54,5 @@ export type GameAction =
    | { readonly type: 'BANK' }
    | { readonly type: 'END_TURN' }
    | { readonly type: 'SKIP_TURN'; readonly playerId: string }
-   | { readonly type: 'MARK_PRESENT'; readonly playerId: string };
+   | { readonly type: 'MARK_PRESENT'; readonly playerId: string }
+   | { readonly type: 'TIMEOUT_TURN'; readonly playerId: string };
