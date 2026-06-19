@@ -13,7 +13,7 @@ export const DEFAULT_VARIANT: DeckVariant = 'even_greedier';
  * turn-advancing action) and the client (renders the countdown + fires the
  * auto-resolve). The pure engine never reads it — it knows nothing of time.
  */
-export const TURN_CLOCK_MS = 12_000;
+export const TURN_CLOCK_MS = 10_000;
 
 /**
  * Shortened shot clock applied while a pirate is revealed online. There's no

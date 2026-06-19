@@ -133,7 +133,7 @@ function reduce(state: GameState, action: GameAction): GameState;
 
 ### Turn shot clock (online)
 
-Online turns carry a server-stamped `turn_deadline` (`TURN_CLOCK_MS`, 12s), reset on every turn advance and on each `DRAW`. The engine stays time-free — the deadline lives on the `games` row, rides each broadcast, and clients render the countdown. At expiry a designated client fires `TIMEOUT_TURN` and the server (after re-checking the deadline against the locked row, so a turn can't be cut short early) auto-resolves it: a standing streak is banked, otherwise the turn passes with no coins. `TIMEOUT_TURN` never marks the player absent — a slow-but-connected player keeps their seat and gets a fresh clock next turn. Contrast `SKIP_TURN`, fired only when a player truly disconnects, which *does* flag them absent so future turns bypass their seat until they reconnect (`MARK_PRESENT`).
+Online turns carry a server-stamped `turn_deadline` (`TURN_CLOCK_MS`, 10s), reset on every turn advance and on each `DRAW`. The engine stays time-free — the deadline lives on the `games` row, rides each broadcast, and clients render the countdown. At expiry a designated client fires `TIMEOUT_TURN` and the server (after re-checking the deadline against the locked row, so a turn can't be cut short early) auto-resolves it: a standing streak is banked, otherwise the turn passes with no coins. `TIMEOUT_TURN` never marks the player absent — a slow-but-connected player keeps their seat and gets a fresh clock next turn. Contrast `SKIP_TURN`, fired only when a player truly disconnects, which *does* flag them absent so future turns bypass their seat until they reconnect (`MARK_PRESENT`).
 
 ---
 
