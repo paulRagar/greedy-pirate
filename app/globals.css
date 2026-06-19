@@ -477,6 +477,32 @@
    animation: toast-in 240ms cubic-bezier(0.2, 0.85, 0.4, 1.15);
 }
 
+/* Right-side slide-over drawer (Friends panel) + its backdrop fade. */
+@keyframes drawer-in {
+   0% { transform: translateX(100%); }
+   100% { transform: translateX(0); }
+}
+
+.animate-drawer-in {
+   animation: drawer-in 260ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes backdrop-in {
+   0% { opacity: 0; }
+   100% { opacity: 1; }
+}
+
+.animate-backdrop-in {
+   animation: backdrop-in 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .animate-drawer-in,
+   .animate-backdrop-in {
+      animation: none;
+   }
+}
+
 /* Stronger shake for bust moments — more violent than pirate-shake */
 @keyframes bust-shake {
    0%, 100% { transform: translateX(0); }
