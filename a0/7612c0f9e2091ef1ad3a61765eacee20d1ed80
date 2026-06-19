@@ -1,0 +1,28 @@
+src/ui/friends/FriendsButton.tsx
+  s_a9d5705db96371::t_4e6c941e522289 1-64
+src/ui/top-nav/TopNav.tsx
+  s_a9d5705db96371::t_5a3b2ac32a83a7 12
+  s_a9d5705db96371::t_2314de7ad1ccfa 94-95
+app/globals.css
+  s_a9d5705db96371::t_b63f852e63a123 480-505
+src/ui/friends/FriendsDrawer.tsx
+  s_a9d5705db96371::t_e35b1987248e80 1-256
+src/ui/friends/FriendsDrawer.test.tsx
+  s_a9d5705db96371::t_5d9469d25558a7 1-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "a07612c0f9e2091ef1ad3a61765eacee20d1ed80",
+  "prompts": {},
+  "sessions": {
+    "s_a9d5705db96371": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51e0f64a-2890-4331-9237-0973b4790829",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
