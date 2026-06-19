@@ -1,0 +1,21 @@
+src/ui/friends/FriendsButton.tsx
+  s_a9d5705db96371::t_e94db0e670450b 5,9,12-15,28-29,32,50-51,53-106,110-111,115-120
+src/ui/friends/FriendsTeaser.tsx
+  s_a9d5705db96371::t_8925a859fbefe1 1-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "73f536f84dc8b7f7bc86caabf4d86be0ea636ea9",
+  "prompts": {},
+  "sessions": {
+    "s_a9d5705db96371": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51e0f64a-2890-4331-9237-0973b4790829",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
