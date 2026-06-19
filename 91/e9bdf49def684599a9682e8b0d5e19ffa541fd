@@ -1,0 +1,41 @@
+app/profile/StatInfo.tsx
+  s_d97853f5f4fd5a::t_7de8b321e2b090 3-16,20-23,26-39,44,47-48,51-52,54,56-67
+package-lock.json
+  s_d97853f5f4fd5a::t_67db088b40b412 11,1559-1611,9557-9560
+.claude/docs/progress.md
+  s_d97853f5f4fd5a::t_74e2d19045ca6f 169
+  s_d97853f5f4fd5a::t_546a533b48a005 71-72
+src/ui/game-room/VictoryModal.tsx
+  s_d97853f5f4fd5a::t_2a961af18e679c 4
+  s_d97853f5f4fd5a::t_4272389bd5420c 23-24
+  s_d97853f5f4fd5a::t_86904373d1a377 33-41
+  s_d97853f5f4fd5a::t_6cb473010ff8d6 60-83
+.claude/docs/architecture.md
+  s_d97853f5f4fd5a::t_e0a2960cbe4049 37
+app/play-local/PlayLocalClient.tsx
+  s_d97853f5f4fd5a::t_568b9a19fdc570 39-40
+package.json
+  s_d97853f5f4fd5a::t_febf5295c0dea2 25
+app/play/[code]/OnlineRoomClient.tsx
+  s_d97853f5f4fd5a::t_c9618ce16be542 153-155,157-163
+  s_d97853f5f4fd5a::t_1a33582ec44039 721
+  s_d97853f5f4fd5a::t_6da3f1c6b8fa4d 1135,1151
+  s_d97853f5f4fd5a::t_7f2dee3f3d8e02 1428
+  s_d97853f5f4fd5a::t_d0944111aa82c6 135-137,142
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "91e9bdf49def684599a9682e8b0d5e19ffa541fd",
+  "prompts": {},
+  "sessions": {
+    "s_d97853f5f4fd5a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c53574e4-3861-4bc5-9015-658b14bd88f6",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
