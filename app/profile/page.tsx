@@ -8,6 +8,7 @@ import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { AccountUpgrade } from '@/client/auth/AccountUpgrade';
 import { AccountSettings } from '@/client/auth/AccountSettings';
 import { ProfileNameHeader } from './ProfileNameHeader';
+import { StatInfo } from './StatInfo';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,7 +57,13 @@ export default async function ProfilePage({
             <ProfileNameHeader initialName={displayName} isAnonymous size='md' />
 
             <section className='w-full max-w-md'>
-               <Stat label='Voyages sailed' value={anonVoyages} tone='teal' wide />
+               <Stat
+                  label='Voyages sailed'
+                  value={anonVoyages}
+                  tone='teal'
+                  wide
+                  info='Total games you have finished as a guest. Sign up to keep them forever.'
+               />
             </section>
 
             <PiratePanel variant='deep' className='w-full max-w-md p-4'>
@@ -163,12 +170,45 @@ export default async function ProfilePage({
          )}
 
          <section className='grid grid-cols-2 gap-3'>
-            <Stat label='Voyages' value={gamesPlayed} tone='teal' />
-            <Stat label='Won' value={gamesWon} suffix={gamesPlayed > 0 ? ` · ${winRate}%` : ''} tone='coral' />
-            <Stat label='Total doubloons' value={totalCoins} tone='gold' wide />
-            <Stat label='Biggest haul' value={biggestHaul} tone='gold' />
-            <Stat label='Pirates faced' value={piratesFaced} tone='coral' />
-            <Stat label='Longest streak' value={longestStreak} tone='teal' wide />
+            <Stat
+               label='Voyages'
+               value={gamesPlayed}
+               tone='teal'
+               info='Total games you have finished, across local and online play.'
+            />
+            <Stat
+               label='Won'
+               value={gamesWon}
+               suffix={gamesPlayed > 0 ? ` · ${winRate}%` : ''}
+               tone='coral'
+               info='Games you finished in first place, and your overall win rate.'
+            />
+            <Stat
+               label='Total doubloons'
+               value={totalCoins}
+               tone='gold'
+               wide
+               info='Every coin you have banked, added up across all your games.'
+            />
+            <Stat
+               label='Biggest haul'
+               value={biggestHaul}
+               tone='gold'
+               info='The most coins you have banked in a single turn.'
+            />
+            <Stat
+               label='Pirates faced'
+               value={piratesFaced}
+               tone='coral'
+               info='Pirate cards you have drawn on your own turns.'
+            />
+            <Stat
+               label='Longest streak'
+               value={longestStreak}
+               tone='teal'
+               wide
+               info='The most cards you held in one streak before banking or busting.'
+            />
          </section>
 
          <section className='flex flex-col gap-2'>
@@ -191,17 +231,27 @@ export default async function ProfilePage({
                               {a.icon}
                            </span>
                            <div className='flex flex-col gap-0.5'>
-                              <span
-                                 className={`text-sm font-semibold ${
-                                    unlocked
-                                       ? 'text-[color:var(--color-gold-300)]'
-                                       : 'text-[color:var(--color-cream-200)]/70'
-                                 }`}
-                              >
-                                 {a.title}
+                              <span className='flex items-center gap-1.5'>
+                                 <span
+                                    className={`text-sm font-semibold ${
+                                       unlocked
+                                          ? 'text-[color:var(--color-gold-300)]'
+                                          : 'text-[color:var(--color-cream-200)]/70'
+                                    }`}
+                                 >
+                                    {a.title}
+                                 </span>
+                                 {unlocked && (
+                                    <span
+                                       className='rounded-full bg-[color:var(--color-teal-600)]/25 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[color:var(--color-teal-200)]'
+                                       aria-label='Unlocked'
+                                    >
+                                       ✓ Unlocked
+                                    </span>
+                                 )}
                               </span>
                               <span className='text-xs text-[color:var(--color-cream-200)]/60'>
-                                 {unlocked ? 'Unlocked' : a.description}
+                                 {a.description}
                               </span>
                            </div>
                         </PiratePanel>
@@ -280,16 +330,21 @@ function Stat({
    suffix,
    wide,
    tone,
+   info,
 }: {
    label: string;
    value: number;
    suffix?: string;
    wide?: boolean;
    tone: keyof typeof STAT_TONE;
+   info?: string;
 }) {
    return (
       <PiratePanel variant='deep' className={`flex flex-col gap-1 p-4 ${wide ? 'col-span-2' : ''}`}>
-         <span className={`text-xs uppercase tracking-[0.2em] ${STAT_TONE[tone].label}`}>{label}</span>
+         <span className='flex items-center gap-1.5'>
+            <span className={`text-xs uppercase tracking-[0.2em] ${STAT_TONE[tone].label}`}>{label}</span>
+            {info && <StatInfo label={label} description={info} />}
+         </span>
          <span className={`pirate-display text-4xl ${STAT_TONE[tone].value}`}>
             {value}
             {suffix && <span className='ml-1 text-base text-[color:var(--color-cream-200)]/70'>{suffix}</span>}
