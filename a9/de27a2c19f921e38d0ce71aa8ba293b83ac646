@@ -1,0 +1,20 @@
+app/profile/page.tsx
+  s_d97853f5f4fd5a::t_3f1c66d3fe76a1 104-107
+  s_d97853f5f4fd5a::t_acf9b8fa8daaec 1,4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "a9de27a2c19f921e38d0ce71aa8ba293b83ac646",
+  "prompts": {},
+  "sessions": {
+    "s_d97853f5f4fd5a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c53574e4-3861-4bc5-9015-658b14bd88f6",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
