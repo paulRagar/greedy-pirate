@@ -21,6 +21,9 @@ vi.mock('@/server/actions/friendActions', () => ({
    getMyFriendCode: () => getMyFriendCode(),
 }));
 vi.mock('@/client/juice/haptics', () => ({ haptics: { tap: vi.fn() } }));
+vi.mock('@/client/realtime/useFriendPresence', () => ({
+   useFriendsPresence: () => new Map(),
+}));
 
 import { FriendsDrawer } from './FriendsDrawer';
 import type { FriendInbox } from '@/client/realtime/useFriendInbox';

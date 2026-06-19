@@ -16,6 +16,7 @@ import {
    type UserSearchResult,
 } from '@/server/actions/friendActions';
 import type { FriendInbox } from '@/client/realtime/useFriendInbox';
+import { useFriendsPresence } from '@/client/realtime/useFriendPresence';
 import { haptics } from '@/client/juice/haptics';
 
 export type FriendsTab = 'friends' | 'requests' | 'add';
@@ -225,6 +226,9 @@ function FriendsList({ open, version }: { open: boolean; version: number }) {
       };
    }, [open, version]);
 
+   const friendIds = state.kind === 'ready' ? state.friends.map((f) => f.userId) : [];
+   const presence = useFriendsPresence(friendIds, open);
+
    if (state.kind === 'loading') {
       return <p className='py-8 text-center text-sm text-[color:var(--color-cream-200)]/55'>Hauling in yer crew…</p>;
    }
@@ -242,18 +246,41 @@ function FriendsList({ open, version }: { open: boolean; version: number }) {
 
    return (
       <ul className='flex flex-col gap-1' data-testid='friends-list'>
-         {state.friends.map((f) => (
-            <li
-               key={f.userId}
-               className='flex min-h-[56px] items-center gap-3 rounded-xl border border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-800)]/40 px-3'
-            >
-               <span aria-hidden='true' className='h-2.5 w-2.5 shrink-0 rounded-full bg-[color:var(--color-cream-200)]/25' />
-               <span className='min-w-0 flex-1'>
-                  <span className='block truncate text-sm font-semibold text-[color:var(--color-cream-100)]'>{f.displayName}</span>
-                  <span className='block font-mono text-xs text-[color:var(--color-cream-200)]/45'>{f.friendCode}</span>
-               </span>
-            </li>
-         ))}
+         {state.friends.map((f) => {
+            const p = presence.get(f.userId);
+            const online = p !== undefined;
+            const inRoom = p?.code ?? null;
+            return (
+               <li
+                  key={f.userId}
+                  className='flex min-h-[56px] items-center gap-3 rounded-xl border border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-800)]/40 px-3'
+               >
+                  <span
+                     aria-hidden='true'
+                     className={
+                        'h-2.5 w-2.5 shrink-0 rounded-full ' +
+                        (online
+                           ? 'bg-[color:var(--color-teal-500)] shadow-[0_0_6px_var(--color-teal-500)]'
+                           : 'bg-[color:var(--color-cream-200)]/25')
+                     }
+                  />
+                  <span className='min-w-0 flex-1'>
+                     <span className='block truncate text-sm font-semibold text-[color:var(--color-cream-100)]'>
+                        {f.displayName}
+                     </span>
+                     {inRoom ? (
+                        <span className='block text-xs font-semibold text-[color:var(--color-teal-200)]'>
+                           In room {inRoom}
+                        </span>
+                     ) : (
+                        <span className='block text-xs text-[color:var(--color-cream-200)]/45'>
+                           {online ? 'Online' : f.friendCode}
+                        </span>
+                     )}
+                  </span>
+               </li>
+            );
+         })}
       </ul>
    );
 }
