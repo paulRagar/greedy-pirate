@@ -42,7 +42,7 @@ import { StreakStrip } from '@/ui/game-room/StreakStrip';
 import { TurnClock } from '@/ui/game-room/TurnClock';
 import { VictoryModal } from '@/ui/game-room/VictoryModal';
 import { useGameToast } from '@/ui/toast/PirateToast';
-import { MAX_PLAYERS, MIN_PLAYERS, PIRATE_PASS_MS, TURN_CLOCK_MS } from '@/game/rules';
+import { MAX_PLAYERS, MIN_PLAYERS, TURN_CLOCK_MS } from '@/game/rules';
 import { cn } from '@/lib/cn';
 import KnockInbox, { type KnockEntry } from './KnockInbox';
 import HostLeaveModal, { type Candidate } from './HostLeaveModal';
@@ -1171,6 +1171,20 @@ function Play({
    const isCurrent = currentPlayer?.id === userId;
    const isPirate = state.currentCard?.kind === 'pirate';
    const isComplete = state.status === 'complete';
+   // Who the helm passes to once this turn ends — mirrors the engine's
+   // advanceTurn (skip past absent seats). Used to name the next player during
+   // the pirate hand-off beat.
+   const nextHolder = (() => {
+      const n = state.players.length;
+      if (n === 0) return null;
+      let i = (state.turnIndex + 1) % n;
+      for (let k = 0; k < n; k++) {
+         const candidate = state.players[i];
+         if (candidate && !state.absentIds.includes(candidate.id)) return candidate;
+         i = (i + 1) % n;
+      }
+      return state.players[(state.turnIndex + 1) % n] ?? null;
+   })();
    const winner = state.winnerId ? (state.players.find((p) => p.id === state.winnerId) ?? null) : null;
    const ranked = isComplete ? [...state.players].sort((a, b) => b.coins - a.coins) : [];
    const streakSum = state.currentStreak.reduce((sum, c) => sum + c.value, 0);
@@ -1388,10 +1402,12 @@ function Play({
          {error && <p className='text-center text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
 
          <div className='z-20 mt-auto flex flex-col gap-2 pt-2 safe-bottom'>
-            {!isComplete && deadlineMs !== null && (
+            {/* Fuse only while there's a live decision — a revealed pirate just
+                hands off, so we show the hand-off line below instead of a bar. */}
+            {!isComplete && !isPirate && deadlineMs !== null && (
                <TurnClock
                   deadlineMs={deadlineMs}
-                  totalMs={isPirate ? PIRATE_PASS_MS : TURN_CLOCK_MS}
+                  totalMs={TURN_CLOCK_MS}
                   mine={isCurrent && !isSpectator}
                />
             )}
@@ -1407,15 +1423,15 @@ function Play({
                      Leave room
                   </PirateButton>
                </div>
+            ) : isPirate ? (
+               // No decision once a pirate's revealed — the turn hands itself
+               // off after a short beat. Name who's up next instead of a timer.
+               <p className='animate-pulse text-center text-sm font-semibold text-[color:var(--color-gold-300)]'>
+                  The helm passes to {nextHolder?.name ?? 'the next pirate'}…
+               </p>
             ) : !isCurrent ? (
                <p className='animate-pulse text-center text-sm text-[color:var(--color-cream-200)]/70'>
                   Waiting on {currentPlayer?.name ?? 'the helm'}…
-               </p>
-            ) : isPirate ? (
-               // No decision once you're robbed — the turn passes itself on a
-               // short fuse (the shot clock above). Just a beat, no tap.
-               <p className='animate-pulse text-center text-sm font-semibold text-[color:var(--color-coral-300)]'>
-                  Robbed! Passin&apos; the helm…
                </p>
             ) : (
                <div className='flex gap-3'>
