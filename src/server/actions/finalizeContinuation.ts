@@ -26,7 +26,7 @@ const InputSchema = z.object({
 export type FinalizeResult = { ok: true; finalized: boolean } | { ok: false; error: string };
 
 /**
- * End the 60-second continuation window. Called by ANY client when its
+ * End the continuation window. Called by ANY client when its
  * local countdown hits zero — idempotent so a thundering herd is safe.
  * Players who never clicked Continue walk the plank. Whoever's left
  * carries forward into a fresh lobby. If the captain didn't opt in,

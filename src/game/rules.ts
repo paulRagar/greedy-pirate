@@ -22,3 +22,10 @@ export const TURN_CLOCK_MS = 10_000;
  * turn actually advances — so a pirate pass and a timeout forfeit feel the same.
  */
 export const PIRATE_PASS_MS = 1_500;
+
+/**
+ * Boarding countdown for online lobby start. When the host hits start with the
+ * crew not all ready, stragglers get this long to ready up before unready
+ * seats are dropped and the game sails. Skipped entirely when everyone's ready.
+ */
+export const BOARDING_COUNTDOWN_MS = 20_000;

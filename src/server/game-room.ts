@@ -70,6 +70,7 @@ export type EventType =
    | 'SKIP_TURN'
    | 'MARK_PRESENT'
    | 'TIMEOUT_TURN'
+   | 'MARK_ABSENT'
    | 'GAME_ENDED';
 
 export type EventPayload = {

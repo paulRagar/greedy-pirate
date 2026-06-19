@@ -99,6 +99,49 @@ export async function endTurnOnline(code: string): Promise<TurnResult> {
 }
 
 /**
+ * Caller is explicitly leaving an active game (back button, logo, etc).
+ * Mark them absent immediately so the table skips their seat right away —
+ * without this, everyone waits out the ~10s presence grace before the
+ * skip-leader notices, and the helm can even land on the empty seat first.
+ * Seated + active only; idempotent.
+ */
+export async function leaveActiveGame(input: { code: string }): Promise<TurnResult> {
+   const parsed = InputSchema.safeParse(input);
+   if (!parsed.success) return { ok: false, error: 'Invalid input' };
+
+   const supabase = await getSupabaseServer();
+   const {
+      data: { user },
+   } = await supabase.auth.getUser();
+   if (!user) return { ok: false, error: 'Not signed in' };
+
+   const game = await findGameByCode(parsed.data.code);
+   if (!game) return { ok: false, error: 'Room not found' };
+   if (game.status !== 'active') return { ok: true }; // lobby/complete leave handled elsewhere
+
+   const seated = await db.query.gamePlayers.findFirst({
+      where: and(eq(gamePlayers.gameId, game.id), eq(gamePlayers.userId, user.id)),
+   });
+   if (!seated) return { ok: true };
+
+   const state = parseEngineState(game);
+   if (state.absentIds.includes(user.id)) return { ok: true };
+
+   try {
+      await applyAction(
+         game.id,
+         { type: 'MARK_ABSENT', playerId: user.id },
+         'MARK_ABSENT',
+         { actorId: user.id, code: parsed.data.code },
+      );
+   } catch (err) {
+      return toTurnResult(err, 'leaveActiveGame');
+   }
+
+   return { ok: true };
+}
+
+/**
  * Caller has just reconnected — clear their absent flag so future turn
  * advances stop bypassing their seat. Idempotent and seated-only.
  */

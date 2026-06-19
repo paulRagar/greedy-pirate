@@ -5,7 +5,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/server/db/client';
 import { gamePlayers, games } from '@/server/db/schema';
-import { findCompletedOrActiveGame, parseEngineState } from '@/server/game-room';
+import { applyAction, findCompletedOrActiveGame, parseEngineState } from '@/server/game-room';
 import { broadcastLobbyEvent } from '@/server/realtime/broadcast';
 import { passTheWheel } from './passTheWheel';
 import { leaveRoom } from './joinRoom';
@@ -100,6 +100,20 @@ export async function leaveAsHost(
       if (game.status === 'lobby') {
          const left = await leaveRoom(parsed.data.code);
          if (!left.ok) return { ok: false, error: 'Failed to disembark' };
+      } else if (game.status === 'active') {
+         // Wheel's been passed; now flag the departing captain absent so the
+         // new captain's table skips the empty seat immediately instead of
+         // waiting out the presence grace.
+         try {
+            await applyAction(
+               game.id,
+               { type: 'MARK_ABSENT', playerId: user.id },
+               'MARK_ABSENT',
+               { actorId: user.id, code: parsed.data.code },
+            );
+         } catch (err) {
+            console.error('leaveAsHost mark-absent failed', err);
+         }
       }
       return { ok: true };
    }

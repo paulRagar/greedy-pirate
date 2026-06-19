@@ -63,6 +63,8 @@ export function reduce(state: GameState, action: GameAction): GameState {
          return handleMarkPresent(state, action.playerId);
       case 'TIMEOUT_TURN':
          return handleTimeoutTurn(state, action.playerId);
+      case 'MARK_ABSENT':
+         return handleMarkAbsent(state, action.playerId);
    }
 }
 
@@ -196,6 +198,26 @@ function handleTimeoutTurn(state: GameState, playerId: string): GameState {
    // three cases: bank-and-pass, pirate-pass, and empty-pass.
    const banked = bankToCurrentPlayer(state);
    return advanceTurn({ ...banked, currentCard: null, currentStreak: [] });
+}
+
+/**
+ * Flag a player absent right now — used when they explicitly leave an active
+ * game, so the table skips their seat immediately instead of waiting out a
+ * presence timeout. Unlike SKIP_TURN this works for any seat, not just the
+ * current holder: if they happen to hold the helm we advance past them
+ * (dropping any in-flight streak); otherwise we just mark them so future
+ * advances bypass their seat. Idempotent.
+ */
+function handleMarkAbsent(state: GameState, playerId: string): GameState {
+   assert(state.status === 'active', 'game not active');
+   const absentIds = state.absentIds.includes(playerId)
+      ? state.absentIds
+      : [...state.absentIds, playerId];
+   const current = state.players[state.turnIndex];
+   if (current?.id === playerId) {
+      return advanceTurn({ ...state, currentCard: null, currentStreak: [], absentIds });
+   }
+   return { ...state, absentIds };
 }
 
 function handleMarkPresent(state: GameState, playerId: string): GameState {

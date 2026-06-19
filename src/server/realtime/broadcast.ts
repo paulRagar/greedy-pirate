@@ -74,6 +74,10 @@ type StatePayload = {
     * render the countdown and fire the auto-resolve at expiry.
     */
    turnDeadline?: string | null;
+   /** Seated user ids currently marked ready in the lobby (ready-up). */
+   readyIds?: string[];
+   /** Absolute ISO deadline of an in-progress lobby boarding countdown. */
+   boardingDeadline?: string | null;
    hostId?: string;
    /**
     * Achievements unlocked for the first time by the completion of this game,

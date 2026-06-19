@@ -113,9 +113,23 @@ export async function POST(req: NextRequest) {
          return new NextResponse(null, { status: 204 });
       }
 
-      // Active game — engine PLAYER_LEAVE asserts lobby. Don't yank the seat;
-      // mark them absent via SKIP_TURN if it's their turn, and mark host gone
-      // so cron migrates the wheel.
+      // Active game — engine PLAYER_LEAVE asserts lobby, so we keep the seat
+      // but flag them absent (advancing the helm if it was theirs) so the
+      // table skips the empty seat at once instead of waiting out the presence
+      // grace. Host also gets hostLeftAt so cron migrates the wheel.
+      const activeState = parseEngineState(game);
+      if (!activeState.absentIds.includes(user.id)) {
+         try {
+            await applyAction(
+               game.id,
+               { type: 'MARK_ABSENT', playerId: user.id },
+               'MARK_ABSENT',
+               { actorId: user.id, code: upper },
+            );
+         } catch (err) {
+            console.error('[room/leave] mark-absent failed', err);
+         }
+      }
       if (isHost) {
          await db
             .update(games)

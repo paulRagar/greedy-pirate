@@ -47,6 +47,10 @@ type BroadcastBody = {
    continuation?: ContinuationContext;
    /** Absolute ISO deadline for the current turn's shot clock, or null. */
    turnDeadline?: string | null;
+   /** Seated user ids currently flagged ready in the lobby (ready-up). */
+   readyIds?: string[];
+   /** Absolute ISO deadline of an in-progress lobby boarding countdown. */
+   boardingDeadline?: string | null;
    hostId?: string;
    /** Achievements unlocked by this game's completion, keyed by user id. */
    unlocks?: Record<string, string[]>;
@@ -94,6 +98,7 @@ export function useGameRoom(
    initialContinuation: ContinuationContext = null,
    initialVersion = 0,
    initialTurnDeadline: string | null = null,
+   initialReadyIds: ReadonlyArray<string> = [],
 ) {
    const [state, setState] = useState<PublicGameState>(initial);
    const [spectators, setSpectators] = useState<ReadonlyArray<RoomSpectatorView>>(initialSpectators);
@@ -101,6 +106,7 @@ export function useGameRoom(
    const [onlineIds, setOnlineIds] = useState<ReadonlySet<string>>(() => new Set());
    const [continuation, setContinuation] = useState<ContinuationContext>(initialContinuation);
    const [turnDeadline, setTurnDeadline] = useState<string | null>(initialTurnDeadline);
+   const [readyIds, setReadyIds] = useState<ReadonlySet<string>>(() => new Set(initialReadyIds));
    // Highest applied broadcast version (game_events.seq). Out-of-order or late
    // broadcasts with a version ≤ this are dropped so an older state can't
    // clobber a newer one. An optimistic local reduce leaves this untouched, so
@@ -147,6 +153,7 @@ export function useGameRoom(
          appliedVersion.current = initialVersion;
          setState(initial);
          setTurnDeadline(initialTurnDeadline);
+         setReadyIds(new Set(initialReadyIds));
          return;
       }
       const gate = gateStateVersion(appliedVersion.current, initialVersion);
@@ -154,8 +161,9 @@ export function useGameRoom(
          appliedVersion.current = gate.nextVersion;
          setState(initial);
          setTurnDeadline(initialTurnDeadline);
+         setReadyIds(new Set(initialReadyIds));
       }
-   }, [gameId, initial, initialVersion, initialTurnDeadline]);
+   }, [gameId, initial, initialVersion, initialTurnDeadline, initialReadyIds]);
 
    useEffect(() => {
       setSpectators(initialSpectators);
@@ -290,6 +298,11 @@ export function useGameRoom(
                if (payload.continuation !== undefined) {
                   setContinuation(payload.continuation);
                }
+               // Lobby ready-up — independent of the version gate (auxiliary
+               // lobby info, not a game step).
+               if (payload.readyIds !== undefined) {
+                  setReadyIds(new Set(payload.readyIds));
+               }
                if (payload.eventType) {
                   onEventRef.current?.(payload.eventType, payload);
                }
@@ -390,5 +403,5 @@ export function useGameRoom(
       [],
    );
 
-   return { state, spectators, status, applyOptimistic, onlineIds, continuation, turnDeadline };
+   return { state, spectators, status, applyOptimistic, onlineIds, continuation, turnDeadline, readyIds };
 }

@@ -9,6 +9,7 @@ interface ToastState {
    id: number;
    message: string;
    tone: ToastTone;
+   dismissible: boolean;
 }
 
 const TONE: Record<ToastTone, string> = {
@@ -31,11 +32,21 @@ export function useGameToast(duration = 1600) {
    const [toast, setToast] = useState<ToastState | null>(null);
    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+   const dismiss = useCallback(() => {
+      if (timer.current) clearTimeout(timer.current);
+      setToast(null);
+   }, []);
+
    const show = useCallback(
-      (message: string, tone: ToastTone = 'gold') => {
+      (
+         message: string,
+         tone: ToastTone = 'gold',
+         durationMs: number = duration,
+         dismissible = false,
+      ) => {
          if (timer.current) clearTimeout(timer.current);
-         setToast({ id: Date.now(), message, tone });
-         timer.current = setTimeout(() => setToast(null), duration);
+         setToast({ id: Date.now(), message, tone, dismissible });
+         timer.current = setTimeout(() => setToast(null), durationMs);
       },
       [duration],
    );
@@ -60,11 +71,26 @@ export function useGameToast(duration = 1600) {
             <div
                key={toast.id}
                className={cn(
-                  'animate-toast-in pirate-display rounded-full border-2 px-6 py-2.5 text-xl tracking-wider shadow-card-deep',
+                  'animate-toast-in pirate-display inline-flex items-center gap-2 rounded-full border-2 px-6 py-2.5 text-xl tracking-wider shadow-card-deep',
                   TONE[toast.tone],
+                  // Only dismissible toasts capture taps; quick event toasts stay
+                  // click-through so they never block the board.
+                  toast.dismissible && 'pointer-events-auto',
                )}
             >
-               {toast.message}
+               <span>{toast.message}</span>
+               {toast.dismissible && (
+                  <button
+                     type='button'
+                     onClick={dismiss}
+                     aria-label='Dismiss'
+                     // Negative margins keep the pill compact while still giving a
+                     // ≥44px tap target.
+                     className='-my-2.5 -mr-4 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-2xl leading-none opacity-70 hover:opacity-100'
+                  >
+                     ×
+                  </button>
+               )}
             </div>
          )}
       </div>

@@ -308,6 +308,40 @@ describe('TIMEOUT_TURN', () => {
    });
 });
 
+describe('MARK_ABSENT', () => {
+   it('flags a non-current player absent without advancing the turn', () => {
+      const s = startGame(buildLobby(p('a'), p('b'), p('c')), 'gold-seed-1');
+      const holder = s.players[s.turnIndex]!;
+      const other = s.players.find((pl) => pl.id !== holder.id)!;
+      const next = reduce(s, { type: 'MARK_ABSENT', playerId: other.id });
+      expect(next.absentIds).toContain(other.id);
+      expect(next.turnIndex).toBe(s.turnIndex); // turn didn't move
+      expect(next.players[next.turnIndex]!.id).toBe(holder.id);
+   });
+
+   it('advances the turn when the absent player held the helm', () => {
+      let s = startGame(buildLobby(p('a'), p('b'), p('c')), 'gold-seed-1');
+      s = drawUntilGold(s);
+      s = reduce(s, { type: 'DRAW' });
+      const holder = s.players[s.turnIndex]!;
+      expect(s.currentStreak.length).toBeGreaterThan(0);
+      const next = reduce(s, { type: 'MARK_ABSENT', playerId: holder.id });
+      expect(next.absentIds).toContain(holder.id);
+      expect(next.currentStreak).toEqual([]);
+      expect(next.currentCard).toBeNull();
+      expect(next.players[next.turnIndex]!.id).not.toBe(holder.id);
+   });
+
+   it('is idempotent and rejects when not active', () => {
+      const s = startGame(buildLobby(p('a'), p('b')), 'any');
+      const once = reduce(s, { type: 'MARK_ABSENT', playerId: 'b' });
+      const twice = reduce(once, { type: 'MARK_ABSENT', playerId: 'b' });
+      expect(twice.absentIds.filter((id) => id === 'b')).toHaveLength(1);
+      const lobby = buildLobby(p('a'), p('b'));
+      expect(() => reduce(lobby, { type: 'MARK_ABSENT', playerId: 'a' })).toThrow(/not active/);
+   });
+});
+
 describe('MARK_PRESENT', () => {
    it('removes a player from the absent list', () => {
       let s = startGame(buildLobby(p('a'), p('b'), p('c')), 'gold-seed-1');
