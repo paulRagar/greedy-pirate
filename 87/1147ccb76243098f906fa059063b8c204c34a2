@@ -1,0 +1,70 @@
+src/server/db/migrations/meta/_journal.json
+  s_d97853f5f4fd5a::t_c239fd8f70a203 25-31
+src/server/db/migrations/0003_achievements_and_biggest_bank.sql
+  s_d97853f5f4fd5a::t_c239fd8f70a203 1-10
+.claude/docs/database.md
+  s_d97853f5f4fd5a::t_a30023727a400a 93-95,98,102-113
+  s_d97853f5f4fd5a::t_684b217d394a3d 130-131,135
+src/game/engine.ts
+  s_d97853f5f4fd5a::t_7bfa0638139719 43
+  s_d97853f5f4fd5a::t_34c69eae404a13 4-19
+  s_d97853f5f4fd5a::t_a4f09343f18f59 97
+  s_d97853f5f4fd5a::t_4853bbf3c16af4 109,118-123,128,134-139
+  s_d97853f5f4fd5a::t_1b71a0afc7cf60 187,191-200
+src/server/actions/gameTurnActions.ts
+  s_d97853f5f4fd5a::t_da586b9e65585c 74
+src/server/db/schema.ts
+  s_d97853f5f4fd5a::t_0b7ae87114c969 11
+  s_d97853f5f4fd5a::t_0bbb5a1d7bec3d 219-220
+  s_d97853f5f4fd5a::t_7fe40a237b6772 182,186-204
+src/lib/achievements.test.ts
+  s_d97853f5f4fd5a::t_8a64449b22fb36 1-53
+.claude/docs/game-rules.md
+  s_d97853f5f4fd5a::t_38b15a55010a63 49-50,55-57
+src/server/db/migrations/meta/0003_snapshot.json
+  s_d97853f5f4fd5a::t_c239fd8f70a203 1-963
+src/lib/achievements.ts
+  s_d97853f5f4fd5a::t_99a23cf4e0228d 1-59
+src/server/actions/persistLocalGame.ts
+  s_d97853f5f4fd5a::t_274f5c93df0f9c 74
+  s_d97853f5f4fd5a::t_b886825db20f1d 15-19
+  s_d97853f5f4fd5a::t_a8a798d6cd960f 98-100
+src/server/game-room.ts
+  s_d97853f5f4fd5a::t_ec92e559e7ffa9 57
+  s_d97853f5f4fd5a::t_3aa00d9eea187e 176
+  s_d97853f5f4fd5a::t_881b82aa1e8c96 243-253
+src/server/stats.ts
+  s_d97853f5f4fd5a::t_f64d6dba392a94 3-4,12-17,21-25,29,36-38,48-50,53-71
+src/game/types.ts
+  s_d97853f5f4fd5a::t_72fc3ff3106dc5 17-30,43-44
+src/game/engine.test.ts
+  s_d97853f5f4fd5a::t_3e88bc174fe4af 310-374
+app/profile/page.tsx
+  s_d97853f5f4fd5a::t_c5d38c279726c3 4,6
+  s_d97853f5f4fd5a::t_f125e971f180c9 97-99,108-110,114-119
+  s_d97853f5f4fd5a::t_524fedc75b4610 136-138
+  s_d97853f5f4fd5a::t_4d3ea409889faf 169-211,216
+  s_d97853f5f4fd5a::t_880c292e297622 224
+  s_d97853f5f4fd5a::t_5a050bc50c0608 46-48,50-53,57-85
+app/play-local/PlayLocalClient.tsx
+  s_d97853f5f4fd5a::t_a22c56afd4da15 59
+  s_d97853f5f4fd5a::t_dff19ad3eba97a 48-55
+supabase/migrations/20260619000000_user_achievements_rls.sql
+  s_d97853f5f4fd5a::t_85b5cf5dee6ec1 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "871147ccb76243098f906fa059063b8c204c34a2",
+  "prompts": {},
+  "sessions": {
+    "s_d97853f5f4fd5a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c53574e4-3861-4bc5-9015-658b14bd88f6",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
