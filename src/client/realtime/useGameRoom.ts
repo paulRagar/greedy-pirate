@@ -20,6 +20,17 @@ const KNOCK_RESOLVED_EVENT = 'knock:resolved';
 const LOBBY_GRACE_MS = 2_500;
 const ACTIVE_GRACE_MS = 10_000;
 
+/**
+ * How long the tab can stay hidden before we release the room socket. A brief
+ * tab-switch (the common desktop case) must NOT drop us off presence — that
+ * surfaces us as "gone" and gets our turn skipped for merely glancing away.
+ * Browsers keep WebSockets open while a tab is backgrounded, so we hold the
+ * channel and our tracked presence until the tab has been hidden this long,
+ * then tear down to avoid zombie sockets on a truly abandoned tab. A real tab
+ * close drops the socket immediately regardless, firing presence `leave`.
+ */
+const IDLE_UNSUBSCRIBE_MS = 5 * 60_000;
+
 export type ContinuationContext = {
    deadlineAt: string;
    continuedIds: ReadonlyArray<string>;
@@ -152,6 +163,14 @@ export function useGameRoom(
       const supabase = getSupabaseBrowser();
       const topic = `room:${code.toUpperCase()}`;
       let channel: ReturnType<typeof supabase.channel> | null = null;
+      let idleTimer: ReturnType<typeof setTimeout> | null = null;
+
+      const clearIdleTimer = () => {
+         if (idleTimer) {
+            clearTimeout(idleTimer);
+            idleTimer = null;
+         }
+      };
 
       const clearGraceTimer = (uid: string) => {
          const timer = graceTimers.current.get(uid);
@@ -316,10 +335,20 @@ export function useGameRoom(
       const handleVisibility = () => {
          if (typeof document === 'undefined') return;
          if (document.hidden) {
-            setStatus('paused');
-            unsubscribe();
+            // Keep the socket + tracked presence alive on a tab-switch. Only
+            // release after a long idle stretch so an abandoned tab doesn't hold
+            // a zombie socket. We stay 'connected' meanwhile — we are.
+            clearIdleTimer();
+            idleTimer = setTimeout(() => {
+               idleTimer = null;
+               setStatus('paused');
+               unsubscribe();
+            }, IDLE_UNSUBSCRIBE_MS);
          } else {
-            void subscribe();
+            clearIdleTimer();
+            // Re-subscribe only if the idle timeout already released us; if the
+            // socket stayed alive we kept receiving broadcasts the whole time.
+            if (!channel) void subscribe();
             onResumeRef.current?.();
          }
       };
@@ -335,6 +364,7 @@ export function useGameRoom(
       const timers = graceTimers.current;
       return () => {
          document.removeEventListener('visibilitychange', handleVisibility);
+         clearIdleTimer();
          unsubscribe();
          for (const t of timers.values()) clearTimeout(t);
          timers.clear();
