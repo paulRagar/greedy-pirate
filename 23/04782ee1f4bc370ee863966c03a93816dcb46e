@@ -1,0 +1,25 @@
+src/server/friends.test.ts
+  s_a9d5705db96371::t_978192ed62a49f 92-123
+  s_a9d5705db96371::t_157b64910684e0 2-7
+src/server/actions/friendActions.ts
+  s_a9d5705db96371::t_542c6341a70f70 9-15
+  s_a9d5705db96371::t_9de8b61c6047f7 354-496
+src/server/friends.ts
+  s_a9d5705db96371::t_9b7336c6a7c764 69-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "2304782ee1f4bc370ee863966c03a93816dcb46e",
+  "prompts": {},
+  "sessions": {
+    "s_a9d5705db96371": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51e0f64a-2890-4331-9237-0973b4790829",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
