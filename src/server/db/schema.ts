@@ -8,6 +8,7 @@ import {
    jsonb,
    pgSchema,
    pgTable,
+   primaryKey,
    text,
    timestamp,
    unique,
@@ -178,8 +179,29 @@ export const userStats = pgTable('user_stats', {
    totalCoinsCollected: bigint('total_coins_collected', { mode: 'number' }).notNull().default(0),
    totalPiratesEncountered: integer('total_pirates_encountered').notNull().default(0),
    longestStreakValue: integer('longest_streak_value').notNull().default(0),
+   biggestSingleBank: integer('biggest_single_bank').notNull().default(0),
    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Unlocked achievements per user. One row per (user, achievement code); the
+ * earliest unlock time is preserved via insert-or-ignore. The catalog of codes
+ * lives in `src/lib/achievements.ts` — this table only records what's unlocked.
+ */
+export const userAchievements = pgTable(
+   'user_achievements',
+   {
+      userId: uuid('user_id')
+         .notNull()
+         .references(() => users.id, { onDelete: 'cascade' }),
+      code: text('code').notNull(),
+      unlockedAt: timestamp('unlocked_at', { withTimezone: true }).notNull().defaultNow(),
+   },
+   (t) => ({
+      pk: primaryKey({ columns: [t.userId, t.code] }),
+      userIdx: index('user_achievements_user_idx').on(t.userId),
+   }),
+);
 
 export type DbUser = typeof users.$inferSelect;
 export type DbUserInsert = typeof users.$inferInsert;
@@ -194,3 +216,5 @@ export type DbGameJoinRequestInsert = typeof gameJoinRequests.$inferInsert;
 export type DbGameEvent = typeof gameEvents.$inferSelect;
 export type DbGameEventInsert = typeof gameEvents.$inferInsert;
 export type DbUserStats = typeof userStats.$inferSelect;
+export type DbUserAchievement = typeof userAchievements.$inferSelect;
+export type DbUserAchievementInsert = typeof userAchievements.$inferInsert;

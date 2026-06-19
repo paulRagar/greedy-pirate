@@ -1,8 +1,9 @@
 import { desc, eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { db } from '@/server/db/client';
-import { games, userStats, users } from '@/server/db/schema';
+import { gamePlayers, games, userAchievements, userStats, users } from '@/server/db/schema';
 import { getSupabaseServer } from '@/server/supabase/server';
+import { ACHIEVEMENTS } from '@/lib/achievements';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { AccountUpgrade } from '@/client/auth/AccountUpgrade';
 import { AccountSettings } from '@/client/auth/AccountSettings';
@@ -42,16 +43,46 @@ export default async function ProfilePage({
 
    const displayName = profile?.displayName ?? 'Crewmate';
 
-   // Anonymous users see only the sign-up gate — no stats or history yet.
-   // The logbook starts tracking once they claim an account.
+   // Anonymous users get a teaser: their voyage count (the one stat that hooks
+   // them) plus a locked preview of everything signing up would unlock. We do
+   // not surface their other stats or PII-bearing history here.
    if (profile?.isAnonymous) {
+      const anonStats = await db.query.userStats.findFirst({
+         where: eq(userStats.userId, user.id),
+      });
+      const anonVoyages = anonStats?.gamesPlayed ?? 0;
       return (
          <main className='flex min-h-0 flex-1 flex-col items-center gap-5 overflow-y-auto px-5 py-8 pb-[max(env(safe-area-inset-bottom),2rem)] sm:py-12'>
             <ProfileNameHeader initialName={displayName} isAnonymous size='md' />
-            <p className='max-w-md text-center text-sm text-[color:var(--color-cream-200)]/75 sm:text-base'>
-               Yer logbook is locked away in Davy Jones&apos; locker. Sign up to save yer voyages, doubloons,
-               and wins forever.
-            </p>
+
+            <section className='w-full max-w-md'>
+               <Stat label='Voyages sailed' value={anonVoyages} tone='teal' wide />
+            </section>
+
+            <PiratePanel variant='deep' className='w-full max-w-md p-4'>
+               <h2 className='pirate-display text-xl text-[color:var(--color-gold-200)]'>
+                  More treasure awaits
+               </h2>
+               <p className='mt-1 text-sm text-[color:var(--color-cream-200)]/75'>
+                  Sign up to unlock yer full logbook — wins &amp; win rate, biggest single haul, pirates
+                  faced, longest streak, and a wall of achievements to plunder.
+               </p>
+               <ul className='mt-3 flex flex-wrap gap-2'>
+                  {ACHIEVEMENTS.map((a) => (
+                     <li
+                        key={a.code}
+                        className='flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 text-xs text-[color:var(--color-cream-200)]/55'
+                        title={a.description}
+                     >
+                        <span aria-hidden className='opacity-50 grayscale'>
+                           {a.icon}
+                        </span>
+                        {a.title}
+                     </li>
+                  ))}
+               </ul>
+            </PiratePanel>
+
             <div className='w-full max-w-md'>
                <AccountUpgrade />
             </div>
@@ -63,7 +94,9 @@ export default async function ProfilePage({
       where: eq(userStats.userId, user.id),
    });
 
-   const hostedGames = await db
+   // Logbook: every game the player *participated in* (seated), not just the
+   // ones they hosted — a join-only player should still see their voyages.
+   const playedGames = await db
       .select({
          id: games.id,
          deckVariant: games.deckVariant,
@@ -72,11 +105,18 @@ export default async function ProfilePage({
          createdAt: games.createdAt,
       })
       .from(games)
-      .where(eq(games.hostId, user.id))
+      .innerJoin(gamePlayers, eq(gamePlayers.gameId, games.id))
+      .where(eq(gamePlayers.userId, user.id))
+      .groupBy(games.id)
       .orderBy(desc(games.completedAt))
       .limit(25);
 
-   const gameIds = hostedGames.map((g) => g.id);
+   const unlockedRows = await db.query.userAchievements.findMany({
+      where: eq(userAchievements.userId, user.id),
+   });
+   const unlockedCodes = new Set(unlockedRows.map((row) => row.code));
+
+   const gameIds = playedGames.map((g) => g.id);
    const seats = gameIds.length
       ? await db.query.gamePlayers.findMany({
            where: (table, { inArray }) => inArray(table.gameId, gameIds),
@@ -93,6 +133,9 @@ export default async function ProfilePage({
    const gamesPlayed = stats?.gamesPlayed ?? 0;
    const gamesWon = stats?.gamesWon ?? 0;
    const totalCoins = Number(stats?.totalCoinsCollected ?? 0);
+   const biggestHaul = stats?.biggestSingleBank ?? 0;
+   const piratesFaced = stats?.totalPiratesEncountered ?? 0;
+   const longestStreak = stats?.longestStreakValue ?? 0;
    const winRate = gamesPlayed > 0 ? Math.round((gamesWon / gamesPlayed) * 100) : 0;
 
    return (
@@ -123,11 +166,54 @@ export default async function ProfilePage({
             <Stat label='Voyages' value={gamesPlayed} tone='teal' />
             <Stat label='Won' value={gamesWon} suffix={gamesPlayed > 0 ? ` · ${winRate}%` : ''} tone='coral' />
             <Stat label='Total doubloons' value={totalCoins} tone='gold' wide />
+            <Stat label='Biggest haul' value={biggestHaul} tone='gold' />
+            <Stat label='Pirates faced' value={piratesFaced} tone='coral' />
+            <Stat label='Longest streak' value={longestStreak} tone='teal' wide />
+         </section>
+
+         <section className='flex flex-col gap-2'>
+            <h2 className='pirate-display text-2xl text-[color:var(--color-gold-200)]'>Achievements</h2>
+            <ul className='grid grid-cols-2 gap-3'>
+               {ACHIEVEMENTS.map((a) => {
+                  const unlocked = unlockedCodes.has(a.code);
+                  return (
+                     <li key={a.code}>
+                        <PiratePanel
+                           variant='deep'
+                           className={`flex h-full items-start gap-3 p-3 ${
+                              unlocked ? '' : 'opacity-55'
+                           }`}
+                        >
+                           <span
+                              aria-hidden
+                              className={`text-2xl leading-none ${unlocked ? '' : 'grayscale'}`}
+                           >
+                              {a.icon}
+                           </span>
+                           <div className='flex flex-col gap-0.5'>
+                              <span
+                                 className={`text-sm font-semibold ${
+                                    unlocked
+                                       ? 'text-[color:var(--color-gold-300)]'
+                                       : 'text-[color:var(--color-cream-200)]/70'
+                                 }`}
+                              >
+                                 {a.title}
+                              </span>
+                              <span className='text-xs text-[color:var(--color-cream-200)]/60'>
+                                 {unlocked ? 'Unlocked' : a.description}
+                              </span>
+                           </div>
+                        </PiratePanel>
+                     </li>
+                  );
+               })}
+            </ul>
          </section>
 
          <section className='flex flex-col gap-2'>
             <h2 className='pirate-display text-2xl text-[color:var(--color-gold-200)]'>Recent voyages</h2>
-            {hostedGames.length === 0 ? (
+            {playedGames.length === 0 ? (
                <PiratePanel variant='deep'>
                   <p className='text-sm text-[color:var(--color-cream-200)]/70'>
                      No games yet. Sail forth and plunder some treasure!
@@ -135,7 +221,7 @@ export default async function ProfilePage({
                </PiratePanel>
             ) : (
                <ul className='flex flex-col gap-2'>
-                  {hostedGames.map((game) => {
+                  {playedGames.map((game) => {
                      const list = seatsByGame[game.id] ?? [];
                      const winner = list.find((seat) => seat.isWinner);
                      const completed = game.completedAt ?? game.createdAt;

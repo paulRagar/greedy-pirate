@@ -14,6 +14,20 @@ export type Player = {
 
 export type GameStatus = 'lobby' | 'active' | 'complete';
 
+/**
+ * Per-player personal bests accrued over a single game. Surfaced to the
+ * persistence layer at completion to light up the dead `user_stats` columns
+ * and feed achievements — never broadcast in the public state.
+ */
+export type PlayerTelemetry = {
+   /** High-water mark of consecutive gold cards held (whether banked or busted). */
+   readonly maxStreakLength: number;
+   /** Largest single banked streak value (doubloons) in one turn. */
+   readonly biggestBank: number;
+   /** Pirates drawn on this player's own turns. */
+   readonly piratesEncountered: number;
+};
+
 export type GameState = {
    readonly status: GameStatus;
    readonly players: ReadonlyArray<Player>;
@@ -26,6 +40,8 @@ export type GameState = {
    readonly winnerId: string | null;
    /** Players marked absent — turn advance skips past their seat. */
    readonly absentIds: ReadonlyArray<string>;
+   /** Per-player personal bests, keyed by player id. */
+   readonly telemetry: Readonly<Record<string, PlayerTelemetry>>;
 };
 
 export type PlayerInit = { readonly id: string; readonly name: string };

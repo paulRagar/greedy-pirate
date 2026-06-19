@@ -1,7 +1,22 @@
 import { DECKS } from './deck';
 import { DEFAULT_VARIANT, MAX_PLAYERS, MIN_PLAYERS } from './rules';
 import { createRng, seedFromString, shuffle } from './shuffle';
-import type { GameAction, GameState, GoldCard, Player } from './types';
+import type { GameAction, GameState, GoldCard, Player, PlayerTelemetry } from './types';
+
+const EMPTY_TELEMETRY: PlayerTelemetry = {
+   maxStreakLength: 0,
+   biggestBank: 0,
+   piratesEncountered: 0,
+};
+
+/** Immutably patch one player's telemetry entry, defaulting from zero. */
+function withTelemetry(
+   telemetry: GameState['telemetry'],
+   playerId: string,
+   fn: (t: PlayerTelemetry) => PlayerTelemetry,
+): GameState['telemetry'] {
+   return { ...telemetry, [playerId]: fn(telemetry[playerId] ?? EMPTY_TELEMETRY) };
+}
 
 export class EngineError extends Error {
    constructor(message: string) {
@@ -25,6 +40,7 @@ export const initialState: GameState = {
    variant: DEFAULT_VARIANT,
    winnerId: null,
    absentIds: [],
+   telemetry: {},
 };
 
 export function reduce(state: GameState, action: GameAction): GameState {
@@ -78,6 +94,7 @@ function handleStart(state: GameState, seed: string, variant = state.variant): G
       pirateCount: 0,
       winnerId: null,
       absentIds: [],
+      telemetry: Object.fromEntries(state.players.map((p) => [p.id, EMPTY_TELEMETRY])),
    };
 }
 
@@ -89,6 +106,7 @@ function handleDraw(state: GameState): GameState {
    const top = state.deck[0];
    assert(top, 'deck empty');
    const rest = state.deck.slice(1);
+   const currentId = state.players[state.turnIndex]?.id;
 
    if (top.kind === 'pirate') {
       const next: GameState = {
@@ -97,15 +115,28 @@ function handleDraw(state: GameState): GameState {
          currentCard: top,
          currentStreak: [],
          pirateCount: state.pirateCount + 1,
+         telemetry: currentId
+            ? withTelemetry(state.telemetry, currentId, (t) => ({
+                 ...t,
+                 piratesEncountered: t.piratesEncountered + 1,
+              }))
+            : state.telemetry,
       };
       return rest.length === 0 ? complete(next) : next;
    }
 
+   const streakLength = state.currentStreak.length + 1;
    const drawn: GameState = {
       ...state,
       deck: rest,
       currentCard: top,
       currentStreak: [...state.currentStreak, top],
+      telemetry: currentId
+         ? withTelemetry(state.telemetry, currentId, (t) => ({
+              ...t,
+              maxStreakLength: Math.max(t.maxStreakLength, streakLength),
+           }))
+         : state.telemetry,
    };
 
    if (rest.length === 0) {
@@ -153,10 +184,20 @@ function handleMarkPresent(state: GameState, playerId: string): GameState {
 function bankToCurrentPlayer(state: GameState): GameState {
    const sum = state.currentStreak.reduce((acc: number, c: GoldCard) => acc + c.value, 0);
    if (sum === 0) return state;
+   const currentId = state.players[state.turnIndex]?.id;
    const players = state.players.map((p, i) =>
       i === state.turnIndex ? { ...p, coins: p.coins + sum } : p,
    );
-   return { ...state, players };
+   return {
+      ...state,
+      players,
+      telemetry: currentId
+         ? withTelemetry(state.telemetry, currentId, (t) => ({
+              ...t,
+              biggestBank: Math.max(t.biggestBank, sum),
+           }))
+         : state.telemetry,
+   };
 }
 
 function advanceTurn(state: GameState): GameState {

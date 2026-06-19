@@ -307,6 +307,71 @@ describe('game completion', () => {
    });
 });
 
+describe('telemetry', () => {
+   const gold = (value: number) => ({ kind: 'gold' as const, value });
+   const pirate = () => ({ kind: 'pirate' as const });
+
+   // Active 2-player game with a hand-controlled deck. startGame already
+   // seeds zeroed telemetry for the seated players; we only swap the deck.
+   function activeWithDeck(deck: GameState['deck']): GameState {
+      const started = startGame(buildLobby(p('a'), p('b')));
+      return { ...started, deck, currentCard: null, currentStreak: [] };
+   }
+
+   it('records max streak length and biggest bank on a banked run', () => {
+      let s = activeWithDeck([gold(1), gold(2), gold(3), gold(1), gold(1)]);
+      const actor = s.players[s.turnIndex]!.id;
+      s = dispatch(s, { type: 'DRAW' }, { type: 'DRAW' }, { type: 'DRAW' }, { type: 'BANK' });
+      expect(s.telemetry[actor]!.maxStreakLength).toBe(3);
+      expect(s.telemetry[actor]!.biggestBank).toBe(6);
+      expect(s.telemetry[actor]!.piratesEncountered).toBe(0);
+   });
+
+   it('keeps the streak high-water mark after a bust', () => {
+      let s = activeWithDeck([gold(4), gold(5), pirate(), gold(1)]);
+      const actor = s.players[s.turnIndex]!.id;
+      s = dispatch(s, { type: 'DRAW' }, { type: 'DRAW' }, { type: 'DRAW' });
+      expect(s.currentCard?.kind).toBe('pirate');
+      expect(s.telemetry[actor]!.maxStreakLength).toBe(2);
+      expect(s.telemetry[actor]!.biggestBank).toBe(0);
+      expect(s.telemetry[actor]!.piratesEncountered).toBe(1);
+   });
+
+   it('tracks the biggest single bank per player across turns', () => {
+      let s = activeWithDeck([gold(5), gold(8), gold(3), gold(1), gold(1)]);
+      const a = s.players[0]!.id;
+      const b = s.players[1]!.id;
+      s = dispatch(
+         s,
+         { type: 'DRAW' },
+         { type: 'BANK' }, // a banks 5, turn -> b
+         { type: 'DRAW' },
+         { type: 'BANK' }, // b banks 8, turn -> a
+         { type: 'DRAW' },
+         { type: 'BANK' }, // a banks 3 (< 5, no change)
+      );
+      expect(s.telemetry[a]!.biggestBank).toBe(5);
+      expect(s.telemetry[b]!.biggestBank).toBe(8);
+   });
+
+   it('attributes pirates to the player who drew them', () => {
+      let s = activeWithDeck([pirate(), gold(1), gold(1)]);
+      const a = s.players[0]!.id;
+      const b = s.players[1]!.id;
+      s = dispatch(s, { type: 'DRAW' }, { type: 'END_TURN' }, { type: 'DRAW' });
+      expect(s.telemetry[a]!.piratesEncountered).toBe(1);
+      expect(s.telemetry[b]!.piratesEncountered).toBe(0);
+   });
+
+   it('resets telemetry on START_GAME', () => {
+      const started = startGame(buildLobby(p('a'), p('b')));
+      expect(started.telemetry).toEqual({
+         a: { maxStreakLength: 0, biggestBank: 0, piratesEncountered: 0 },
+         b: { maxStreakLength: 0, biggestBank: 0, piratesEncountered: 0 },
+      });
+   });
+});
+
 describe('purity', () => {
    it('does not mutate input state', () => {
       const lobby = buildLobby(p('a'), p('b'));

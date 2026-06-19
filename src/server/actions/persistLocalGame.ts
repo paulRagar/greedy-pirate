@@ -12,6 +12,11 @@ const PlayerSchema = z.object({
    id: z.string().min(1),
    name: z.string().trim().min(1).max(80),
    coins: z.number().int().min(0),
+   // Per-seat telemetry from the local engine state. Defaulted so older
+   // clients that omit it still persist a valid (zeroed) row.
+   maxStreakLength: z.number().int().min(0).default(0),
+   biggestBank: z.number().int().min(0).default(0),
+   piratesEncountered: z.number().int().min(0).default(0),
 });
 
 const InputSchema = z.object({
@@ -66,6 +71,7 @@ export async function persistLocalGame(input: PersistLocalGameInput): Promise<Pe
                displayName: player.name,
                coins: player.coins,
                isWinner: player.id === data.winnerSeatId,
+               piratesEncountered: player.piratesEncountered,
             })),
          );
 
@@ -89,6 +95,9 @@ export async function persistLocalGame(input: PersistLocalGameInput): Promise<Pe
                      userId: user.id,
                      coins: hostSeat.coins,
                      isWinner: hostSeat.id === data.winnerSeatId,
+                     maxStreakLength: hostSeat.maxStreakLength,
+                     biggestBank: hostSeat.biggestBank,
+                     piratesEncountered: hostSeat.piratesEncountered,
                   },
                ]);
             }
