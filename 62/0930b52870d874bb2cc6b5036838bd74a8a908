@@ -1,0 +1,48 @@
+src/game/types.ts
+  s_4d6d35ac66b468::t_2ff88991621993 58-59
+src/server/actions/leaveAsHost.ts
+  s_4d6d35ac66b468::t_7b9f7285a1eccd 8
+  s_4d6d35ac66b468::t_2346f3e1d7ce96 103-116
+src/server/continuation.ts
+  s_4d6d35ac66b468::t_4e5c0630ec91d8 10,14-15
+app/api/room/leave/route.ts
+  s_4d6d35ac66b468::t_04d39cb805c7ab 116-132
+src/server/actions/finalizeContinuation.ts
+  s_4d6d35ac66b468::t_247c9a1e9cebf9 29
+src/server/actions/continueIntoNextRound.ts
+  s_4d6d35ac66b468::t_a2e4fb0b74af4f 65
+src/game/engine.ts
+  s_4d6d35ac66b468::t_0b953958b0efdf 203-222
+  s_4d6d35ac66b468::t_b4f5fc4befbacc 66-67
+src/game/engine.test.ts
+  s_4d6d35ac66b468::t_c4eebbe9950f17 311-344
+src/server/game-room.ts
+  s_4d6d35ac66b468::t_a4e48f0e7128d4 73
+src/server/actions/restartRoom.ts
+  s_4d6d35ac66b468::t_2ad643f9c60850 199-203
+  s_4d6d35ac66b468::t_46a676ceae4d52 231,238
+  s_4d6d35ac66b468::t_f2a8ca9b40099d 16
+app/play/[code]/OnlineRoomClient.tsx
+  s_4d6d35ac66b468::t_0677c8b65f6c53 1418-1423,1427-1428,1430-1432
+  s_4d6d35ac66b468::t_01604fb8e71f90 496-499
+  s_4d6d35ac66b468::t_095fcfd4a75d27 500
+  s_4d6d35ac66b468::t_80cb57a9677c6f 18
+src/server/actions/gameTurnActions.ts
+  s_4d6d35ac66b468::t_783dd1652b8571 102-143
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "620930b52870d874bb2cc6b5036838bd74a8a908",
+  "prompts": {},
+  "sessions": {
+    "s_4d6d35ac66b468": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "701e5f55-a442-4a8f-9b06-92abbec5c3e4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
