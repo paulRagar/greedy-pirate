@@ -1,0 +1,67 @@
+src/client/realtime/useGameRoom.ts
+  s_4d6d35ac66b468::t_18bfeed0e65b6c 109
+  s_4d6d35ac66b468::t_c7b86756015265 101
+  s_4d6d35ac66b468::t_cc195ea05e8674 156,164,166
+  s_4d6d35ac66b468::t_5db97ef4658f57 301-305
+  s_4d6d35ac66b468::t_6a8ee6fcdc60ee 406
+  s_4d6d35ac66b468::t_35df916b063621 50-53
+src/server/realtime/broadcast.ts
+  s_4d6d35ac66b468::t_29b280dee7fb08 77-80
+src/server/db/migrations/0008_wooden_switch.sql
+  s_4d6d35ac66b468::t_90cc75cc6ca703 1
+src/server/actions/readyActions.ts
+  s_4d6d35ac66b468::t_d9f6d4a656e0d5 1-170
+src/server/db/schema.ts
+  s_4d6d35ac66b468::t_77fda108b58688 92-94
+src/server/db/migrations/meta/_journal.json
+  s_4d6d35ac66b468::t_90cc75cc6ca703 60-66
+src/server/db/migrations/meta/0008_snapshot.json
+  s_4d6d35ac66b468::t_90cc75cc6ca703 1-1712
+src/game/rules.ts
+  s_4d6d35ac66b468::t_7f10a2a1cc1565 25-31
+app/play/[code]/page.tsx
+  s_4d6d35ac66b468::t_f60ba61eb9cec0 80,84-87,89
+  s_4d6d35ac66b468::t_b236b766a6b6f9 104
+  s_4d6d35ac66b468::t_e3e28784bf94dc 12
+  s_4d6d35ac66b468::t_999f1ebd069581 2
+app/play/[code]/OnlineRoomClient.tsx
+  s_4d6d35ac66b468::t_bf00b3b3882fb2 708-710
+  s_4d6d35ac66b468::t_324374aa71b063 914-916,933-935,940
+  s_4d6d35ac66b468::t_39c92f5735464d 174
+  s_4d6d35ac66b468::t_a44cc8c146d884 97-102
+  s_4d6d35ac66b468::t_5f0e6d1c2d6756 747
+  s_4d6d35ac66b468::t_d17f5b48d1aa2a 190-202
+  s_4d6d35ac66b468::t_ddeaef231ff038 1131
+  s_4d6d35ac66b468::t_c3e191490f7e05 154-157
+  s_4d6d35ac66b468::t_8dff640e1d0599 1161,1178-1200,1207,1211,1213,1217-1222,1229-1241
+  s_4d6d35ac66b468::t_047e7e381b0f31 23
+  s_4d6d35ac66b468::t_20a84942d5ca29 969-978,985,987-989,993-1031
+  s_4d6d35ac66b468::t_c05a1058bddf72 840-877
+  s_4d6d35ac66b468::t_8ac0c38c39b91c 124
+  s_4d6d35ac66b468::t_e6255636245fe7 70,81
+  s_4d6d35ac66b468::t_35a387f7b859ad 46-52
+src/ui/game-room/CrewGrid.tsx
+  s_4d6d35ac66b468::t_026f83a9c7b8ea 90-98
+  s_4d6d35ac66b468::t_54fa81b4064aca 40
+  s_4d6d35ac66b468::t_403131ed935cf7 16-18
+  s_4d6d35ac66b468::t_15ce49ccd09abe 33
+.claude/docs/architecture.md
+  s_4d6d35ac66b468::t_df3292b6d0a7cd 123-124
+  s_4d6d35ac66b468::t_9b69bb907ee7f0 125-127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "af8ea782c1051308187fff13d9491ae1631bc136",
+  "prompts": {},
+  "sessions": {
+    "s_4d6d35ac66b468": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "701e5f55-a442-4a8f-9b06-92abbec5c3e4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
