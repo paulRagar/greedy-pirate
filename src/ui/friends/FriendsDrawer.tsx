@@ -4,12 +4,16 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
    cancelFriendRequest,
+   getMyFriendCode,
    listFriends,
    listIncomingRequests,
    listOutgoingRequests,
    respondToFriendRequest,
+   searchUsers,
+   sendFriendRequest,
    type FriendSummary,
    type PendingRequest,
+   type UserSearchResult,
 } from '@/server/actions/friendActions';
 import type { FriendInbox } from '@/client/realtime/useFriendInbox';
 import { haptics } from '@/client/juice/haptics';
@@ -30,11 +34,14 @@ export function FriendsDrawer({
    onClose,
    inbox,
    initialTab = 'friends',
+   initialQuery,
 }: {
    open: boolean;
    onClose: () => void;
    inbox: FriendInbox;
    initialTab?: FriendsTab;
+   /** Pre-fill the Add tab's search (from the `/?add={code}` deep link). */
+   initialQuery?: string;
 }) {
    const titleId = useId();
    const panelRef = useRef<HTMLDivElement>(null);
@@ -185,7 +192,7 @@ export function FriendsDrawer({
                )}
                {tab === 'add' && (
                   <div role='tabpanel' id='friends-panel-add' aria-labelledby='friends-tab-add'>
-                     <ComingSoon label='Add crewmates by code here soon.' />
+                     <AddPanel initialQuery={initialQuery} onIncomingResolved={inbox.onIncomingResolved} />
                   </div>
                )}
             </div>
@@ -396,12 +403,220 @@ function RequestsPanel({
    );
 }
 
-function ComingSoon({ label }: { label: string }) {
+function AddPanel({
+   initialQuery,
+   onIncomingResolved,
+}: {
+   initialQuery?: string;
+   onIncomingResolved: () => void;
+}) {
+   const [query, setQuery] = useState(initialQuery ?? '');
+   const [results, setResults] = useState<UserSearchResult[] | null>(null);
+   const [searching, setSearching] = useState(false);
+   const [error, setError] = useState<string | null>(null);
+   const [code, setCode] = useState<string | null>(null);
+   const [copied, setCopied] = useState<'code' | 'link' | null>(null);
+   const [busy, setBusy] = useState<string | null>(null);
+
+   useEffect(() => {
+      let active = true;
+      getMyFriendCode()
+         .then((r) => active && r.ok && setCode(r.friendCode))
+         .catch(() => {});
+      return () => {
+         active = false;
+      };
+   }, []);
+
+   // Debounced exact-match search.
+   useEffect(() => {
+      const q = query.trim();
+      if (q.length === 0) {
+         setResults(null);
+         setError(null);
+         setSearching(false);
+         return;
+      }
+      setSearching(true);
+      let active = true;
+      const t = window.setTimeout(() => {
+         searchUsers({ query: q })
+            .then((r) => {
+               if (!active) return;
+               if (r.ok) {
+                  setResults(r.results);
+                  setError(null);
+               } else {
+                  setResults([]);
+                  setError(r.error);
+               }
+            })
+            .catch(() => active && (setResults([]), setError('Search failed')))
+            .finally(() => active && setSearching(false));
+      }, 300);
+      return () => {
+         active = false;
+         window.clearTimeout(t);
+      };
+   }, [query]);
+
+   const copy = async (text: string, which: 'code' | 'link') => {
+      try {
+         await navigator.clipboard.writeText(text);
+         setCopied(which);
+         window.setTimeout(() => setCopied(null), 1500);
+      } catch {
+         /* clipboard blocked — no-op */
+      }
+   };
+
+   const add = async (r: UserSearchResult) => {
+      setBusy(r.userId);
+      const res = await sendFriendRequest({ toUserId: r.userId }).catch(() => ({
+         ok: false as const,
+         error: 'Failed',
+      }));
+      setBusy(null);
+      if (res.ok) {
+         const nextRel: UserSearchResult['relationship'] =
+            res.status === 'friends' ? 'friend' : 'pending_out';
+         // Adding someone who already asked us auto-accepts their request.
+         if (r.relationship === 'pending_in') onIncomingResolved();
+         setResults((rows) =>
+            (rows ?? []).map((x) => (x.userId === r.userId ? { ...x, relationship: nextRel } : x)),
+         );
+      } else {
+         setError(res.error);
+      }
+   };
+
+   const shareLink =
+      code && typeof window !== 'undefined' ? `${window.location.origin}/?add=${code}` : null;
+
    return (
-      <div className='py-10 text-center'>
-         <p className='text-sm text-[color:var(--color-cream-200)]/55'>{label}</p>
+      <div className='flex flex-col gap-5'>
+         {/* Your code */}
+         <section aria-label='Your friend code' className='rounded-xl border border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-800)]/40 p-3'>
+            <h3 className='text-xs font-semibold uppercase tracking-wide text-[color:var(--color-cream-200)]/55'>Your code</h3>
+            <div className='mt-2 flex items-center gap-2'>
+               <code className='flex-1 truncate rounded-lg bg-black/20 px-3 py-2 font-mono text-lg tracking-widest text-[color:var(--color-gold-200)]'>
+                  {code ?? '········'}
+               </code>
+               <button
+                  type='button'
+                  disabled={!code}
+                  onClick={() => code && copy(code, 'code')}
+                  className='shrink-0 rounded-lg border border-[color:var(--color-gold-400)]/50 px-3 py-2 text-sm font-semibold text-[color:var(--color-gold-200)] transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-coral-400)] disabled:opacity-50'
+               >
+                  {copied === 'code' ? 'Copied' : 'Copy'}
+               </button>
+            </div>
+            {shareLink && (
+               <button
+                  type='button'
+                  onClick={() => copy(shareLink, 'link')}
+                  className='mt-2 text-sm font-semibold text-[color:var(--color-teal-200)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-coral-400)]'
+               >
+                  {copied === 'link' ? 'Link copied!' : 'Copy invite link'}
+               </button>
+            )}
+         </section>
+
+         {/* Search */}
+         <section aria-label='Find a crewmate'>
+            <label htmlFor='friend-search' className='text-xs font-semibold uppercase tracking-wide text-[color:var(--color-cream-200)]/55'>
+               Add by code or name
+            </label>
+            <input
+               id='friend-search'
+               type='text'
+               inputMode='text'
+               autoCapitalize='characters'
+               autoCorrect='off'
+               spellCheck={false}
+               value={query}
+               onChange={(e) => setQuery(e.target.value)}
+               placeholder='e.g. 7K2QF8MN'
+               className='mt-2 min-h-[44px] w-full rounded-lg border border-[color:var(--color-surface-border)] bg-black/20 px-3 text-sm text-[color:var(--color-cream-100)] placeholder:text-[color:var(--color-cream-200)]/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-coral-400)]'
+            />
+
+            <div className='mt-3'>
+               {searching && (
+                  <p className='py-4 text-center text-sm text-[color:var(--color-cream-200)]/55'>Searching…</p>
+               )}
+               {error && !searching && (
+                  <p className='py-4 text-center text-sm text-[color:var(--color-coral-400)]'>{error}</p>
+               )}
+               {!searching && !error && results !== null && results.length === 0 && (
+                  <p className='py-4 text-center text-sm text-[color:var(--color-cream-200)]/55'>
+                     No crewmate with that exact code or name.
+                  </p>
+               )}
+               {!searching && results && results.length > 0 && (
+                  <ul className='flex flex-col gap-1' data-testid='search-results'>
+                     {results.map((r) => (
+                        <li key={r.userId} className='flex min-h-[56px] items-center gap-2 rounded-xl border border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-800)]/40 px-3'>
+                           <span className='min-w-0 flex-1'>
+                              <span className='block truncate text-sm font-semibold text-[color:var(--color-cream-100)]'>{r.displayName}</span>
+                              <span className='block font-mono text-xs text-[color:var(--color-cream-200)]/45'>{r.friendCode}</span>
+                           </span>
+                           <AddAction result={r} busy={busy === r.userId} onAdd={() => void add(r)} />
+                        </li>
+                     ))}
+                  </ul>
+               )}
+            </div>
+         </section>
       </div>
    );
+}
+
+function AddAction({
+   result,
+   busy,
+   onAdd,
+}: {
+   result: UserSearchResult;
+   busy: boolean;
+   onAdd: () => void;
+}) {
+   const base = 'shrink-0 rounded-lg px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-coral-400)]';
+   switch (result.relationship) {
+      case 'self':
+         return <span className='shrink-0 px-3 py-2 text-sm text-[color:var(--color-cream-200)]/45'>You</span>;
+      case 'friend':
+         return <span className='shrink-0 px-3 py-2 text-sm text-[color:var(--color-teal-200)]'>Friends ✓</span>;
+      case 'pending_out':
+         return <span className='shrink-0 px-3 py-2 text-sm text-[color:var(--color-cream-200)]/55'>Pending</span>;
+      case 'pending_in':
+         return (
+            <button
+               type='button'
+               disabled={busy}
+               onClick={() => {
+                  haptics.tap();
+                  onAdd();
+               }}
+               className={`${base} border border-[color:var(--color-teal-500)]/50 text-[color:var(--color-teal-200)] transition-colors hover:bg-[color:var(--color-teal-600)]/15 disabled:opacity-50`}
+            >
+               Accept
+            </button>
+         );
+      default:
+         return (
+            <button
+               type='button'
+               disabled={busy}
+               onClick={() => {
+                  haptics.tap();
+                  onAdd();
+               }}
+               className={`${base} border border-[color:var(--color-gold-400)]/60 text-[color:var(--color-gold-200)] transition-colors hover:bg-white/5 disabled:opacity-50`}
+            >
+               Add
+            </button>
+         );
+   }
 }
 
 function CloseIcon({ small = false }: { small?: boolean }) {

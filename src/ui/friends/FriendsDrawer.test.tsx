@@ -7,12 +7,18 @@ const listIncomingRequests = vi.fn();
 const listOutgoingRequests = vi.fn();
 const respondToFriendRequest = vi.fn();
 const cancelFriendRequest = vi.fn();
+const searchUsers = vi.fn();
+const sendFriendRequest = vi.fn();
+const getMyFriendCode = vi.fn();
 vi.mock('@/server/actions/friendActions', () => ({
    listFriends: () => listFriends(),
    listIncomingRequests: () => listIncomingRequests(),
    listOutgoingRequests: () => listOutgoingRequests(),
    respondToFriendRequest: (a: unknown) => respondToFriendRequest(a),
    cancelFriendRequest: (a: unknown) => cancelFriendRequest(a),
+   searchUsers: (a: unknown) => searchUsers(a),
+   sendFriendRequest: (a: unknown) => sendFriendRequest(a),
+   getMyFriendCode: () => getMyFriendCode(),
 }));
 vi.mock('@/client/juice/haptics', () => ({ haptics: { tap: vi.fn() } }));
 
@@ -39,6 +45,9 @@ describe('FriendsDrawer', () => {
       listOutgoingRequests.mockResolvedValue({ ok: true, requests: [] });
       respondToFriendRequest.mockResolvedValue({ ok: true });
       cancelFriendRequest.mockResolvedValue({ ok: true });
+      searchUsers.mockResolvedValue({ ok: true, results: [] });
+      sendFriendRequest.mockResolvedValue({ ok: true, status: 'pending', requestId: 'x' });
+      getMyFriendCode.mockResolvedValue({ ok: true, friendCode: 'MYCODE12' });
    });
 
    it('renders nothing when closed', () => {
@@ -95,6 +104,27 @@ describe('FriendsDrawer', () => {
       });
       render(<FriendsDrawer open onClose={() => {}} inbox={makeInbox()} />);
       expect(await screen.findByText('Blackbeard')).toBeInTheDocument();
+   });
+
+   it('shows your friend code and searches + adds on the Add tab', async () => {
+      searchUsers.mockResolvedValue({
+         ok: true,
+         results: [
+            { userId: 'u9', displayName: 'Calico', friendCode: 'CJ99XX22', relationship: 'none' },
+         ],
+      });
+      render(
+         <FriendsDrawer open onClose={() => {}} inbox={makeInbox()} initialTab='add' initialQuery='CJ99XX22' />,
+      );
+
+      // Own code surfaces.
+      expect(await screen.findByText('MYCODE12')).toBeInTheDocument();
+      // Deep-link query auto-searches and yields a result with an Add action.
+      const add = await screen.findByRole('button', { name: 'Add' });
+      fireEvent.click(add);
+      await waitFor(() => expect(sendFriendRequest).toHaveBeenCalledWith({ toUserId: 'u9' }));
+      // Row flips to Pending after a successful send.
+      expect(await screen.findByText('Pending')).toBeInTheDocument();
    });
 
    it('calls onClose on Escape', async () => {

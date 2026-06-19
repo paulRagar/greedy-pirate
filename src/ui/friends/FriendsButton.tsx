@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { haptics } from '@/client/juice/haptics';
 import { useFriendInbox } from '@/client/realtime/useFriendInbox';
 import { FriendsDrawer, type FriendsTab } from './FriendsDrawer';
@@ -22,11 +22,33 @@ export function FriendsButton({
    const inbox = useFriendInbox(userId, isAnonymous);
    const [open, setOpen] = useState(false);
    const [initialTab, setInitialTab] = useState<FriendsTab>('friends');
+   const [initialQuery, setInitialQuery] = useState<string | undefined>(undefined);
+
+   // Deep link: `/?add={code}` opens the drawer on the Add tab, pre-filled.
+   // Read from the URL once on mount and strip the param so a refresh / back
+   // doesn't reopen it. Skipped for anon (they can't friend).
+   useEffect(() => {
+      if (isAnonymous || !userId || typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('add');
+      if (!code) return;
+      setInitialQuery(code);
+      setInitialTab('add');
+      setOpen(true);
+      params.delete('add');
+      const qs = params.toString();
+      window.history.replaceState(
+         null,
+         '',
+         window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash,
+      );
+   }, [isAnonymous, userId]);
 
    if (isAnonymous || !userId) return null;
 
    const openTo = (tab: FriendsTab) => {
       setInitialTab(tab);
+      setInitialQuery(undefined);
       setOpen(true);
       inbox.dismissNotice();
    };
@@ -71,6 +93,7 @@ export function FriendsButton({
             onClose={() => setOpen(false)}
             inbox={inbox}
             initialTab={initialTab}
+            initialQuery={initialQuery}
          />
       </>
    );
