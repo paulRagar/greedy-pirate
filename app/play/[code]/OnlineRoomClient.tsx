@@ -139,7 +139,7 @@ export default function OnlineRoomClient({
             if (broadcastHostId) {
                if (broadcastHostId !== prevHostId.current) {
                   if (broadcastHostId === userId && prevHostId.current !== userId) {
-                     showToast('The wheel be yours — yer the captain now! 🧭', 'gold', 6000);
+                     showToast('The wheel be yours — yer the captain now! 🧭', 'gold', 6000, true);
                   }
                   prevHostId.current = broadcastHostId;
                }
@@ -201,7 +201,7 @@ export default function OnlineRoomClient({
    useEffect(() => {
       if (initial.hostId !== prevHostId.current) {
          if (initial.hostId === userId && prevHostId.current !== userId) {
-            showToast('The wheel be yours — yer the captain now! 🧭', 'gold', 6000);
+            showToast('The wheel be yours — yer the captain now! 🧭', 'gold', 6000, true);
          }
          prevHostId.current = initial.hostId;
       }
