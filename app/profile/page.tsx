@@ -1,7 +1,7 @@
-import { desc, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { db } from '@/server/db/client';
-import { gamePlayers, games, userAchievements, userStats, users } from '@/server/db/schema';
+import { userAchievements, userStats, users } from '@/server/db/schema';
 import { getSupabaseServer } from '@/server/supabase/server';
 import { ACHIEVEMENTS } from '@/lib/achievements';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
@@ -101,41 +101,15 @@ export default async function ProfilePage({
       where: eq(userStats.userId, user.id),
    });
 
-   // Logbook: every game the player *participated in* (seated), not just the
-   // ones they hosted — a join-only player should still see their voyages.
-   const playedGames = await db
-      .select({
-         id: games.id,
-         deckVariant: games.deckVariant,
-         mode: games.mode,
-         completedAt: games.completedAt,
-         createdAt: games.createdAt,
-      })
-      .from(games)
-      .innerJoin(gamePlayers, eq(gamePlayers.gameId, games.id))
-      .where(eq(gamePlayers.userId, user.id))
-      .groupBy(games.id)
-      .orderBy(desc(games.completedAt))
-      .limit(25);
+   // NOTE: a per-voyage "Recent Voyages" logbook is deferred to GRE-34 — online
+   // game rows are recycled across rounds (continuation resets status/completed_at),
+   // so there's no durable per-voyage record to list until we persist a voyage
+   // history snapshot at completion.
 
    const unlockedRows = await db.query.userAchievements.findMany({
       where: eq(userAchievements.userId, user.id),
    });
    const unlockedCodes = new Set(unlockedRows.map((row) => row.code));
-
-   const gameIds = playedGames.map((g) => g.id);
-   const seats = gameIds.length
-      ? await db.query.gamePlayers.findMany({
-           where: (table, { inArray }) => inArray(table.gameId, gameIds),
-        })
-      : [];
-
-   const seatsByGame = seats.reduce<Record<string, typeof seats>>((acc, seat) => {
-      const list = acc[seat.gameId] ?? [];
-      list.push(seat);
-      acc[seat.gameId] = list;
-      return acc;
-   }, {});
 
    const gamesPlayed = stats?.gamesPlayed ?? 0;
    const gamesWon = stats?.gamesWon ?? 0;
@@ -266,58 +240,6 @@ export default async function ProfilePage({
             </ul>
          </section>
 
-         <section className='flex flex-col gap-2'>
-            <h2 className='pirate-display text-2xl text-[color:var(--color-gold-200)]'>Recent voyages</h2>
-            {playedGames.length === 0 ? (
-               <PiratePanel variant='deep'>
-                  <p className='text-sm text-[color:var(--color-cream-200)]/70'>
-                     No games yet. Sail forth and plunder some treasure!
-                  </p>
-               </PiratePanel>
-            ) : (
-               <ul className='flex flex-col gap-2'>
-                  {playedGames.map((game) => {
-                     const list = seatsByGame[game.id] ?? [];
-                     const winner = list.find((seat) => seat.isWinner);
-                     const completed = game.completedAt ?? game.createdAt;
-                     return (
-                        <li key={game.id}>
-                           <PiratePanel variant='deep' className='flex flex-col gap-1 p-3'>
-                              <div className='flex items-center justify-between gap-2 text-sm'>
-                                 <div className='flex items-center gap-2'>
-                                    <span className='pirate-display text-lg text-[color:var(--color-gold-200)]'>
-                                       {prettyVariant(game.deckVariant)}
-                                    </span>
-                                    <span className='rounded-full bg-black/30 px-2 py-0.5 text-[10px] uppercase tracking-wider'>
-                                       {game.mode}
-                                    </span>
-                                 </div>
-                                 <time className='text-xs text-[color:var(--color-cream-200)]/60'>
-                                    {formatDate(completed)}
-                                 </time>
-                              </div>
-                              <div className='flex items-center justify-between gap-2 text-sm text-[color:var(--color-cream-200)]/80'>
-                                 <span>
-                                    Winner:{' '}
-                                    <span className='font-semibold text-[color:var(--color-gold-300)]'>
-                                       {winner?.displayName ?? '—'}
-                                    </span>
-                                 </span>
-                                 <span className='font-semibold text-[color:var(--color-gold-300)]'>
-                                    {winner?.coins ?? 0} doubloons
-                                 </span>
-                              </div>
-                              <div className='text-xs text-[color:var(--color-cream-200)]/55'>
-                                 {list.length} crewmates
-                              </div>
-                           </PiratePanel>
-                        </li>
-                     );
-                  })}
-               </ul>
-            )}
-         </section>
-
          {profile?.email && <AccountSettings currentEmail={profile.email} />}
       </main>
    );
@@ -356,20 +278,4 @@ function Stat({
          </span>
       </PiratePanel>
    );
-}
-
-function prettyVariant(variant: string) {
-   if (variant === 'greedy') return 'Greedy';
-   if (variant === 'even_greedier') return 'Even Greedier';
-   if (variant === 'super_greedy') return 'Super Greedy';
-   return variant;
-}
-
-function formatDate(date: Date | null) {
-   if (!date) return '';
-   return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-   }).format(date);
 }
