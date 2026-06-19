@@ -6,7 +6,13 @@ import { z } from 'zod';
 import { db } from '@/server/db/client';
 import { parseRows } from '@/server/db/parseRows';
 import { friendRequests, friendships, userBlocks, users } from '@/server/db/schema';
-import { canonicalPair, decideFriendRequest, type FriendRequestFlags } from '@/server/friends';
+import {
+   canonicalPair,
+   classifyRelationship,
+   decideFriendRequest,
+   type FriendRelationship,
+   type FriendRequestFlags,
+} from '@/server/friends';
 import {
    broadcastFriendRequest,
    broadcastFriendResolved,
@@ -342,6 +348,150 @@ async function listPendingRequests(direction: 'incoming' | 'outgoing'): Promise<
          createdAt: r.createdAt.toISOString(),
       })),
    };
+}
+
+// ---------------------------------------------------------------------------
+// Search + own friend code
+// ---------------------------------------------------------------------------
+
+const SEARCH_RATE_WINDOW_MS = 60_000;
+const SEARCH_RATE_MAX = 30;
+const SEARCH_RESULT_LIMIT = 10;
+
+// Best-effort, per-instance sliding-window limiter. Search is read-only so
+// there's no row to count; this caps abusive polling without external infra
+// (Fluid Compute reuses instances, so it bites in practice). The real
+// enumeration defense is exact-match + no email in results, not this.
+const searchHits = new Map<string, number[]>();
+
+function searchRateOk(userId: string, now: number): boolean {
+   const recent = (searchHits.get(userId) ?? []).filter((t) => now - t < SEARCH_RATE_WINDOW_MS);
+   recent.push(now);
+   searchHits.set(userId, recent);
+   return recent.length <= SEARCH_RATE_MAX;
+}
+
+export type UserSearchResult = {
+   userId: string;
+   displayName: string;
+   friendCode: string;
+   relationship: FriendRelationship;
+};
+
+export type SearchUsersResult =
+   | { ok: true; results: UserSearchResult[] }
+   | { ok: false; error: string };
+
+const SearchSchema = z.object({ query: z.string().trim().min(1).max(40) });
+
+/**
+ * Find people to friend by **exact** friend code OR **exact** display name
+ * (both case-insensitive). No fuzzy/partial matching and email is never a key
+ * nor returned — this is the PII-safe, enumeration-resistant model (GRE-38).
+ * Results exclude anyone with a block in either direction and carry the
+ * viewer's relationship so the Add tab can render the right row action.
+ */
+export async function searchUsers(
+   input: z.input<typeof SearchSchema>,
+): Promise<SearchUsersResult> {
+   const parsed = SearchSchema.safeParse(input);
+   if (!parsed.success) return { ok: false, error: 'Invalid input' };
+   const q = parsed.data.query;
+
+   const me = await requireUser();
+   if (!me) return { ok: false, error: 'Not signed in' };
+
+   if (!searchRateOk(me.id, Date.now())) {
+      return { ok: false, error: 'Slow down — too many searches. Wait a minute.' };
+   }
+
+   // Exact match on code (stored uppercase) or display name, case-insensitive.
+   const candidates = await db
+      .select({
+         userId: users.id,
+         displayName: users.displayName,
+         friendCode: users.friendCode,
+      })
+      .from(users)
+      .where(
+         or(
+            sql`upper(${users.friendCode}) = upper(${q})`,
+            sql`lower(${users.displayName}) = lower(${q})`,
+         ),
+      )
+      .limit(SEARCH_RESULT_LIMIT);
+
+   if (candidates.length === 0) return { ok: true, results: [] };
+
+   const ids = candidates.map((c) => c.userId);
+   const [blocks, friendEdges, pendingFromMe, pendingToMe] = await Promise.all([
+      db.query.userBlocks.findMany({
+         where: or(
+            and(eq(userBlocks.blockerId, me.id), inArray(userBlocks.blockedId, ids)),
+            and(eq(userBlocks.blockedId, me.id), inArray(userBlocks.blockerId, ids)),
+         ),
+      }),
+      db.query.friendships.findMany({
+         where: or(
+            and(eq(friendships.userLow, me.id), inArray(friendships.userHigh, ids)),
+            and(eq(friendships.userHigh, me.id), inArray(friendships.userLow, ids)),
+         ),
+      }),
+      db.query.friendRequests.findMany({
+         where: and(
+            eq(friendRequests.fromUserId, me.id),
+            inArray(friendRequests.toUserId, ids),
+            eq(friendRequests.status, 'pending'),
+         ),
+      }),
+      db.query.friendRequests.findMany({
+         where: and(
+            eq(friendRequests.toUserId, me.id),
+            inArray(friendRequests.fromUserId, ids),
+            eq(friendRequests.status, 'pending'),
+         ),
+      }),
+   ]);
+
+   // Any block in either direction hides the user entirely.
+   const blockedIds = new Set<string>();
+   for (const b of blocks) {
+      blockedIds.add(b.blockerId === me.id ? b.blockedId : b.blockerId);
+   }
+   const friendIds = new Set(
+      friendEdges.map((e) => (e.userLow === me.id ? e.userHigh : e.userLow)),
+   );
+   const pendingOut = new Set(pendingFromMe.map((r) => r.toUserId));
+   const pendingIn = new Set(pendingToMe.map((r) => r.fromUserId));
+
+   const results: UserSearchResult[] = candidates
+      .filter((c) => !blockedIds.has(c.userId))
+      .map((c) => ({
+         userId: c.userId,
+         displayName: c.displayName,
+         friendCode: c.friendCode!, // NOT NULL in DB; Drizzle type lags.
+         relationship: classifyRelationship({
+            isSelf: c.userId === me.id,
+            isFriend: friendIds.has(c.userId),
+            pendingFromViewer: pendingOut.has(c.userId),
+            pendingToViewer: pendingIn.has(c.userId),
+         }),
+      }));
+
+   return { ok: true, results };
+}
+
+export type MyFriendCodeResult =
+   | { ok: true; friendCode: string }
+   | { ok: false; error: string };
+
+/** The signed-in user's own shareable friend code (for display + share link). */
+export async function getMyFriendCode(): Promise<MyFriendCodeResult> {
+   const me = await requireUser();
+   if (!me) return { ok: false, error: 'Not signed in' };
+   const profile = await db.query.users.findFirst({ where: eq(users.id, me.id) });
+   if (!profile?.friendCode) return { ok: false, error: 'No code yet' };
+   return { ok: true, friendCode: profile.friendCode };
 }
 
 // ---------------------------------------------------------------------------
