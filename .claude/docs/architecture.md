@@ -110,9 +110,9 @@ The active player should feel zero latency on their own actions. BANK and END_TU
 
 ### Tab-visibility-aware realtime
 
-`useGameRoom` listens for `visibilitychange`. When the tab is hidden it tears down the broadcast channel (status → `paused`) and frees the WebSocket. On return to visible it resubscribes and fires an `onResume` callback that the page wires to `router.refresh()` — re-running the RSC initial fetch so the player picks back up on the latest state.
+`useGameRoom` listens for `visibilitychange`. A hidden tab does **not** tear down immediately — backgrounded ≠ disconnected, and dropping presence on a brief tab-switch surfaced the player as "gone" and got their turn skipped just for glancing away (GRE-54). Instead it keeps the channel and its tracked presence alive and only releases the socket after the tab has stayed hidden `IDLE_UNSUBSCRIBE_MS` (5 min), at which point status → `paused`. On return to visible it cancels that idle timer, resubscribes only if the idle teardown already fired, and calls the `onResume` callback the page wires to `router.refresh()` — re-running the RSC initial fetch so the player reconciles to the latest state.
 
-This prevents background tabs from holding open WebSockets overnight.
+A genuine tab close / process kill / network drop closes the WebSocket immediately regardless, which fires presence `leave` on the server side — so a real departure is still detected promptly, while a glance away is not. This keeps short tab-switches seamless while still preventing abandoned tabs from holding zombie WebSockets overnight.
 
 ---
 
@@ -131,7 +131,7 @@ This prevents background tabs from holding open WebSockets overnight.
 
 Long-running tabs + accumulating DB rows = compounding bloat. Mitigations:
 
-- **Tab visibility** — already covered above. Hidden tabs drop their WebSocket.
+- **Tab visibility** — already covered above. Tabs hidden longer than `IDLE_UNSUBSCRIBE_MS` (5 min) drop their WebSocket; a real close drops it at once.
 - **Daily cron** — Vercel Cron hits `/api/cron/cleanup` once daily (Hobby tier cap). Calls two SQL functions:
   - `abandon_stale_games()`: lobbies > 2h and active games with no events > 6h → `abandoned`.
   - `prune_old_events()`: deletes `game_events` rows older than 30 days.

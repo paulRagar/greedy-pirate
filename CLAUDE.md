@@ -57,4 +57,4 @@ Sub-directories with their own `CLAUDE.md`: `src/game/`, `src/server/`, `src/cli
 5. **RSC by default.** `'use client'` only where interactivity demands it.
 6. **No premature abstraction.** Three similar lines beats a wrong helper.
 7. **Type the boundaries strictly.** Zod at every server action; TS internally.
-8. **Realtime is fragile.** Tab-visibility-aware subscribes prevent zombie WebSockets; daily cron prunes stale rooms + old events.
+8. **Realtime is fragile.** A backgrounded tab keeps its socket alive (a brief switch must not skip your turn); only a long-idle hidden tab is torn down, preventing zombie WebSockets. Daily cron prunes stale rooms + old events.
