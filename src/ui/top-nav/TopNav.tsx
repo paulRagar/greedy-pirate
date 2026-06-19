@@ -9,6 +9,7 @@ import { getSupabaseBrowser } from '@/client/supabase/browser';
 import { haptics } from '@/client/juice/haptics';
 import { AccountLinkModal } from '@/client/auth/AccountLinkModal';
 import { GuestAvatar } from '@/ui/avatar/GuestAvatar';
+import { FriendsButton } from '@/ui/friends/FriendsButton';
 import { SKIP_LEAVE_BEACON_KEY } from '@/lib/leaveBeacon';
 
 const ROOM_PATH_RE = /^\/play\/([A-Z0-9]{4})$/i;
@@ -90,7 +91,8 @@ export function TopNav() {
             Greedy Pirate
          </Link>
 
-         <span className='flex h-11 w-11 items-center justify-end'>
+         <span className='flex items-center justify-end gap-1.5'>
+            <FriendsButton isAnonymous={profile?.isAnonymous ?? true} />
             <AccountMenu
                displayName={profile?.displayName}
                isAnonymous={profile?.isAnonymous ?? true}
