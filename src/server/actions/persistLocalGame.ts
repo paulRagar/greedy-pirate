@@ -1,22 +1,15 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/server/db/client';
-import { gameEvents, gamePlayers, games, users } from '@/server/db/schema';
+import { gameEvents, gamePlayers, games } from '@/server/db/schema';
 import { getSupabaseServer } from '@/server/supabase/server';
 import { DECK_VARIANTS } from '@/game/rules';
-import { bumpUserStats } from '@/server/stats';
 
 const PlayerSchema = z.object({
    id: z.string().min(1),
    name: z.string().trim().min(1).max(80),
    coins: z.number().int().min(0),
-   // Per-seat telemetry from the local engine state. Defaulted so older
-   // clients that omit it still persist a valid (zeroed) row.
-   maxStreakLength: z.number().int().min(0).default(0),
-   biggestBank: z.number().int().min(0).default(0),
-   piratesEncountered: z.number().int().min(0).default(0),
 });
 
 const InputSchema = z.object({
@@ -71,7 +64,6 @@ export async function persistLocalGame(input: PersistLocalGameInput): Promise<Pe
                displayName: player.name,
                coins: player.coins,
                isWinner: player.id === data.winnerSeatId,
-               piratesEncountered: player.piratesEncountered,
             })),
          );
 
@@ -83,26 +75,9 @@ export async function persistLocalGame(input: PersistLocalGameInput): Promise<Pe
             payload: { pirateCount: data.pirateCount, winnerSeatId: data.winnerSeatId },
          });
 
-         // Local games credit stats to the host based on a name match against
-         // the seats. Multi-device local play means non-host players never
-         // had accounts — they aren't counted here.
-         const profile = await tx.query.users.findFirst({ where: eq(users.id, user.id) });
-         if (profile) {
-            const hostSeat = data.players.find((p) => p.name === profile.displayName);
-            if (hostSeat) {
-               await bumpUserStats(tx, [
-                  {
-                     userId: user.id,
-                     coins: hostSeat.coins,
-                     isWinner: hostSeat.id === data.winnerSeatId,
-                     maxStreakLength: hostSeat.maxStreakLength,
-                     biggestBank: hostSeat.biggestBank,
-                     piratesEncountered: hostSeat.piratesEncountered,
-                  },
-               ]);
-            }
-         }
-
+         // Local games are pass-and-play with entered names, not the signed-in
+         // user's identity — so they intentionally do NOT touch user_stats or
+         // achievements. Only online games count toward a player's record.
          return game.id;
       });
 

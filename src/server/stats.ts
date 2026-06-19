@@ -23,8 +23,18 @@ type ContributionRow = {
  * incremented; personal bests (longest streak, biggest bank) take the GREATEST
  * of the existing value and this game's. Achievement rows are insert-or-ignore,
  * so the earliest unlock time is preserved across replays.
+ *
+ * Only online games call this — local pass-and-play never touches user_stats —
+ * so the stats (and therefore achievements) are inherently online-only.
+ *
+ * Returns the achievement codes unlocked *for the first time* this call, keyed
+ * by user id (empty arrays omitted), so callers can notify those players.
  */
-export async function bumpUserStats(tx: Tx, rows: ContributionRow[]): Promise<void> {
+export async function bumpUserStats(
+   tx: Tx,
+   rows: ContributionRow[],
+): Promise<Record<string, string[]>> {
+   const newlyUnlocked: Record<string, string[]> = {};
    for (const row of rows) {
       const [updated] = await tx
          .insert(userStats)
@@ -65,9 +75,17 @@ export async function bumpUserStats(tx: Tx, rows: ContributionRow[]): Promise<vo
       });
       if (codes.length === 0) continue;
 
-      await tx
+      // RETURNING after ON CONFLICT DO NOTHING yields only the rows that were
+      // actually inserted — i.e. the achievements unlocked for the first time.
+      const inserted = await tx
          .insert(userAchievements)
          .values(codes.map((code) => ({ userId: row.userId, code })))
-         .onConflictDoNothing();
+         .onConflictDoNothing()
+         .returning({ code: userAchievements.code });
+
+      if (inserted.length > 0) {
+         newlyUnlocked[row.userId] = inserted.map((r) => r.code);
+      }
    }
+   return newlyUnlocked;
 }

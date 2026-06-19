@@ -45,18 +45,11 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
       persistedFor.current = key;
       void persistLocalGame({
          deckVariant: state.variant,
-         players: state.players.map((p) => ({
-            id: p.id,
-            name: p.name,
-            coins: p.coins,
-            maxStreakLength: state.telemetry[p.id]?.maxStreakLength ?? 0,
-            biggestBank: state.telemetry[p.id]?.biggestBank ?? 0,
-            piratesEncountered: state.telemetry[p.id]?.piratesEncountered ?? 0,
-         })),
+         players: state.players.map((p) => ({ id: p.id, name: p.name, coins: p.coins })),
          winnerSeatId: state.winnerId,
          pirateCount: state.pirateCount,
       }).catch((err) => console.error('persistLocalGame error', err));
-   }, [state.status, state.winnerId, state.players, state.variant, state.pirateCount, state.telemetry]);
+   }, [state.status, state.winnerId, state.players, state.variant, state.pirateCount]);
 
    useEffect(() => {
       if (state.status !== 'lobby') return;

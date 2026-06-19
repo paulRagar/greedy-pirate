@@ -54,7 +54,7 @@ Current tie behavior: lexicographic by `coins` then whoever sort happens to land
 
 ### Per-player telemetry (GRE-26)
 
-The engine accrues `GameState.telemetry`, a `Record<playerId, { maxStreakLength, biggestBank, piratesEncountered }>`, updated in the DRAW/BANK reducers and reset on `START_GAME`. It is **server/internal only** — `toPublic()` does not expose it. At game completion the server rolls it into `user_stats` (`longest_streak_value`, `biggest_single_bank`, `total_pirates_encountered`) and into the per-seat `game_players.pirates_encountered`, then unlocks achievements. `maxStreakLength` is the high-water mark of consecutive gold held (counts even if the run later busts).
+The engine accrues `GameState.telemetry`, a `Record<playerId, { maxStreakLength, biggestBank, piratesEncountered }>`, updated in the DRAW/BANK reducers and reset on `START_GAME`. It is **server/internal only** — `toPublic()` does not expose it. At **online** game completion the server rolls it into `user_stats` (`longest_streak_value`, `biggest_single_bank`, `total_pirates_encountered`) and into the per-seat `game_players.pirates_encountered`, then unlocks achievements and notifies each player via the completion broadcast's `unlocks` map. `maxStreakLength` is the high-water mark of consecutive gold held (counts even if the run later busts). Local games run the same engine (so the telemetry exists) but intentionally do not persist stats or achievements.
 
 ## End-of-game UI
 

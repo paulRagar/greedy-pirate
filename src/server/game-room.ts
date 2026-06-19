@@ -216,6 +216,7 @@ export async function applyAction(
       let next = reduce(current, action);
 
       const justCompleted = row.status !== 'complete' && next.status === 'complete';
+      let unlocks: Record<string, string[]> = {};
       await tx
          .update(games)
          .set({
@@ -252,7 +253,7 @@ export async function applyAction(
             };
          });
          if (contributions.length > 0) {
-            await bumpUserStats(tx, contributions);
+            unlocks = await bumpUserStats(tx, contributions);
          }
 
          // Promote FIFO spectators into open seats so they get a chance to
@@ -280,6 +281,7 @@ export async function applyAction(
             payload: {
                state: toPublic(next),
                actorId: options.actorId ?? null,
+               ...(Object.keys(unlocks).length > 0 ? { unlocks } : {}),
             },
          })
          .returning({ id: gameEvents.id });
@@ -297,6 +299,7 @@ export async function applyAction(
          prevStatus: row.status,
          spectators,
          continuation,
+         unlocks,
       };
    });
 
@@ -309,6 +312,7 @@ export async function applyAction(
          eventType,
          version: result.seq,
          continuation: result.continuation,
+         ...(Object.keys(result.unlocks).length > 0 ? { unlocks: result.unlocks } : {}),
       });
       if (result.isPublic) {
          revalidatePath('/play/lobby');

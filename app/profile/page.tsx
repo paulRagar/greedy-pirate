@@ -211,6 +211,11 @@ export default async function ProfilePage({
             />
          </section>
 
+         <p className='-mt-2 text-center text-xs text-[color:var(--color-cream-200)]/50'>
+            Stats and achievements count online games only — local pass-and-play voyages don&apos;t affect
+            your record.
+         </p>
+
          <section className='flex flex-col gap-2'>
             <h2 className='pirate-display text-2xl text-[color:var(--color-gold-200)]'>Achievements</h2>
             <ul className='grid grid-cols-2 gap-3'>

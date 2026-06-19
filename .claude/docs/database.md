@@ -95,11 +95,9 @@ One row per user. Materialized aggregates updated incrementally.
 | `biggest_single_bank` | `int` default 0 | GREATEST single banked streak value, in doubloons (GRE-26). |
 | `updated_at` | `timestamptz` default now() | |
 
-Populated by `bumpUserStats(tx, rows[])` (UPSERT with column increments / `greatest()` for bests) called from:
-- `applyAction` on `lobby|active → complete` (online mode: all seated users).
-- `persistLocalGame` (local mode: host only, matched by `displayName`).
+Populated by `bumpUserStats(tx, rows[])` (UPSERT with column increments / `greatest()` for bests), called **only** from `applyAction` on `lobby|active → complete` (online mode, all seated users). **Local pass-and-play never touches `user_stats`** — local games use entered names rather than the signed-in user's identity, so stats and achievements are online-only by construction.
 
-After each upsert, `bumpUserStats` evaluates the `src/lib/achievements.ts` catalog against the new totals and insert-or-ignores unlocked rows into `user_achievements`.
+After each upsert, `bumpUserStats` evaluates the `src/lib/achievements.ts` catalog against the new totals, insert-or-ignores unlocked rows into `user_achievements`, and returns the codes unlocked *for the first time* (keyed by user id) so the completion broadcast can notify each player.
 
 ### `user_achievements`
 One row per unlocked achievement per user (GRE-26).

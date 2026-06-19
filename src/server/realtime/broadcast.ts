@@ -53,6 +53,13 @@ type StatePayload = {
    version?: number;
    continuation?: ContinuationState;
    hostId?: string;
+   /**
+    * Achievements unlocked for the first time by the completion of this game,
+    * keyed by user id. Only set on the completing broadcast. Members read their
+    * own entry to toast personally; the key set marks who to badge on the
+    * scoreboard. Achievement codes are not sensitive.
+    */
+   unlocks?: Record<string, string[]>;
 };
 
 export type KnockRequestedPayload = {

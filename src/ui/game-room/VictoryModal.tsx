@@ -17,6 +17,8 @@ interface Props {
    winner: RankedPlayer | null;
    ranked: ReadonlyArray<RankedPlayer>;
    youId?: string;
+   /** User ids who unlocked an achievement this game — badged with a medal. */
+   achieverIds?: ReadonlySet<string>;
    /** Action buttons row (Play again / To port etc.) */
    actions: React.ReactNode;
 }
@@ -25,7 +27,7 @@ interface Props {
  * End-of-game celebration: gold rain over the whole screen, treasure-chest
  * trophy, gold-framed winner row, full standings.
  */
-export function VictoryModal({ open, winner, ranked, youId, actions }: Props) {
+export function VictoryModal({ open, winner, ranked, youId, achieverIds, actions }: Props) {
    if (!open || !winner) return null;
    return (
       <>
@@ -74,6 +76,15 @@ export function VictoryModal({ open, winner, ranked, youId, actions }: Props) {
                                     <span className='ml-2 text-xs text-[color:var(--color-cream-200)]/55'>(you)</span>
                                  )}
                               </span>
+                              {achieverIds?.has(player.id) && (
+                                 <span
+                                    className='shrink-0 text-base leading-none'
+                                    title='Unlocked an achievement this game'
+                                    aria-label='Unlocked an achievement this game'
+                                 >
+                                    🏅
+                                 </span>
+                              )}
                            </span>
                            <span className='shrink-0 font-semibold text-[color:var(--color-gold-300)]'>
                               <CountUpNumber value={player.coins} duration={900} from={0} />
