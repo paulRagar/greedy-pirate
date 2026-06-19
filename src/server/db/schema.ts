@@ -89,6 +89,9 @@ export const gamePlayers = pgTable(
       piratesEncountered: integer('pirates_encountered').notNull().default(0),
       isWinner: boolean('is_winner').notNull().default(false),
       joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
+      // Set when a crewmate marks themselves ready in the lobby; cleared when
+      // they stand down. Null ⇒ not ready. Drives the ready-up start gate.
+      readyAt: timestamp('ready_at', { withTimezone: true }),
       leftAt: timestamp('left_at', { withTimezone: true }),
       continuedAt: timestamp('continued_at', { withTimezone: true }),
       // One-time token a seated player generates right before they sign

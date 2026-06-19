@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNotNull } from 'drizzle-orm';
 import {
    fetchSpectators,
    findCompletedOrActiveGame,
@@ -9,7 +9,7 @@ import {
 } from '@/server/game-room';
 import { fetchContinuation } from '@/server/continuation';
 import { db } from '@/server/db/client';
-import { gameSpectators } from '@/server/db/schema';
+import { gamePlayers, gameSpectators } from '@/server/db/schema';
 import { toPublic } from '@/game/public';
 import type { RoomState } from '@/game/public';
 import { getSupabaseServer } from '@/server/supabase/server';
@@ -77,11 +77,16 @@ export default async function PlayRoomPage({ params }: { params: Promise<{ code:
    }
 
    const engineState = parseEngineState(game);
-   const [spectators, continuation, initialVersion] = await Promise.all([
+   const [spectators, continuation, initialVersion, readyRows] = await Promise.all([
       fetchSpectators(db, game.id),
       fetchContinuation(db, game.id),
       latestEventSeq(game.id),
+      db
+         .select({ userId: gamePlayers.userId })
+         .from(gamePlayers)
+         .where(and(eq(gamePlayers.gameId, game.id), isNotNull(gamePlayers.readyAt))),
    ]);
+   const initialReadyIds = readyRows.map((r) => r.userId).filter((id): id is string => !!id);
    const room: RoomState = {
       ...toPublic(engineState),
       code: upper,
@@ -96,6 +101,7 @@ export default async function PlayRoomPage({ params }: { params: Promise<{ code:
          initial={room}
          initialVersion={initialVersion}
          initialTurnDeadline={game.turnDeadline ? game.turnDeadline.toISOString() : null}
+         initialReadyIds={initialReadyIds}
          isPublic={game.isPublic}
          initialContinuation={
             continuation

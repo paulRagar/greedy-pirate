@@ -13,6 +13,9 @@ interface Props {
    /** Player IDs awaiting a decision (continuation window). Renders dimmed
     *  with an hourglass marker. */
    pendingIds?: ReadonlySet<string>;
+   /** Player IDs marked ready in the lobby. Renders a ✓ marker (the captain is
+    *  shown via the C badge instead). */
+   readyIds?: ReadonlySet<string>;
 }
 
 /**
@@ -27,12 +30,14 @@ export function CrewGrid({
    onRemove,
    renderRowAction,
    pendingIds,
+   readyIds,
 }: Props) {
    const emptySeats = Math.max(0, capacity - players.length);
    return (
       <ul className='grid grid-cols-2 gap-2'>
          {players.map((player, i) => {
             const pending = pendingIds?.has(player.id) ?? false;
+            const ready = !pending && player.id !== hostId && (readyIds?.has(player.id) ?? false);
             return (
             <li
                key={player.id}
@@ -80,6 +85,15 @@ export function CrewGrid({
                      aria-label='Deciding'
                   >
                      ⏳
+                  </span>
+               )}
+               {ready && (
+                  <span
+                     className='pirate-display flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-teal-400)]/20 text-[11px] text-[color:var(--color-teal-300)]'
+                     title='Ready'
+                     aria-label='Ready'
+                  >
+                     ✓
                   </span>
                )}
                {renderRowAction?.(player)}

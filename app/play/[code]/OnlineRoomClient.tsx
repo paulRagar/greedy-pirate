@@ -20,6 +20,7 @@ import {
    timeoutTurn,
 } from '@/server/actions/gameTurnActions';
 import { startOnlineGame } from '@/server/actions/startOnlineGame';
+import { setReady, beginBoarding, startGameDroppingUnready } from '@/server/actions/readyActions';
 import { endGameByForfeit } from '@/server/actions/restartRoom';
 import { leaveSpectator } from '@/server/actions/spectatorActions';
 import { leaveRoom } from '@/server/actions/joinRoom';
@@ -42,7 +43,13 @@ import { StreakStrip } from '@/ui/game-room/StreakStrip';
 import { TurnClock, useCountdown } from '@/ui/game-room/TurnClock';
 import { VictoryModal } from '@/ui/game-room/VictoryModal';
 import { useGameToast } from '@/ui/toast/PirateToast';
-import { MAX_PLAYERS, MIN_PLAYERS, PIRATE_PASS_MS, TURN_CLOCK_MS } from '@/game/rules';
+import {
+   BOARDING_COUNTDOWN_MS,
+   MAX_PLAYERS,
+   MIN_PLAYERS,
+   PIRATE_PASS_MS,
+   TURN_CLOCK_MS,
+} from '@/game/rules';
 import { cn } from '@/lib/cn';
 import KnockInbox, { type KnockEntry } from './KnockInbox';
 import HostLeaveModal, { type Candidate } from './HostLeaveModal';
@@ -60,6 +67,7 @@ interface Props {
    initialContinuation: ContinuationContext;
    initialVersion: number;
    initialTurnDeadline: string | null;
+   initialReadyIds: string[];
 }
 
 export default function OnlineRoomClient({
@@ -70,6 +78,7 @@ export default function OnlineRoomClient({
    initialContinuation,
    initialVersion,
    initialTurnDeadline,
+   initialReadyIds,
 }: Props) {
    const router = useRouter();
    const [leaving, startLeave] = useTransition();
@@ -85,6 +94,12 @@ export default function OnlineRoomClient({
    >(null);
    const [plankedReason, setPlankedReason] = useState<'kicked' | 'hesitated' | null>(null);
    const [captainPromoted, setCaptainPromoted] = useState(false);
+   // Absolute epoch-ms deadline of an in-progress lobby boarding countdown,
+   // or null when none is running. Set by the host on begin, and by everyone
+   // on the BOARDING_STARTED broadcast.
+   const [boardingUntil, setBoardingUntil] = useState<number | null>(null);
+   // Brief "settin' sail" beat shown over the lobby→active hand-off.
+   const [settingSail, setSettingSail] = useState(false);
    const { showToast, toastElement: globalToast } = useGameToast();
 
    const removeKnock = useCallback((requestId: string) => {
@@ -106,6 +121,7 @@ export default function OnlineRoomClient({
       onlineIds,
       continuation,
       turnDeadline,
+      readyIds,
    } = useGameRoom(
       gameId,
       initial.code,
@@ -135,6 +151,10 @@ export default function OnlineRoomClient({
                router.refresh();
             }
             if (eventType === 'ROOM_ABANDONED') router.push('/play/lobby');
+            if (eventType === 'BOARDING_STARTED') {
+               const dl = (body as { boardingDeadline?: string | null }).boardingDeadline;
+               setBoardingUntil(dl ? Date.parse(dl) : null);
+            }
             // Achievements unlocked by this game's completion. Everyone in the
             // room gets the payload; we badge every achiever on the scoreboard
             // and surface the local player's own unlocks inside the victory
@@ -151,6 +171,7 @@ export default function OnlineRoomClient({
       initialContinuation,
       initialVersion,
       initialTurnDeadline,
+      initialReadyIds,
    );
 
    const [hostId, setHostId] = useState<string>(initial.hostId);
@@ -165,6 +186,19 @@ export default function OnlineRoomClient({
          setAchieverIds(new Set());
          setMyUnlocks([]);
       }
+   }, [live.status]);
+   // "Settin' sail" beat over the lobby→active hand-off. Also clears any
+   // boarding countdown once we've actually sailed.
+   const sailPrevStatus = useRef(initial.status);
+   useEffect(() => {
+      if (sailPrevStatus.current === 'lobby' && live.status === 'active') {
+         setBoardingUntil(null);
+         setSettingSail(true);
+         const t = setTimeout(() => setSettingSail(false), 1600);
+         sailPrevStatus.current = live.status;
+         return () => clearTimeout(t);
+      }
+      sailPrevStatus.current = live.status;
    }, [live.status]);
    useEffect(() => {
       if (initial.hostId !== prevHostId.current) {
@@ -671,6 +705,9 @@ export default function OnlineRoomClient({
                onLeaveRoom={handleLeaveRoom}
                navLeaving={leaving}
                onLeaveAsHost={handleLeaveHost}
+               readyIds={readyIds}
+               boardingUntil={boardingUntil}
+               onBoardingUntil={setBoardingUntil}
             />
             {sharedModals}
          </>
@@ -707,6 +744,7 @@ export default function OnlineRoomClient({
    return (
       <>
          {globalToast}
+         {settingSail && <SailOverlay />}
          <KnockInbox knocks={isHost ? knocks : []} onRemove={removeKnock} />
          <Play
             state={state}
@@ -799,6 +837,44 @@ function ContinuationWaitingButton({ deadlineAt }: { deadlineAt: string }) {
    );
 }
 
+function BoardingCountdown({
+   deadlineMs,
+   onElapsed,
+}: {
+   deadlineMs: number;
+   onElapsed: () => void;
+}) {
+   const [secs, setSecs] = useState(() => Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000)));
+   useEffect(() => {
+      const id = setInterval(() => {
+         const s = Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
+         setSecs(s);
+         if (s <= 0) {
+            clearInterval(id);
+            onElapsed();
+         }
+      }, 250);
+      return () => clearInterval(id);
+   }, [deadlineMs, onElapsed]);
+   return (
+      <span className='font-mono font-bold tabular-nums text-[color:var(--color-gold-300)]'>{secs}s</span>
+   );
+}
+
+function SailOverlay() {
+   return (
+      <div className='fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[color:var(--color-abyss-900)]/90 backdrop-blur-sm'>
+         <span className='text-6xl' aria-hidden>
+            ⛵
+         </span>
+         <p className='wordmark-gold pirate-display text-4xl'>Settin&apos; sail!</p>
+         <p className='animate-pulse text-sm text-[color:var(--color-cream-200)]/70'>
+            All hands aboard — hoistin&apos; the anchor…
+         </p>
+      </div>
+   );
+}
+
 function optimisticBank(prev: PublicGameState, actorId: string): PublicGameState {
    const sum = prev.currentStreak.reduce((acc, card) => acc + card.value, 0);
    const players = prev.players.map((p) => (p.id === actorId ? { ...p, coins: p.coins + sum } : p));
@@ -835,6 +911,9 @@ function Lobby({
    continuationDeadline,
    pendingIds,
    seatedIds,
+   readyIds,
+   boardingUntil = null,
+   onBoardingUntil,
 }: {
    state: RoomState;
    userId: string;
@@ -851,10 +930,14 @@ function Lobby({
    continuationDeadline?: string;
    pendingIds?: ReadonlySet<string>;
    seatedIds?: ReadonlySet<string>;
+   readyIds?: ReadonlySet<string>;
+   boardingUntil?: number | null;
+   onBoardingUntil?: (until: number | null) => void;
 }) {
    const isHost = userId === hostId;
    const [error, setError] = useState<string | null>(null);
    const [starting, setStarting] = useState(false);
+   const [readyPending, setReadyPending] = useState(false);
    const [copied, setCopied] = useState(false);
    const [leaving, setLeaving] = useState(false);
    const [togglingVis, setTogglingVis] = useState(false);
@@ -883,19 +966,69 @@ function Lobby({
    );
    const canStart = isHost && visiblePlayers.length >= MIN_PLAYERS;
 
+   // Ready-up only applies to the fresh pre-game lobby, not the post-game
+   // continuation re-lobby (which has its own Continue flow).
+   const readyUpPhase = !continuationDeadline;
+   const crew = visiblePlayers.filter((p) => p.id !== hostId);
+   const readyCrew = crew.filter((p) => readyIds?.has(p.id));
+   const allCrewReady = crew.length > 0 && readyCrew.length === crew.length;
+   const iAmReady = readyIds?.has(userId) ?? false;
+   const boardingActive = readyUpPhase && boardingUntil !== null;
+   const clearBoarding = useCallback(() => onBoardingUntil?.(null), [onBoardingUntil]);
+
    const handleLeaveSpectator = async () => {
       setLeaving(true);
       await leaveSpectator({ code });
       onLeave();
    };
 
-   const start = async () => {
+   const toggleReady = async () => {
       setError(null);
-      setStarting(true);
-      const result = await startOnlineGame({ code });
-      setStarting(false);
+      setReadyPending(true);
+      const result = await setReady({ code, ready: !iAmReady });
+      setReadyPending(false);
       if (!result.ok) setError(result.error);
    };
+
+   // Host start. All crew ready → sail immediately; otherwise open the boarding
+   // countdown so stragglers get a chance before they're dropped.
+   const onStartPressed = async () => {
+      setError(null);
+      if (allCrewReady) {
+         setStarting(true);
+         const result = await startOnlineGame({ code });
+         setStarting(false);
+         if (!result.ok) setError(result.error);
+         return;
+      }
+      const result = await beginBoarding({ code });
+      if (result.ok && result.deadline) onBoardingUntil?.(Date.parse(result.deadline));
+      else if (!result.ok) setError(result.error);
+   };
+
+   // Host drives the boarding finalize: if everyone readies up mid-countdown,
+   // sail now (no drops); at the deadline, drop the unready and sail. The
+   // server re-validates both, and clears boarding either way.
+   useEffect(() => {
+      if (!isHost || !readyUpPhase || boardingUntil === null) return;
+      if (allCrewReady) {
+         void startOnlineGame({ code }).then((r) => {
+            if (!r.ok) setError(r.error);
+         });
+         onBoardingUntil?.(null);
+         return;
+      }
+      const delay = Math.max(0, boardingUntil - Date.now());
+      const handle = setTimeout(() => {
+         void startGameDroppingUnready({ code }).then((r) => {
+            if (!r.ok) setError(r.error);
+         });
+         onBoardingUntil?.(null);
+      }, delay);
+      return () => clearTimeout(handle);
+      // onBoardingUntil is stable (a setState); excluded to avoid needless re-runs.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [isHost, readyUpPhase, boardingUntil, allCrewReady, code]);
 
    const share = async () => {
       const url = typeof window !== 'undefined' ? `${window.location.origin}/play/${code}` : '';
@@ -995,6 +1128,7 @@ function Lobby({
                hostId={hostId}
                youId={userId}
                pendingIds={pendingIds}
+               readyIds={readyUpPhase ? readyIds : undefined}
                renderRowAction={
                   continuationDeadline
                      ? undefined
@@ -1024,7 +1158,7 @@ function Lobby({
 
          {error && <p className='text-center text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
 
-         <div className='mt-auto pt-2 safe-bottom'>
+         <div className='mt-auto flex flex-col gap-2 pt-2 safe-bottom'>
             {isSpectator ? (
                <div className='flex items-center justify-between gap-3 rounded-2xl border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-3 py-2 text-sm'>
                   <span className='text-[color:var(--color-cream-200)]/75'>
@@ -1041,31 +1175,70 @@ function Lobby({
                </div>
             ) : continuationDeadline ? (
                <ContinuationWaitingButton deadlineAt={continuationDeadline} />
+            ) : boardingActive ? (
+               <div className='flex flex-col gap-2'>
+                  <p className='text-center text-sm text-[color:var(--color-cream-200)]/85'>
+                     Settin&apos; sail in{' '}
+                     <BoardingCountdown deadlineMs={boardingUntil!} onElapsed={clearBoarding} /> ·{' '}
+                     {readyCrew.length}/{crew.length} crew ready
+                  </p>
+                  {!isHost && !iAmReady ? (
+                     <PirateButton
+                        variant='primary'
+                        size='lg'
+                        fullWidth
+                        onClick={toggleReady}
+                        loading={readyPending}
+                     >
+                        Ready up — last call!
+                     </PirateButton>
+                  ) : (
+                     <PirateButton variant='secondary' size='lg' fullWidth disabled>
+                        {isHost ? 'Waitin’ for crew…' : 'Ready ✓'}
+                     </PirateButton>
+                  )}
+               </div>
             ) : isHost ? (
                <div className='flex flex-col gap-2'>
                   <PirateButton
                      variant='primary'
                      size='lg'
                      fullWidth
-                     onClick={start}
+                     onClick={onStartPressed}
                      disabled={!canStart}
                      loading={starting}
                   >
-                     Hoist the Colors!
+                     {allCrewReady ? 'Set Sail!' : 'Hoist the Colors!'}
                   </PirateButton>
-                  {!canStart && (
+                  {!canStart ? (
                      <p className='text-center text-xs text-[color:var(--color-cream-200)]/60'>
                         Need at least {MIN_PLAYERS} crewmates.
                      </p>
-                  )}
+                  ) : !allCrewReady ? (
+                     <p className='text-center text-xs text-[color:var(--color-cream-200)]/60'>
+                        {readyCrew.length}/{crew.length} crew ready — sailing gives the rest{' '}
+                        {Math.round(BOARDING_COUNTDOWN_MS / 1000)}s to ready up.
+                     </p>
+                  ) : null}
                   <PirateButton variant='ghost' size='sm' fullWidth onClick={onLeaveAsHost}>
                      Abandon ship
                   </PirateButton>
                </div>
             ) : (
                <div className='flex flex-col gap-2'>
-                  <p className='animate-pulse text-center text-sm text-[color:var(--color-cream-200)]/60'>
-                     Waiting for the captain to hoist the colors…
+                  <PirateButton
+                     variant={iAmReady ? 'secondary' : 'primary'}
+                     size='lg'
+                     fullWidth
+                     onClick={toggleReady}
+                     loading={readyPending}
+                  >
+                     {iAmReady ? 'Ready ✓ — stand down' : 'Ready up!'}
+                  </PirateButton>
+                  <p className='text-center text-xs text-[color:var(--color-cream-200)]/55'>
+                     {iAmReady
+                        ? 'Waitin’ for the captain to set sail…'
+                        : 'Let the captain know yer aboard.'}
                   </p>
                   <PirateButton
                      variant='ghost'

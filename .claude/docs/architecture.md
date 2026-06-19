@@ -120,10 +120,11 @@ A genuine tab close / process kill / network drop closes the WebSocket immediate
 
 1. **Create** — `/play/new` (RSC) calls `createRoom()`. Server generates a 4-char code from a 30-char alphabet (no `0/O/1/I/L`), inserts a `games` row with `status='lobby'`, seats the host via `applyAction({type:'PLAYER_JOIN'})`, and redirects to `/play/{code}`.
 2. **Join** — `/play/join` (form) or `/play/{code}` (auto-gate). `joinRoom({code})` validates lobby + capacity, dispatches `PLAYER_JOIN`, inserts the seat row.
-3. **Start** — Host taps "Hoist the Colors". `startOnlineGame({code})` validates `host_id === auth.uid()`, dispatches `START_GAME` with a `crypto.randomUUID()` seed.
-4. **Play** — Turn validation via `current_player_id === auth.uid()`. DRAW / BANK / END_TURN.
-5. **End** — When deck empties, engine transitions to `'complete'`. `applyAction` detects the transition and bumps `user_stats` for every seated user.
-6. **Cleanup** — Stale lobbies (>2h) and idle active games (>6h) get auto-abandoned by the daily cron (`/api/cron/cleanup`).
+3. **Ready up** — Crew toggle ready in the lobby (`setReady` → `game_players.ready_at`, broadcast as `readyIds` on a `READY_CHANGED` event). The captain isn't gated on a tap toggle.
+4. **Start** — Host taps the start button. If all online crew are ready it sails immediately via `startOnlineGame({code})` (`host_id === auth.uid()`, dispatch `START_GAME` with a `crypto.randomUUID()` seed). Otherwise it opens a **boarding countdown** (`BOARDING_COUNTDOWN_MS`, broadcast as `boardingDeadline` on `BOARDING_STARTED`): stragglers get a last chance to ready; the host's client finalizes — all-ready → start now, or at the deadline `startGameDroppingUnready` drops the unready (reusing the lobby `PLAYER_LEAVE` path) and starts. A brief client-only "settin' sail" overlay covers the lobby→active hand-off.
+5. **Play** — Turn validation via `current_player_id === auth.uid()`. DRAW / BANK / END_TURN.
+6. **End** — When deck empties, engine transitions to `'complete'`. `applyAction` detects the transition and bumps `user_stats` for every seated user.
+7. **Cleanup** — Stale lobbies (>2h) and idle active games (>6h) get auto-abandoned by the daily cron (`/api/cron/cleanup`).
 
 ---
 
