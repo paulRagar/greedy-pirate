@@ -1,0 +1,54 @@
+src/ui/friends/FriendsDrawer.tsx
+  s_a9d5705db96371::t_dddcf1b076f3e6 210-218,224
+  s_a9d5705db96371::t_d37672942f8a51 304-313,321-339
+  s_a9d5705db96371::t_4c5d6024671612 190
+  s_a9d5705db96371::t_3f290f78b3ba5e 245-254
+  s_a9d5705db96371::t_04a8af2c2ea919 18
+  s_a9d5705db96371::t_3ccc702cbd4019 40,48-49
+src/server/db/schema.ts
+  s_a9d5705db96371::t_755ace6ffbeb1f 343-379
+  s_a9d5705db96371::t_3c46e47ef90413 405-406
+src/ui/friends/FriendsDrawer.test.tsx
+  s_a9d5705db96371::t_790eece045a654 27
+  s_a9d5705db96371::t_cfebf809c165d9 37-38
+src/server/actions/roomInviteActions.ts
+  s_a9d5705db96371::t_63606a85a55e21 1-151
+src/server/db/migrations/meta/_journal.json
+  s_a9d5705db96371::t_9c0e90cf2e072a 46-52
+src/server/db/migrations/0006_clammy_ser_duncan.sql
+  s_a9d5705db96371::t_9c0e90cf2e072a 1-16
+src/client/realtime/useFriendInbox.ts
+  s_a9d5705db96371::t_4638328c278dc5 32-34
+  s_a9d5705db96371::t_e74e39f9c1d87b 144-153
+  s_a9d5705db96371::t_dcf4100b0c9858 53
+  s_a9d5705db96371::t_51375833bbee9d 9,18-23
+  s_a9d5705db96371::t_5dbc9ed1c52ef3 68
+  s_a9d5705db96371::t_aa9a0ed7693fd4 80
+  s_a9d5705db96371::t_db2f1c07279b10 126-132
+src/ui/friends/RoomInviteNotice.tsx
+  s_a9d5705db96371::t_82b3e25b9e8f39 1-64
+src/server/db/migrations/meta/0006_snapshot.json
+  s_a9d5705db96371::t_9c0e90cf2e072a 1-1700
+supabase/migrations/20260619050000_room_invites_rls.sql
+  s_a9d5705db96371::t_dae6ff3bd0d901 1-7
+src/ui/friends/FriendsButton.tsx
+  s_a9d5705db96371::t_56f5a31f77149c 4,8,11,14
+  s_a9d5705db96371::t_3b1e0a39ece8ff 116-125,129,142-146,153
+  s_a9d5705db96371::t_4d11c4403a117b 30-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "aba732af8bb0c3a63632bda06f72f4316ec6f127",
+  "prompts": {},
+  "sessions": {
+    "s_a9d5705db96371": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51e0f64a-2890-4331-9237-0973b4790829",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
