@@ -74,32 +74,26 @@ export async function sendFriendRequest(
    if (!target) return { ok: false, error: 'Player not found' };
 
    const pair = canonicalPair(me.id, toUserId);
-   const [existingFriendship, pendingFromSender, pendingToSender, senderBlock, targetBlock] =
-      await Promise.all([
-         db.query.friendships.findFirst({
-            where: and(eq(friendships.userLow, pair.low), eq(friendships.userHigh, pair.high)),
-         }),
-         db.query.friendRequests.findFirst({
-            where: and(
-               eq(friendRequests.fromUserId, me.id),
-               eq(friendRequests.toUserId, toUserId),
-               eq(friendRequests.status, 'pending'),
-            ),
-         }),
-         db.query.friendRequests.findFirst({
-            where: and(
-               eq(friendRequests.fromUserId, toUserId),
-               eq(friendRequests.toUserId, me.id),
-               eq(friendRequests.status, 'pending'),
-            ),
-         }),
-         db.query.userBlocks.findFirst({
-            where: and(eq(userBlocks.blockerId, me.id), eq(userBlocks.blockedId, toUserId)),
-         }),
-         db.query.userBlocks.findFirst({
-            where: and(eq(userBlocks.blockerId, toUserId), eq(userBlocks.blockedId, me.id)),
-         }),
-      ]);
+   const [existingFriendship, pendingFromSender, pendingToSender, blockState] = await Promise.all([
+      db.query.friendships.findFirst({
+         where: and(eq(friendships.userLow, pair.low), eq(friendships.userHigh, pair.high)),
+      }),
+      db.query.friendRequests.findFirst({
+         where: and(
+            eq(friendRequests.fromUserId, me.id),
+            eq(friendRequests.toUserId, toUserId),
+            eq(friendRequests.status, 'pending'),
+         ),
+      }),
+      db.query.friendRequests.findFirst({
+         where: and(
+            eq(friendRequests.fromUserId, toUserId),
+            eq(friendRequests.toUserId, me.id),
+            eq(friendRequests.status, 'pending'),
+         ),
+      }),
+      getBlockState(me.id, toUserId),
+   ]);
 
    const flags: FriendRequestFlags = {
       isSelf: me.id === toUserId,
@@ -107,8 +101,8 @@ export async function sendFriendRequest(
       alreadyFriends: Boolean(existingFriendship),
       pendingFromSender: Boolean(pendingFromSender),
       pendingToSender: Boolean(pendingToSender),
-      senderBlockedTarget: Boolean(senderBlock),
-      targetBlockedSender: Boolean(targetBlock),
+      senderBlockedTarget: blockState.viewerBlockedOther,
+      targetBlockedSender: blockState.otherBlockedViewer,
    };
    const decision = decideFriendRequest(flags);
 
@@ -348,6 +342,115 @@ async function listPendingRequests(direction: 'incoming' | 'outgoing'): Promise<
          createdAt: r.createdAt.toISOString(),
       })),
    };
+}
+
+// ---------------------------------------------------------------------------
+// Block / unblock + the shared block guard
+// ---------------------------------------------------------------------------
+
+/**
+ * Directional block state between a viewer and another user. The shared guard
+ * for every "can these two interact?" check — friend requests today, room
+ * invites / join requests later (GRE-45/46).
+ */
+export async function getBlockState(
+   viewerId: string,
+   otherId: string,
+): Promise<{ viewerBlockedOther: boolean; otherBlockedViewer: boolean }> {
+   const rows = await db.query.userBlocks.findMany({
+      where: or(
+         and(eq(userBlocks.blockerId, viewerId), eq(userBlocks.blockedId, otherId)),
+         and(eq(userBlocks.blockerId, otherId), eq(userBlocks.blockedId, viewerId)),
+      ),
+   });
+   return {
+      viewerBlockedOther: rows.some((r) => r.blockerId === viewerId),
+      otherBlockedViewer: rows.some((r) => r.blockerId === otherId),
+   };
+}
+
+/** Either-direction block — convenience for callers that don't need the direction. */
+export async function isBlockedEitherWay(a: string, b: string): Promise<boolean> {
+   const s = await getBlockState(a, b);
+   return s.viewerBlockedOther || s.otherBlockedViewer;
+}
+
+const BlockSchema = z.object({ userId: z.string().uuid() });
+
+export async function blockUser(
+   input: z.input<typeof BlockSchema>,
+): Promise<FriendActionResult> {
+   const parsed = BlockSchema.safeParse(input);
+   if (!parsed.success) return { ok: false, error: 'Invalid input' };
+   const { userId } = parsed.data;
+
+   const me = await requireUser();
+   if (!me) return { ok: false, error: 'Not signed in' };
+   if (userId === me.id) return { ok: false, error: 'You cannot block yourself' };
+
+   const pair = canonicalPair(me.id, userId);
+   // One transaction: record the block, sever any friendship, and cancel every
+   // pending request in either direction so nothing dangles after the block.
+   await db.transaction(async (tx) => {
+      await tx
+         .insert(userBlocks)
+         .values({ blockerId: me.id, blockedId: userId })
+         .onConflictDoNothing();
+      await tx
+         .delete(friendships)
+         .where(and(eq(friendships.userLow, pair.low), eq(friendships.userHigh, pair.high)));
+      await tx
+         .update(friendRequests)
+         .set({ status: 'cancelled', resolvedAt: new Date() })
+         .where(
+            and(
+               eq(friendRequests.status, 'pending'),
+               or(
+                  and(eq(friendRequests.fromUserId, me.id), eq(friendRequests.toUserId, userId)),
+                  and(eq(friendRequests.fromUserId, userId), eq(friendRequests.toUserId, me.id)),
+               ),
+            ),
+         );
+   });
+   return { ok: true };
+}
+
+const UnblockSchema = z.object({ userId: z.string().uuid() });
+
+export async function unblockUser(
+   input: z.input<typeof UnblockSchema>,
+): Promise<FriendActionResult> {
+   const parsed = UnblockSchema.safeParse(input);
+   if (!parsed.success) return { ok: false, error: 'Invalid input' };
+
+   const me = await requireUser();
+   if (!me) return { ok: false, error: 'Not signed in' };
+
+   await db
+      .delete(userBlocks)
+      .where(and(eq(userBlocks.blockerId, me.id), eq(userBlocks.blockedId, parsed.data.userId)));
+   return { ok: true };
+}
+
+export type BlockedUser = { userId: string; displayName: string };
+
+export type ListBlockedResult =
+   | { ok: true; blocked: BlockedUser[] }
+   | { ok: false; error: string };
+
+/** People the viewer has blocked. Display name only — never email (org PII rule). */
+export async function listBlocked(): Promise<ListBlockedResult> {
+   const me = await requireUser();
+   if (!me) return { ok: false, error: 'Not signed in' };
+
+   const rows = await db
+      .select({ userId: users.id, displayName: users.displayName })
+      .from(userBlocks)
+      .innerJoin(users, eq(users.id, userBlocks.blockedId))
+      .where(eq(userBlocks.blockerId, me.id))
+      .orderBy(desc(userBlocks.createdAt));
+
+   return { ok: true, blocked: rows };
 }
 
 // ---------------------------------------------------------------------------
