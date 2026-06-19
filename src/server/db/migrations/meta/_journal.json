@@ -43,6 +43,13 @@
       "when": 1781881484476,
       "tag": "0005_groovy_virginia_dare",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781893566202,
+      "tag": "0006_clammy_ser_duncan",
+      "breakpoints": true
     }
   ]
 }

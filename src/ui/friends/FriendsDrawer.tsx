@@ -15,6 +15,7 @@ import {
    type PendingRequest,
    type UserSearchResult,
 } from '@/server/actions/friendActions';
+import { inviteFriendToRoom } from '@/server/actions/roomInviteActions';
 import type { FriendInbox } from '@/client/realtime/useFriendInbox';
 import { useFriendsPresence } from '@/client/realtime/useFriendPresence';
 import { haptics } from '@/client/juice/haptics';
@@ -36,6 +37,7 @@ export function FriendsDrawer({
    inbox,
    initialTab = 'friends',
    initialQuery,
+   currentRoomCode,
 }: {
    open: boolean;
    onClose: () => void;
@@ -43,6 +45,8 @@ export function FriendsDrawer({
    initialTab?: FriendsTab;
    /** Pre-fill the Add tab's search (from the `/?add={code}` deep link). */
    initialQuery?: string;
+   /** The room the viewer is currently in (enables per-friend Invite). */
+   currentRoomCode?: string | null;
 }) {
    const titleId = useId();
    const panelRef = useRef<HTMLDivElement>(null);
@@ -183,7 +187,7 @@ export function FriendsDrawer({
             <div className='flex-1 overflow-y-auto p-4'>
                {tab === 'friends' && (
                   <div role='tabpanel' id='friends-panel-friends' aria-labelledby='friends-tab-friends'>
-                     <FriendsList open={open} version={inbox.version} />
+                     <FriendsList open={open} version={inbox.version} currentRoomCode={currentRoomCode} />
                   </div>
                )}
                {tab === 'requests' && (
@@ -203,12 +207,21 @@ export function FriendsDrawer({
    );
 }
 
-function FriendsList({ open, version }: { open: boolean; version: number }) {
+function FriendsList({
+   open,
+   version,
+   currentRoomCode,
+}: {
+   open: boolean;
+   version: number;
+   currentRoomCode?: string | null;
+}) {
    const [state, setState] = useState<
       | { kind: 'loading' }
       | { kind: 'error'; error: string }
       | { kind: 'ready'; friends: FriendSummary[] }
    >({ kind: 'loading' });
+   const [invited, setInvited] = useState<Record<string, 'sending' | 'sent' | 'error'>>({});
 
    useEffect(() => {
       if (!open) return;
@@ -228,6 +241,16 @@ function FriendsList({ open, version }: { open: boolean; version: number }) {
 
    const friendIds = state.kind === 'ready' ? state.friends.map((f) => f.userId) : [];
    const presence = useFriendsPresence(friendIds, open);
+
+   const invite = async (friendId: string) => {
+      if (!currentRoomCode) return;
+      setInvited((m) => ({ ...m, [friendId]: 'sending' }));
+      const res = await inviteFriendToRoom({ friendId, code: currentRoomCode }).catch(() => ({
+         ok: false as const,
+         error: 'Failed',
+      }));
+      setInvited((m) => ({ ...m, [friendId]: res.ok ? 'sent' : 'error' }));
+   };
 
    if (state.kind === 'loading') {
       return <p className='py-8 text-center text-sm text-[color:var(--color-cream-200)]/55'>Hauling in yer crew…</p>;
@@ -278,10 +301,42 @@ function FriendsList({ open, version }: { open: boolean; version: number }) {
                         </span>
                      )}
                   </span>
+                  {/* Invite: only when you're in a room and the friend isn't already in it. */}
+                  {currentRoomCode && inRoom !== currentRoomCode && (
+                     <InviteButton
+                        state={invited[f.userId]}
+                        onClick={() => {
+                           haptics.tap();
+                           void invite(f.userId);
+                        }}
+                     />
+                  )}
                </li>
             );
          })}
       </ul>
+   );
+}
+
+function InviteButton({
+   state,
+   onClick,
+}: {
+   state: 'sending' | 'sent' | 'error' | undefined;
+   onClick: () => void;
+}) {
+   if (state === 'sent') {
+      return <span className='shrink-0 px-3 py-2 text-sm text-[color:var(--color-teal-200)]'>Invited ✓</span>;
+   }
+   return (
+      <button
+         type='button'
+         disabled={state === 'sending'}
+         onClick={onClick}
+         className='shrink-0 rounded-lg border border-[color:var(--color-gold-400)]/60 px-3 py-2 text-sm font-semibold text-[color:var(--color-gold-200)] transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-coral-400)] disabled:opacity-50'
+      >
+         {state === 'sending' ? '…' : state === 'error' ? 'Retry' : 'Invite'}
+      </button>
    );
 }
 
