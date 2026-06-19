@@ -1,0 +1,70 @@
+src/server/actions/gameTurnActions.ts
+  s_4d6d35ac66b468::t_1119642ed9fc41 209-279
+src/game/types.ts
+  s_4d6d35ac66b468::t_e23765f2ab2cef 57-58
+src/game/rules.ts
+  s_4d6d35ac66b468::t_121fa78cd5a997 9-16
+src/server/db/migrations/0007_shallow_molly_hayes.sql
+  s_4d6d35ac66b468::t_01baeff8da2448 1
+src/ui/game-room/TurnClock.tsx
+  s_4d6d35ac66b468::t_4ed704b0c64932 1-104
+src/server/db/migrations/meta/_journal.json
+  s_4d6d35ac66b468::t_01baeff8da2448 53-59
+src/game/engine.ts
+  s_4d6d35ac66b468::t_9953cad2a84e62 64-65
+  s_4d6d35ac66b468::t_65ad3a2b29893c 181-200
+src/server/db/schema.ts
+  s_4d6d35ac66b468::t_0a40e1def65c1c 56-59
+src/game/engine.test.ts
+  s_4d6d35ac66b468::t_e92afed9cc9d4f 256-310
+src/client/realtime/useGameRoom.ts
+  s_4d6d35ac66b468::t_836b81cca9efb5 48-49
+  s_4d6d35ac66b468::t_a2d007764efe2d 96,103
+  s_4d6d35ac66b468::t_b31d7afd86662a 149,156,158
+  s_4d6d35ac66b468::t_06581ad78049b9 277-282
+  s_4d6d35ac66b468::t_d032fe57dab72b 393
+app/play/[code]/OnlineRoomClient.tsx
+  s_4d6d35ac66b468::t_8283f989175d16 43
+  s_4d6d35ac66b468::t_a5ce8e9e7b6d02 154
+  s_4d6d35ac66b468::t_35ddd28d932462 1408-1415
+  s_4d6d35ac66b468::t_832bb60291c497 1270-1300
+  s_4d6d35ac66b468::t_6e6e80cfefdf9a 109
+  s_4d6d35ac66b468::t_47c55e7e96f9a6 720
+  s_4d6d35ac66b468::t_2fb5aba41d407e 63,73
+  s_4d6d35ac66b468::t_048f68c51f99f2 21
+  s_4d6d35ac66b468::t_aae88bce881262 46
+  s_4d6d35ac66b468::t_fca6bdd92f5e96 1135,1152
+src/server/game-room.ts
+  s_4d6d35ac66b468::t_6e9d9d80740833 72
+  s_4d6d35ac66b468::t_93109a593f632f 335
+  s_4d6d35ac66b468::t_43200fedaee107 222-240,257
+  s_4d6d35ac66b468::t_b86aa752953424 17
+  s_4d6d35ac66b468::t_262e76e0a95e4c 348
+app/play/[code]/page.tsx
+  s_4d6d35ac66b468::t_90f422d45ddecf 98
+.claude/docs/game-rules.md
+  s_4d6d35ac66b468::t_8d21bff238b490 132-135
+  s_4d6d35ac66b468::t_ce4e704f101422 110-113
+src/game/CLAUDE.md
+  s_4d6d35ac66b468::t_8c06600c4359d8 41-43
+src/server/realtime/broadcast.ts
+  s_4d6d35ac66b468::t_06a825e45cbaaa 71-76
+src/server/db/migrations/meta/0007_snapshot.json
+  s_4d6d35ac66b468::t_01baeff8da2448 1-1706
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "5d2ee442ab858c7bba08c96642525a65d31c16b6",
+  "prompts": {},
+  "sessions": {
+    "s_4d6d35ac66b468": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "701e5f55-a442-4a8f-9b06-92abbec5c3e4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
