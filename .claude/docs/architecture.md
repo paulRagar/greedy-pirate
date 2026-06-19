@@ -58,7 +58,7 @@ User taps "Plunder"
   → React re-renders
 ```
 
-State lives in the Zustand store. On game completion, a server action persists the game record + bumps `user_stats` for the host (matched by `displayName`).
+State lives in the Zustand store. Local games are **ephemeral** — nothing is persisted to the server and they never touch `user_stats`/achievements/voyage history (they use entered names, not the player's identity). Stats are online-only.
 
 ---
 

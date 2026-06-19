@@ -7,6 +7,7 @@ import { parseRows } from './db/parseRows';
 import { gameEvents, gamePlayers, games } from './db/schema';
 import type { DbGame } from './db/schema';
 import { bumpUserStats } from './stats';
+import { recordVoyage } from './voyages';
 import { broadcastLobbyEvent, broadcastRoomState } from './realtime/broadcast';
 import { fetchSpectators, promoteSpectators } from './spectators';
 import { CONTINUATION_WINDOW_MS, fetchContinuation } from './continuation';
@@ -255,6 +256,15 @@ export async function applyAction(
          if (contributions.length > 0) {
             unlocks = await bumpUserStats(tx, contributions);
          }
+
+         // Archive an immutable voyage record now, while `next.players` still
+         // reflects who actually played — before spectator promotion mutates
+         // the roster and before the continuation flow recycles this row.
+         await recordVoyage(tx, {
+            code: row.code as string,
+            deckVariant: row.deckVariant,
+            state: next,
+         });
 
          // Promote FIFO spectators into open seats so they get a chance to
          // opt into the continuation window. Promoted players need to

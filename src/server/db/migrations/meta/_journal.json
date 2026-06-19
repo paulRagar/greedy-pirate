@@ -29,6 +29,13 @@
       "when": 1781835692214,
       "tag": "0003_achievements_and_biggest_bank",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781843140833,
+      "tag": "0004_voyage_history",
+      "breakpoints": true
     }
   ]
 }

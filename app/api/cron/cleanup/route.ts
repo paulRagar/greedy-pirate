@@ -21,6 +21,7 @@ export const dynamic = 'force-dynamic';
 const AbandonRow = z.object({ abandoned_lobbies: z.number(), abandoned_active: z.number() });
 const PruneRow = z.object({ prune_old_events: z.number() });
 const PurgeRow = z.object({ purge_old_games: z.number() });
+const PurgeVoyagesRow = z.object({ purge_old_voyages: z.number() });
 const ExpireRow = z.object({
    game_code: z.string(),
    request_id: z.string(),
@@ -56,6 +57,12 @@ export async function GET(req: NextRequest) {
          PurgeRow,
       );
       const purgedGames = purgeRows[0]?.purge_old_games ?? 0;
+
+      const purgeVoyageRows = parseRows(
+         await db.execute(sql`select public.purge_old_voyages() as purge_old_voyages`),
+         PurgeVoyagesRow,
+      );
+      const purgedVoyages = purgeVoyageRows[0]?.purge_old_voyages ?? 0;
 
       const expiredRows = parseRows(
          await db.execute(sql`select * from public.expire_pending_join_requests()`),
@@ -116,6 +123,7 @@ export async function GET(req: NextRequest) {
          abandonedActive: abandon.abandoned_active,
          prunedEvents,
          purgedGames,
+         purgedVoyages,
          expiredKnocks: expiredRows.length,
          migratedHosts: migratedRows.length,
          finalizedContinuations,
