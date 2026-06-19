@@ -1,0 +1,28 @@
+src/ui/top-nav/TopNav.tsx
+  s_d97853f5f4fd5a::t_840827b991c328 197-227,229-230
+app/profile/page.tsx
+  s_d97853f5f4fd5a::t_c574a21ccedde6 333,340,344-347
+  s_d97853f5f4fd5a::t_e4dd82a4495257 60-66
+  s_d97853f5f4fd5a::t_aced4e018d467a 11
+  s_d97853f5f4fd5a::t_ac287a4de3f6d5 173-211
+  s_d97853f5f4fd5a::t_20b1fdd420138d 234-251,254
+app/profile/StatInfo.tsx
+  s_d97853f5f4fd5a::t_f177df7495b2a8 36
+  s_d97853f5f4fd5a::t_f6e3135963d61a 1-35,37-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "07f623f660b08e1e60ebc9f0530b496d7a03ac65",
+  "prompts": {},
+  "sessions": {
+    "s_d97853f5f4fd5a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c53574e4-3861-4bc5-9015-658b14bd88f6",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
