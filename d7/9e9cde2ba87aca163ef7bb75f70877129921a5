@@ -1,0 +1,23 @@
+app/play/[code]/OnlineRoomClient.tsx
+  s_4d6d35ac66b468::t_1e0a0b0526e515 142,204
+src/ui/toast/PirateToast.tsx
+  s_4d6d35ac66b468::t_664e2e64cd8afd 12
+  s_4d6d35ac66b468::t_ea91c6e5670094 35-39,41-46,48
+  s_4d6d35ac66b468::t_a43dcfa7733f58 74,76-78,81-93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "d79e9cde2ba87aca163ef7bb75f70877129921a5",
+  "prompts": {},
+  "sessions": {
+    "s_4d6d35ac66b468": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "701e5f55-a442-4a8f-9b06-92abbec5c3e4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
