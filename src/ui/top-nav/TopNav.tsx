@@ -10,6 +10,7 @@ import { haptics } from '@/client/juice/haptics';
 import { AccountLinkModal } from '@/client/auth/AccountLinkModal';
 import { GuestAvatar } from '@/ui/avatar/GuestAvatar';
 import { FriendsButton } from '@/ui/friends/FriendsButton';
+import { OwnPresenceTracker } from '@/ui/friends/OwnPresenceTracker';
 import { SKIP_LEAVE_BEACON_KEY } from '@/lib/leaveBeacon';
 
 const ROOM_PATH_RE = /^\/play\/([A-Z0-9]{4})$/i;
@@ -92,6 +93,7 @@ export function TopNav() {
          </Link>
 
          <span className='flex items-center justify-end gap-1.5'>
+            <OwnPresenceTracker userId={profile?.id ?? null} isAnonymous={profile?.isAnonymous ?? true} />
             <FriendsButton userId={profile?.id ?? null} isAnonymous={profile?.isAnonymous ?? true} />
             <AccountMenu
                displayName={profile?.displayName}

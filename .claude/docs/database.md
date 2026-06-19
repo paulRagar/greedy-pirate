@@ -209,6 +209,18 @@ create policy "users access their own user topic" on realtime.messages
    for all to authenticated
    using (realtime.is_own_user_topic(realtime.topic()))
    with check (realtime.is_own_user_topic(realtime.topic()));
+
+-- presence:{USER_ID} — friend presence (GRE-43). A user tracks their own
+--   online/room state here; friends READ it. Split clauses: read = friend-or-self
+--   (realtime.is_friend_or_self_presence, SECURITY DEFINER reads friendships),
+--   write = self only (realtime.is_own_presence_topic) so nobody forges presence
+--   onto another user's channel. Channels multiplex over one socket.
+create policy "friends read presence topics" on realtime.messages
+   for select to authenticated
+   using (realtime.is_friend_or_self_presence(realtime.topic()));
+create policy "users write only their own presence" on realtime.messages
+   for insert to authenticated
+   with check (realtime.is_own_presence_topic(realtime.topic()));
 ```
 
 Notes:
