@@ -14,7 +14,7 @@ import { CONTINUATION_WINDOW_MS, fetchContinuation } from './continuation';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 import { initialState, reduce } from '@/game/engine';
-import { TURN_CLOCK_MS } from '@/game/rules';
+import { PIRATE_PASS_MS, TURN_CLOCK_MS } from '@/game/rules';
 import { toPublic } from '@/game/public';
 import type { PublicGameState } from '@/game/public';
 import type { DeckVariant, GameAction, GameState } from '@/game/types';
@@ -231,12 +231,16 @@ export async function applyAction(
          next.status === 'active' ? (next.players[next.turnIndex]?.id ?? null) : null;
       const resetClock =
          next.status === 'active' && (nextHolderId !== prevHolderId || action.type === 'DRAW');
+      // A revealed pirate carries no decision — pass on a short fuse instead of
+      // the full turn clock. (Only ever set on the pirate-revealing DRAW; the
+      // next holder's turn resets to the full clock.)
+      const clockMs = next.currentCard?.kind === 'pirate' ? PIRATE_PASS_MS : TURN_CLOCK_MS;
       const turnDeadline =
          next.status !== 'active'
             ? null
             : resetClock
-              ? new Date(Date.now() + TURN_CLOCK_MS)
-              : (row.turnDeadline ?? new Date(Date.now() + TURN_CLOCK_MS));
+              ? new Date(Date.now() + clockMs)
+              : (row.turnDeadline ?? new Date(Date.now() + clockMs));
 
       let unlocks: Record<string, string[]> = {};
       await tx

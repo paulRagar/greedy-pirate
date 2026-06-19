@@ -15,7 +15,6 @@ import type { PublicGameState, RoomState, RoomSpectatorView } from '@/game/publi
 import {
    bankOnline,
    drawOnline,
-   endTurnOnline,
    markPresentOnline,
    skipAbsentTurn,
    timeoutTurn,
@@ -43,7 +42,7 @@ import { StreakStrip } from '@/ui/game-room/StreakStrip';
 import { TurnClock } from '@/ui/game-room/TurnClock';
 import { VictoryModal } from '@/ui/game-room/VictoryModal';
 import { useGameToast } from '@/ui/toast/PirateToast';
-import { MAX_PLAYERS, MIN_PLAYERS, TURN_CLOCK_MS } from '@/game/rules';
+import { MAX_PLAYERS, MIN_PLAYERS, PIRATE_PASS_MS, TURN_CLOCK_MS } from '@/game/rules';
 import { cn } from '@/lib/cn';
 import KnockInbox, { type KnockEntry } from './KnockInbox';
 import HostLeaveModal, { type Candidate } from './HostLeaveModal';
@@ -813,15 +812,6 @@ function optimisticBank(prev: PublicGameState, actorId: string): PublicGameState
    };
 }
 
-function optimisticEndTurn(prev: PublicGameState): PublicGameState {
-   const turnIndex = prev.players.length === 0 ? 0 : (prev.turnIndex + 1) % prev.players.length;
-   return {
-      ...prev,
-      currentCard: null,
-      turnIndex,
-   };
-}
-
 function optimisticDrawStart(prev: PublicGameState): PublicGameState {
    return {
       ...prev,
@@ -1348,14 +1338,6 @@ function Play({
       );
    };
 
-   const handleEndTurn = () => {
-      void wrap(
-         'end',
-         () => endTurnOnline(code),
-         () => applyOptimistic(optimisticEndTurn),
-      );
-   };
-
    return (
       <main
          className={cn('flex min-h-0 flex-1 flex-col gap-2 px-4 pt-2 sm:gap-3', shaking && 'animate-bust-shake')}
@@ -1409,7 +1391,7 @@ function Play({
             {!isComplete && deadlineMs !== null && (
                <TurnClock
                   deadlineMs={deadlineMs}
-                  totalMs={TURN_CLOCK_MS}
+                  totalMs={isPirate ? PIRATE_PASS_MS : TURN_CLOCK_MS}
                   mine={isCurrent && !isSpectator}
                />
             )}
@@ -1430,16 +1412,11 @@ function Play({
                   Waiting on {currentPlayer?.name ?? 'the helm'}…
                </p>
             ) : isPirate ? (
-               <PirateButton
-                  variant='tertiary'
-                  size='lg'
-                  fullWidth
-                  loading={pending === 'end'}
-                  disabled={pending !== null}
-                  onClick={handleEndTurn}
-               >
-                  Pass the Helm
-               </PirateButton>
+               // No decision once you're robbed — the turn passes itself on a
+               // short fuse (the shot clock above). Just a beat, no tap.
+               <p className='animate-pulse text-center text-sm font-semibold text-[color:var(--color-coral-300)]'>
+                  Robbed! Passin&apos; the helm…
+               </p>
             ) : (
                <div className='flex gap-3'>
                   <PirateButton

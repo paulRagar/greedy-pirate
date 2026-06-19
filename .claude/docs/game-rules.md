@@ -125,9 +125,11 @@ function reduce(state: GameState, action: GameAction): GameState;
 
 ### Why an explicit `END_TURN` after a pirate?
 
-A pirate ends the streak but we want a beat — the UI shows the pirate card, animates the shake, and the player taps "Pass the Helm" to advance. Explicit dispatch keeps the UI from racing the state.
+`END_TURN` exists so a pirate gets a beat rather than snapping straight to the next player — the UI shows the pirate card and animates the shake before advancing.
 
-Alternative: have `DRAW` (when it reveals a pirate) auto-advance. We chose the explicit version for UI clarity.
+**Online**, the player no longer taps anything: a revealed pirate is given a short `PIRATE_PASS_MS` (2s) deadline and the shot-clock auto-resolve passes the turn for them (see "Turn shot clock" below). The "Pass the Helm" button is gone — there's no decision once you're robbed. `END_TURN` / `endTurnOnline` remain valid engine/server operations but are no longer triggered by the online UI.
+
+**Local** mode still uses an explicit `END_TURN` (no server clock there).
 
 ### Turn shot clock (online)
 

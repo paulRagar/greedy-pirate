@@ -14,3 +14,11 @@ export const DEFAULT_VARIANT: DeckVariant = 'even_greedier';
  * auto-resolve). The pure engine never reads it — it knows nothing of time.
  */
 export const TURN_CLOCK_MS = 12_000;
+
+/**
+ * Shortened shot clock applied while a pirate is revealed online. There's no
+ * decision to make once you're robbed, so the turn auto-passes after a brief
+ * beat (shake + vignette) instead of waiting on a tap. Server stamps it as the
+ * turn deadline; the client uses it as the countdown total when a pirate shows.
+ */
+export const PIRATE_PASS_MS = 2_000;
