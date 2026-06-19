@@ -2,24 +2,34 @@
 
 import { useState } from 'react';
 import { haptics } from '@/client/juice/haptics';
-import { FriendsDrawer } from './FriendsDrawer';
+import { useFriendInbox } from '@/client/realtime/useFriendInbox';
+import { FriendsDrawer, type FriendsTab } from './FriendsDrawer';
+import { FriendRequestNotice } from './FriendRequestNotice';
 
 /**
  * TopNav entry point for the Friends drawer. Signed-in only — anonymous users
- * render nothing here for now; the locked teaser/upsell is GRE-42. The unread
- * badge is wired by the request-inbox issue (GRE-40); until then `unreadCount`
- * stays 0 and the badge is hidden.
+ * render nothing for now (the locked teaser/upsell is GRE-42). Hosts the
+ * app-wide friend-notification subscription (mounted once via the TopNav): the
+ * unread badge and the incoming on-screen notice both come from it.
  */
 export function FriendsButton({
+   userId,
    isAnonymous,
-   unreadCount = 0,
 }: {
+   userId: string | null;
    isAnonymous: boolean;
-   unreadCount?: number;
 }) {
+   const inbox = useFriendInbox(userId, isAnonymous);
    const [open, setOpen] = useState(false);
+   const [initialTab, setInitialTab] = useState<FriendsTab>('friends');
 
-   if (isAnonymous) return null;
+   if (isAnonymous || !userId) return null;
+
+   const openTo = (tab: FriendsTab) => {
+      setInitialTab(tab);
+      setOpen(true);
+      inbox.dismissNotice();
+   };
 
    return (
       <>
@@ -28,26 +38,40 @@ export function FriendsButton({
             data-testid='friends-trigger'
             onClick={() => {
                haptics.tap();
-               setOpen(true);
+               openTo('friends');
             }}
             aria-haspopup='dialog'
             aria-expanded={open}
-            aria-label={
-               unreadCount > 0 ? `Friends, ${unreadCount} new requests` : 'Friends'
-            }
+            aria-label={inbox.unread > 0 ? `Friends, ${inbox.unread} new requests` : 'Friends'}
             className='group relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-teal-500)]/40 bg-[color:var(--color-deep-800)]/70 text-[color:var(--color-gold-300)] transition-colors hover:border-[color:var(--color-gold-400)]/60 hover:text-[color:var(--color-gold-200)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-coral-400)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-abyss-950)]'
          >
             <CrewIcon />
-            {unreadCount > 0 && (
+            {inbox.unread > 0 && (
                <span
                   aria-hidden='true'
                   className='absolute -right-0.5 -top-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full border border-[color:var(--color-abyss-950)] bg-[color:var(--color-coral-500)] px-1 text-[11px] font-bold leading-none text-white'
                >
-                  {unreadCount > 9 ? '9+' : unreadCount}
+                  {inbox.unread > 9 ? '9+' : inbox.unread}
                </span>
             )}
          </button>
-         <FriendsDrawer open={open} onClose={() => setOpen(false)} />
+
+         {/* Live notice only when the drawer is closed — open the drawer and the
+             Requests list updates in place instead. */}
+         {!open && (
+            <FriendRequestNotice
+               notice={inbox.notice}
+               onView={() => openTo('requests')}
+               onDismiss={inbox.dismissNotice}
+            />
+         )}
+
+         <FriendsDrawer
+            open={open}
+            onClose={() => setOpen(false)}
+            inbox={inbox}
+            initialTab={initialTab}
+         />
       </>
    );
 }
