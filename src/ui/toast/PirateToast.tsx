@@ -32,10 +32,10 @@ export function useGameToast(duration = 1600) {
    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
    const show = useCallback(
-      (message: string, tone: ToastTone = 'gold') => {
+      (message: string, tone: ToastTone = 'gold', durationMs: number = duration) => {
          if (timer.current) clearTimeout(timer.current);
          setToast({ id: Date.now(), message, tone });
-         timer.current = setTimeout(() => setToast(null), duration);
+         timer.current = setTimeout(() => setToast(null), durationMs);
       },
       [duration],
    );
