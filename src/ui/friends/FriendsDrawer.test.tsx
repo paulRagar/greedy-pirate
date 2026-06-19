@@ -24,6 +24,7 @@ vi.mock('@/client/juice/haptics', () => ({ haptics: { tap: vi.fn() } }));
 vi.mock('@/client/realtime/useFriendPresence', () => ({
    useFriendsPresence: () => new Map(),
 }));
+vi.mock('@/server/actions/roomInviteActions', () => ({ inviteFriendToRoom: vi.fn() }));
 
 import { FriendsDrawer } from './FriendsDrawer';
 import type { FriendInbox } from '@/client/realtime/useFriendInbox';
@@ -33,6 +34,8 @@ function makeInbox(over: Partial<FriendInbox> = {}): FriendInbox {
       unread: 0,
       notice: null,
       dismissNotice: vi.fn(),
+      roomInvite: null,
+      dismissRoomInvite: vi.fn(),
       version: 0,
       onIncomingResolved: vi.fn(),
       refreshUnread: vi.fn(),

@@ -1,12 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { haptics } from '@/client/juice/haptics';
 import { AccountLinkModal } from '@/client/auth/AccountLinkModal';
 import { useFriendInbox } from '@/client/realtime/useFriendInbox';
+import { acceptRoomInvite } from '@/server/actions/roomInviteActions';
 import { FriendsDrawer, type FriendsTab } from './FriendsDrawer';
 import { FriendRequestNotice } from './FriendRequestNotice';
+import { RoomInviteNotice } from './RoomInviteNotice';
 import { FriendsTeaser } from './FriendsTeaser';
+
+const ROOM_PATH_RE = /^\/play\/([a-z0-9]{4})$/i;
 
 /**
  * TopNav entry point for friends. Shown to everyone signed in OR anonymous —
@@ -22,6 +27,9 @@ export function FriendsButton({
    isAnonymous: boolean;
 }) {
    const inbox = useFriendInbox(userId, isAnonymous);
+   const router = useRouter();
+   const pathname = usePathname();
+   const currentRoomCode = pathname?.match(ROOM_PATH_RE)?.[1]?.toUpperCase() ?? null;
    const [open, setOpen] = useState(false);
    const [initialTab, setInitialTab] = useState<FriendsTab>('friends');
    const [initialQuery, setInitialQuery] = useState<string | undefined>(undefined);
@@ -105,10 +113,20 @@ export function FriendsButton({
       );
    }
 
+   const joinInvite = async () => {
+      const invite = inbox.roomInvite;
+      if (!invite) return;
+      inbox.dismissRoomInvite();
+      // Redeem the invite (bypasses the knock); fall through to the room either
+      // way — if the invite expired, the normal join/knock flow takes over.
+      await acceptRoomInvite({ code: invite.code }).catch(() => {});
+      router.push(`/play/${invite.code}`);
+   };
+
    return (
       <>
          {Icon}
-         {/* Live notice only when the drawer is closed. */}
+         {/* Live notices only when the drawer is closed. */}
          {!open && (
             <FriendRequestNotice
                notice={inbox.notice}
@@ -121,12 +139,18 @@ export function FriendsButton({
                onDismiss={inbox.dismissNotice}
             />
          )}
+         <RoomInviteNotice
+            invite={inbox.roomInvite}
+            onJoin={() => void joinInvite()}
+            onDismiss={inbox.dismissRoomInvite}
+         />
          <FriendsDrawer
             open={open}
             onClose={() => setOpen(false)}
             inbox={inbox}
             initialTab={initialTab}
             initialQuery={initialQuery}
+            currentRoomCode={currentRoomCode}
          />
       </>
    );

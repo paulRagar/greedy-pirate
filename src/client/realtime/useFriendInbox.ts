@@ -6,6 +6,7 @@ import { listIncomingRequests } from '@/server/actions/friendActions';
 
 const FRIEND_REQUESTED_EVENT = 'friend:requested';
 const FRIEND_RESOLVED_EVENT = 'friend:resolved';
+const ROOM_INVITE_EVENT = 'room:invite';
 
 /** Live incoming friend request — drives the on-screen notice. */
 export type FriendNotice = {
@@ -14,12 +15,23 @@ export type FriendNotice = {
    fromDisplayName: string;
 };
 
+/** Live room invite from a friend — drives the join notice. */
+export type RoomInviteNotice = {
+   code: string;
+   fromUserId: string;
+   fromDisplayName: string;
+   isPublic: boolean;
+};
+
 export type FriendInbox = {
    /** Pending incoming requests — the TopNav badge count. */
    unread: number;
    /** Newest live incoming request to surface as a notice, or null. */
    notice: FriendNotice | null;
    dismissNotice: () => void;
+   /** Newest live room invite from a friend, or null. */
+   roomInvite: RoomInviteNotice | null;
+   dismissRoomInvite: () => void;
    /** Bumped whenever the graph changes server-side; open panels refetch on it. */
    version: number;
    /** Recipient acted on an incoming request (accept/decline): drop one + refetch. */
@@ -38,6 +50,7 @@ export type FriendInbox = {
 export function useFriendInbox(userId: string | null, isAnonymous: boolean): FriendInbox {
    const [unread, setUnread] = useState(0);
    const [notice, setNotice] = useState<FriendNotice | null>(null);
+   const [roomInvite, setRoomInvite] = useState<RoomInviteNotice | null>(null);
    const [version, setVersion] = useState(0);
 
    const refreshUnread = useCallback(() => {
@@ -52,6 +65,7 @@ export function useFriendInbox(userId: string | null, isAnonymous: boolean): Fri
    }, [userId, isAnonymous]);
 
    const dismissNotice = useCallback(() => setNotice(null), []);
+   const dismissRoomInvite = useCallback(() => setRoomInvite(null), []);
 
    const onIncomingResolved = useCallback(() => {
       setUnread((u) => Math.max(0, u - 1));
@@ -63,6 +77,7 @@ export function useFriendInbox(userId: string | null, isAnonymous: boolean): Fri
       if (!userId || isAnonymous) {
          setUnread(0);
          setNotice(null);
+         setRoomInvite(null);
          return;
       }
       refreshUnread();
@@ -108,6 +123,13 @@ export function useFriendInbox(userId: string | null, isAnonymous: boolean): Fri
             // A request we SENT was accepted/declined — outgoing changed.
             setVersion((v) => v + 1);
          });
+         channel.on(
+            'broadcast',
+            { event: ROOM_INVITE_EVENT },
+            (message: { payload?: RoomInviteNotice }) => {
+               if (message.payload) setRoomInvite(message.payload);
+            },
+         );
          channel.subscribe();
       };
 
@@ -119,5 +141,14 @@ export function useFriendInbox(userId: string | null, isAnonymous: boolean): Fri
       };
    }, [userId, isAnonymous]);
 
-   return { unread, notice, dismissNotice, version, onIncomingResolved, refreshUnread };
+   return {
+      unread,
+      notice,
+      dismissNotice,
+      roomInvite,
+      dismissRoomInvite,
+      version,
+      onIncomingResolved,
+      refreshUnread,
+   };
 }

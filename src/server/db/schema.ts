@@ -340,6 +340,43 @@ export const userBlocks = pgTable(
    }),
 );
 
+/**
+ * A friend's invitation to join a specific room. Short-lived; lets the
+ * recipient bypass the knock (they were invited by a member). Written by
+ * `inviteFriendToRoom`, redeemed by `acceptRoomInvite` (GRE-45).
+ */
+export const roomInvites = pgTable(
+   'room_invites',
+   {
+      id: uuid('id').primaryKey().defaultRandom(),
+      gameId: uuid('game_id')
+         .notNull()
+         .references(() => games.id, { onDelete: 'cascade' }),
+      fromUserId: uuid('from_user_id')
+         .notNull()
+         .references(() => users.id, { onDelete: 'cascade' }),
+      toUserId: uuid('to_user_id')
+         .notNull()
+         .references(() => users.id, { onDelete: 'cascade' }),
+      status: text('status', {
+         enum: ['pending', 'accepted', 'declined', 'cancelled', 'expired'],
+      })
+         .notNull()
+         .default('pending'),
+      createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+      expiresAt: timestamp('expires_at', { withTimezone: true })
+         .notNull()
+         .default(sql`now() + interval '2 minutes'`),
+      resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+   },
+   (t) => ({
+      onePendingPerPair: uniqueIndex('room_invites_one_pending_idx')
+         .on(t.gameId, t.toUserId)
+         .where(sql`status = 'pending'`),
+      toStatusIdx: index('room_invites_to_status_idx').on(t.toUserId, t.status),
+   }),
+);
+
 export type DbUser = typeof users.$inferSelect;
 export type DbUserInsert = typeof users.$inferInsert;
 export type DbGame = typeof games.$inferSelect;
@@ -365,3 +402,5 @@ export type DbFriendRequest = typeof friendRequests.$inferSelect;
 export type DbFriendRequestInsert = typeof friendRequests.$inferInsert;
 export type DbUserBlock = typeof userBlocks.$inferSelect;
 export type DbUserBlockInsert = typeof userBlocks.$inferInsert;
+export type DbRoomInvite = typeof roomInvites.$inferSelect;
+export type DbRoomInviteInsert = typeof roomInvites.$inferInsert;
