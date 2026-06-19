@@ -1,0 +1,51 @@
+app/api/cron/cleanup/route.ts
+  s_d97853f5f4fd5a::t_2379079e3e52a5 126
+  s_d97853f5f4fd5a::t_cc8a73e0e24022 24
+  s_d97853f5f4fd5a::t_19ca8cc6ffd41b 61-66
+.claude/docs/database.md
+  s_d97853f5f4fd5a::t_bc4258ccfed553 113-121
+src/server/game-room.ts
+  s_d97853f5f4fd5a::t_54b0e3f501b1c7 260-268
+  s_d97853f5f4fd5a::t_b825cad8c521f0 10
+src/server/db/migrations/meta/0004_snapshot.json
+  s_d97853f5f4fd5a::t_95160c0b3506c3 1-1186
+app/profile/page.tsx
+  s_d97853f5f4fd5a::t_277ae651e394e5 119-122
+  s_d97853f5f4fd5a::t_add793086eb810 2,7,14-16
+  s_d97853f5f4fd5a::t_c99c5e47780c1a 252-280
+src/server/db/migrations/meta/_journal.json
+  s_d97853f5f4fd5a::t_95160c0b3506c3 32-38
+src/server/db/schema.ts
+  s_d97853f5f4fd5a::t_b835f72203b3e4 268-271
+  s_d97853f5f4fd5a::t_9146b1117893cb 206-252
+src/server/db/migrations/0004_voyage_history.sql
+  s_d97853f5f4fd5a::t_95160c0b3506c3 1-29
+src/server/voyages.ts
+  s_d97853f5f4fd5a::t_33eb59c2b0bb9c 2-3,5
+  s_d97853f5f4fd5a::t_6366abc1581f03 1,4,6-56
+  s_d97853f5f4fd5a::t_4a012e40255c60 57-112
+supabase/migrations/20260619010000_voyages_rls_and_purge.sql
+  s_d97853f5f4fd5a::t_8e50dc7c62cb7e 1-49
+.claude/docs/architecture.md
+  s_d97853f5f4fd5a::t_763fa0a2b92611 61
+app/profile/voyages/page.tsx
+  s_d97853f5f4fd5a::t_08cac1e4139d5a 1-52
+app/profile/VoyageCard.tsx
+  s_d97853f5f4fd5a::t_fbecb02ff46ac7 1-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "8f09ee135a0eea2ed8c888dab2e7497a859e0b1d",
+  "prompts": {},
+  "sessions": {
+    "s_d97853f5f4fd5a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c53574e4-3861-4bc5-9015-658b14bd88f6",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
