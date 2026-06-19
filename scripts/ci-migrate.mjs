@@ -11,6 +11,16 @@
 //
 // Local builds (no VERCEL env) skip migrations entirely.
 // Set SKIP_MIGRATIONS=1 on Vercel to bypass (e.g. infra-only deploys).
+//
+// Shared preview DB: all branch previews deploy against ONE preview database,
+// so a branch's preview can push migrations that aren't on main yet. A later
+// branch that lacks those migrations then fails `supabase db push` with
+// "Remote migration versions not found in local migrations directory" — the
+// remote is ahead of the branch. On PREVIEW that drift is expected and harmless
+// (the missing migrations belong to other in-flight branches), so we log it and
+// continue. PRODUCTION stays strict — any push failure there fails the build.
+// Genuine migration errors (bad SQL) still fail preview too; only the
+// remote-ahead drift is tolerated.
 
 import { spawnSync } from 'node:child_process';
 
@@ -61,15 +71,34 @@ function run(label, cmd, args, extraEnv = {}) {
    console.log(`[ci-migrate] ✓ ${label} done.`);
 }
 
+// Drizzle (schema) — always fatal. Its forward-only journal apply doesn't trip
+// on a remote that's ahead, so drift never surfaces here.
 run('drizzle-kit migrate', 'npx', ['drizzle-kit', 'migrate'], { DATABASE_URL: migrationUrl });
 
-run('supabase db push', 'npx', [
-   'supabase',
-   'db',
-   'push',
-   '--db-url',
-   migrationUrl,
-   '--include-all',
-]);
+// supabase db push (RLS / triggers / functions) — strict remote-vs-local check.
+// Tolerate only the remote-ahead drift on preview; fail on anything else.
+const isProd = env === 'production';
+const pushArgs = ['supabase', 'db', 'push', '--db-url', migrationUrl, '--include-all'];
+console.log('\n[ci-migrate] ▶ supabase db push: npx supabase db push --db-url <redacted-url> --include-all');
+const push = spawnSync('npx', pushArgs, { encoding: 'utf8', env: process.env });
+if (push.stdout) process.stdout.write(push.stdout);
+if (push.stderr) process.stderr.write(push.stderr);
+
+if (push.status === 0) {
+   console.log('[ci-migrate] ✓ supabase db push done.');
+} else {
+   const output = `${push.stdout ?? ''}${push.stderr ?? ''}`;
+   const remoteAheadDrift = /Remote migration versions not found in local migrations directory/i.test(
+      output,
+   );
+   if (!isProd && remoteAheadDrift) {
+      console.warn(
+         '[ci-migrate] ⚠ preview DB is ahead of this branch (another in-flight branch pushed newer migrations to the shared preview DB). Skipping supabase db push for this preview — production stays strict.',
+      );
+   } else {
+      console.error(`[ci-migrate] ✗ supabase db push failed (exit ${push.status}).`);
+      process.exit(push.status ?? 1);
+   }
+}
 
 console.log('\n[ci-migrate] all migrations applied.');
