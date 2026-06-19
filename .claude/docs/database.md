@@ -181,6 +181,8 @@ create policy game_events_co_member_read on public.game_events   for select usin
 -- No public write policies are needed.
 ```
 
+**Table grants (GRE-52).** RLS gates *which rows* a role sees, but PostgREST checks *table privileges* first — a role with no `SELECT` grant gets a **403 before RLS is consulted** (an RLS-only denial is `200 []`). The app's one client-side read is `useCurrentUser` (`supabase.from('users')`), so `public.users` has an explicit `grant select … to anon, authenticated` (`20260619030000_grant_users_select.sql`); `users_self_read` still restricts it to the caller's own row. Don't rely on Supabase's implicit default-privilege grant — it's lost on a local `supabase db reset`. Other public tables intentionally have **no** client `SELECT` grant (clients reach them only via service-role server actions).
+
 **Realtime (`realtime.messages`)** — added in `20260618000000_realtime_private_room_channels.sql` (GRE-6). Private channels are deny-by-default; two permissive policies open them to the right members:
 
 ```sql
