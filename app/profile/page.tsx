@@ -12,6 +12,7 @@ import { AccountSettings } from '@/client/auth/AccountSettings';
 import { ProfileNameHeader } from './ProfileNameHeader';
 import { StatInfo } from './StatInfo';
 import { VoyageCard } from './VoyageCard';
+import { BlockedPlayers } from './BlockedPlayers';
 
 const RECENT_VOYAGES_PREVIEW = 3;
 
@@ -277,6 +278,8 @@ export default async function ProfilePage({
                </ul>
             )}
          </section>
+
+         <BlockedPlayers />
 
          {profile?.email && <AccountSettings currentEmail={profile.email} />}
       </main>
