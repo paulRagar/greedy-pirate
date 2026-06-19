@@ -1,0 +1,22 @@
+-- Explicit SELECT grant on public.users for anon + authenticated (GRE-52).
+--
+-- The app's only client-side direct read is useCurrentUser.refreshProfile():
+--   supabase.from('users').select('id, display_name, is_anonymous')
+-- For that to work, the anon/authenticated roles need SELECT on the table —
+-- PostgREST checks table privileges BEFORE RLS, so without the grant the read
+-- 403s (an RLS-only denial would return 200 []), the profile comes back null,
+-- and the UI falls back to the anonymous state even after a successful sign-in.
+--
+-- Until now we relied on Supabase's implicit default-privilege grant to
+-- anon/authenticated. That holds on hosted projects but is lost on a local
+-- `supabase db reset` (the Drizzle-created tables miss the default-priv grant),
+-- which silently breaks local auth. Make it explicit so every environment is
+-- deterministic.
+--
+-- Safe re: PII: the users_self_read policy (auth.uid() = id, from
+-- 20260610180000_rls_and_triggers.sql) still restricts every caller to their
+-- OWN row, so a user can only read their own profile (incl. their own email).
+-- No cross-user exposure. SELECT only — all writes stay on the service role.
+-- `users` is the only client-read public table, so the grant is scoped to it.
+
+grant select on table public.users to anon, authenticated;
