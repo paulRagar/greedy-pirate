@@ -1,0 +1,41 @@
+src/server/db/migrations/0005_groovy_virginia_dare.sql
+  s_a9d5705db96371::t_f6f2eac24fd172 1-41
+supabase/migrations/20260619020000_friends_graph.sql
+  s_a9d5705db96371::t_ea6cfca483af65 1-118
+src/server/realtime/broadcast.ts
+  s_a9d5705db96371::t_a9f6898693c9a5 190-239
+  s_a9d5705db96371::t_b9f34f633cdda8 11-13
+  s_a9d5705db96371::t_dba446882d4385 28-37
+  s_a9d5705db96371::t_b4a61f9f4281e3 43-45
+src/server/db/migrations/meta/0005_snapshot.json
+  s_a9d5705db96371::t_f6f2eac24fd172 1-1551
+src/server/db/schema.ts
+  s_a9d5705db96371::t_ef806275938dcf 6
+  s_a9d5705db96371::t_d99b77d9f99c53 31-35
+  s_a9d5705db96371::t_e1ca5003fcabac 362-367
+src/server/db/migrations/meta/_journal.json
+  s_a9d5705db96371::t_f6f2eac24fd172 39-45
+src/server/realtime/broadcast.test.ts
+  s_a9d5705db96371::t_1a094884e71be7 90-101
+  s_a9d5705db96371::t_e21d605e7490d5 7,12
+.claude/docs/database.md
+  s_a9d5705db96371::t_054d76559cd2d8 202-209
+  s_a9d5705db96371::t_ee61da1d60a358 25
+  s_a9d5705db96371::t_26f59db66a7b91 123-133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "7fa622aa90836413d7d77606710c35006e1f93a9",
+  "prompts": {},
+  "sessions": {
+    "s_a9d5705db96371": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51e0f64a-2890-4331-9237-0973b4790829",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
