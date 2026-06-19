@@ -1,0 +1,22 @@
+app/profile/BlockedPlayers.tsx
+  s_a9d5705db96371::t_6c2dd86083389a 1-77
+app/profile/page.tsx
+  s_a9d5705db96371::t_b390e450f83a0a 282-283
+  s_a9d5705db96371::t_f60fdd10db770a 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "39cf752070516e560ea34d950eed8fc6df4075f1",
+  "prompts": {},
+  "sessions": {
+    "s_a9d5705db96371": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51e0f64a-2890-4331-9237-0973b4790829",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
