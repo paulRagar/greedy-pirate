@@ -227,6 +227,18 @@ export function useGameRoom(
             },
          });
 
+         // supabase caches channels by topic. Under React StrictMode (dev) the
+         // effect double-invokes, and the async setAuth() above lets a second
+         // invocation reach here before the first's channel lands in the
+         // registry — so both pass the teardown, then supabase hands the SAME
+         // (already-subscribed) instance back to the second. Re-adding .on()
+         // after subscribe() throws. If the channel isn't brand new, an earlier
+         // invocation already owns + wired it: adopt it and bail.
+         if (channel.state !== 'closed') {
+            if (channel.state === 'joined') setStatus('connected');
+            return;
+         }
+
          channel.on(
             'broadcast',
             { event: ROOM_BROADCAST_EVENT },
