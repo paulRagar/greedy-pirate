@@ -1,0 +1,21 @@
+src/client/realtime/useGameRoom.ts
+  s_9a4c6f733b206a::t_23a6fc4017658f 188
+  s_9a4c6f733b206a::t_cd40e1da45d5b8 213-247,249-259,261-323,327,329
+  s_9a4c6f733b206a::t_63c77e4a602e46 107-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "a10ed2d861f76e3b4500ac691941219527f644e7",
+  "prompts": {},
+  "sessions": {
+    "s_9a4c6f733b206a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7116e7ef-affe-42fc-8b8d-122c9560e61f",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
