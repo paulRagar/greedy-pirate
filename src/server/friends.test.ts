@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { canonicalPair, decideFriendRequest, type FriendRequestFlags } from './friends';
+import {
+   canonicalPair,
+   classifyRelationship,
+   decideFriendRequest,
+   type FriendRequestFlags,
+} from './friends';
 
 const NONE: FriendRequestFlags = {
    isSelf: false,
@@ -82,5 +87,37 @@ describe('decideFriendRequest', () => {
          pendingFromSender: true,
       });
       expect(d).toEqual({ action: 'accept_reverse' });
+   });
+});
+
+describe('classifyRelationship', () => {
+   const REL = {
+      isSelf: false,
+      isFriend: false,
+      pendingFromViewer: false,
+      pendingToViewer: false,
+   };
+
+   it('returns none with no relationship', () => {
+      expect(classifyRelationship(REL)).toBe('none');
+   });
+
+   it('returns self for the viewer', () => {
+      expect(classifyRelationship({ ...REL, isSelf: true })).toBe('self');
+   });
+
+   it('returns friend when already friends', () => {
+      expect(classifyRelationship({ ...REL, isFriend: true })).toBe('friend');
+   });
+
+   it('distinguishes outgoing vs incoming pending', () => {
+      expect(classifyRelationship({ ...REL, pendingFromViewer: true })).toBe('pending_out');
+      expect(classifyRelationship({ ...REL, pendingToViewer: true })).toBe('pending_in');
+   });
+
+   it('self outranks every other flag', () => {
+      expect(
+         classifyRelationship({ isSelf: true, isFriend: true, pendingFromViewer: true, pendingToViewer: true }),
+      ).toBe('self');
    });
 });

@@ -66,3 +66,23 @@ export function decideFriendRequest(flags: FriendRequestFlags): FriendRequestDec
    if (flags.pendingFromSender) return { action: 'already_pending' };
    return { action: 'create' };
 }
+
+/** How a search result relates to the viewer — drives the Add-tab row action. */
+export type FriendRelationship = 'self' | 'friend' | 'pending_out' | 'pending_in' | 'none';
+
+/**
+ * Classify a candidate relative to the viewer for search results. `pending_out`
+ * = the viewer sent them a request; `pending_in` = they sent the viewer one.
+ */
+export function classifyRelationship(flags: {
+   isSelf: boolean;
+   isFriend: boolean;
+   pendingFromViewer: boolean;
+   pendingToViewer: boolean;
+}): FriendRelationship {
+   if (flags.isSelf) return 'self';
+   if (flags.isFriend) return 'friend';
+   if (flags.pendingFromViewer) return 'pending_out';
+   if (flags.pendingToViewer) return 'pending_in';
+   return 'none';
+}
