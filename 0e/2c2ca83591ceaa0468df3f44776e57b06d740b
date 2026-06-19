@@ -1,0 +1,21 @@
+supabase/migrations/20260619030000_grant_users_select.sql
+  s_a9d5705db96371::t_568d7189b8c9a3 1-22
+.claude/docs/database.md
+  s_a9d5705db96371::t_4a33d27f8a1948 184-185
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "0e2c2ca83591ceaa0468df3f44776e57b06d740b",
+  "prompts": {},
+  "sessions": {
+    "s_a9d5705db96371": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51e0f64a-2890-4331-9237-0973b4790829",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
