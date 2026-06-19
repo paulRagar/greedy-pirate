@@ -94,7 +94,6 @@ export default function OnlineRoomClient({
       | null
    >(null);
    const [plankedReason, setPlankedReason] = useState<'kicked' | 'hesitated' | null>(null);
-   const [captainPromoted, setCaptainPromoted] = useState(false);
    // Absolute epoch-ms deadline of an in-progress lobby boarding countdown,
    // or null when none is running. Set by the host on begin, and by everyone
    // on the BOARDING_STARTED broadcast.
@@ -138,15 +137,13 @@ export default function OnlineRoomClient({
             // gets their notice immediately — no router.refresh roundtrip.
             const broadcastHostId = (body as { hostId?: string } | undefined)?.hostId;
             if (broadcastHostId) {
-               setHostId((prev) => {
-                  if (prev !== broadcastHostId) {
-                     if (broadcastHostId === userId && prev !== userId) {
-                        setCaptainPromoted(true);
-                     }
-                     prevHostId.current = broadcastHostId;
+               if (broadcastHostId !== prevHostId.current) {
+                  if (broadcastHostId === userId && prevHostId.current !== userId) {
+                     showToast('The wheel be yours — yer the captain now! 🧭', 'gold');
                   }
-                  return broadcastHostId;
-               });
+                  prevHostId.current = broadcastHostId;
+               }
+               setHostId(broadcastHostId);
             } else if (eventType === 'HOST_CHANGED') {
                // Fallback for legacy broadcasts without hostId.
                router.refresh();
@@ -204,11 +201,13 @@ export default function OnlineRoomClient({
    useEffect(() => {
       if (initial.hostId !== prevHostId.current) {
          if (initial.hostId === userId && prevHostId.current !== userId) {
-            setCaptainPromoted(true);
+            showToast('The wheel be yours — yer the captain now! 🧭', 'gold');
          }
          prevHostId.current = initial.hostId;
       }
       setHostId(initial.hostId);
+      // showToast is stable (from useGameToast); excluded to avoid re-running.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [initial.hostId, userId]);
 
    const didContinueRef = useRef(false);
@@ -665,28 +664,6 @@ export default function OnlineRoomClient({
                   onClick={goToLobby}
                >
                   Return to docks
-               </PirateButton>
-            </div>
-         </PirateModal>
-         <PirateModal
-            open={captainPromoted}
-            onClose={() => setCaptainPromoted(false)}
-            title='Captain!'
-         >
-            <div className='flex flex-col items-center gap-3 text-center'>
-               <span className='text-5xl' aria-hidden>
-                  🧭
-               </span>
-               <p className='text-sm text-[color:var(--color-cream-200)]/85'>
-                  The wheel is yours. Hoist the colors when the crew is ready.
-               </p>
-               <PirateButton
-                  variant='primary'
-                  size='lg'
-                  fullWidth
-                  onClick={() => setCaptainPromoted(false)}
-               >
-                  Aye aye
                </PirateButton>
             </div>
          </PirateModal>
