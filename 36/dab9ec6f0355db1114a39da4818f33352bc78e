@@ -1,0 +1,35 @@
+src/ui/friends/FriendsDrawer.tsx
+  s_a9d5705db96371::t_0a7597e544d70d 19
+  s_a9d5705db96371::t_1f330210a1587a 229-231
+  s_a9d5705db96371::t_319c13ad4ef413 249-283
+.claude/docs/database.md
+  s_a9d5705db96371::t_76d99d490c9fe1 212-223
+src/ui/friends/FriendsDrawer.test.tsx
+  s_a9d5705db96371::t_e74d025b694c6c 24-26
+src/ui/friends/OwnPresenceTracker.tsx
+  s_a9d5705db96371::t_81f52220db8e3e 1-18
+src/ui/top-nav/TopNav.tsx
+  s_a9d5705db96371::t_d56640c7baf098 96
+  s_a9d5705db96371::t_7e427b2d9de2e9 13
+supabase/migrations/20260619040000_presence_channels.sql
+  s_a9d5705db96371::t_b875431c4bf45f 1-64
+src/client/realtime/useFriendPresence.ts
+  s_a9d5705db96371::t_aa51505f13bb09 1-58,60-159
+  s_a9d5705db96371::t_4409e5131efe2f 59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "36dab9ec6f0355db1114a39da4818f33352bc78e",
+  "prompts": {},
+  "sessions": {
+    "s_a9d5705db96371": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51e0f64a-2890-4331-9237-0973b4790829",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
