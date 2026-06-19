@@ -110,6 +110,15 @@ One row per unlocked achievement per user (GRE-26).
 
 PK `(user_id, code)`. RLS: self-read only; the server writes via the direct (service-role) connection.
 
+### `voyages` + `voyage_players`
+Immutable archive of finished **online** games (GRE-34). Written in the `justCompleted` block of `applyAction` (`recordVoyage`), **before** the continuation/restart flow recycles the live `games` row — so a player's logbook survives independently of `games`.
+
+`voyages`: `id` PK, `code` (room code at play time, reference only — not a live FK), `deck_variant`, `player_count`, `winner_user_id` (FK → users, set null on account delete), `winner_name` (snapshot), `completed_at`. Index on `completed_at`.
+
+`voyage_players`: `id` PK, `voyage_id` (FK → voyages cascade), `user_id` (FK → users, set null), `display_name` (snapshot), `placement` (1-based, coins desc), `coins`, `is_winner`, `pirates_encountered`, `biggest_bank`, `max_streak`. Indexes on `voyage_id` and `user_id`.
+
+RLS: a participant can read their voyages and the full roster of any voyage they were in. Server reads via the direct connection. Retention: `purge_old_voyages()` deletes voyages older than 365 days (run by the cleanup cron); cascades clear `voyage_players`.
+
 ---
 
 ## State JSONB shape

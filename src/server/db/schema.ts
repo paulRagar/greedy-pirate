@@ -203,6 +203,53 @@ export const userAchievements = pgTable(
    }),
 );
 
+/**
+ * Immutable archive of a finished online game. Written at completion, before
+ * the live `games` row is recycled by the continuation/restart flow. This is
+ * the source of truth for a player's voyage logbook — independent of `games`.
+ */
+export const voyages = pgTable(
+   'voyages',
+   {
+      id: uuid('id').primaryKey().defaultRandom(),
+      /** Room code at the time of play — reference only, not a live FK. */
+      code: text('code').notNull(),
+      deckVariant: text('deck_variant').notNull(),
+      playerCount: integer('player_count').notNull(),
+      /** Winner's user id at completion; null if that account is later deleted. */
+      winnerUserId: uuid('winner_user_id').references(() => users.id, { onDelete: 'set null' }),
+      winnerName: text('winner_name'),
+      completedAt: timestamp('completed_at', { withTimezone: true }).notNull().defaultNow(),
+   },
+   (t) => ({
+      completedIdx: index('voyages_completed_idx').on(t.completedAt),
+   }),
+);
+
+/** Per-player snapshot of a finished voyage (display names frozen at the time). */
+export const voyagePlayers = pgTable(
+   'voyage_players',
+   {
+      id: uuid('id').primaryKey().defaultRandom(),
+      voyageId: uuid('voyage_id')
+         .notNull()
+         .references(() => voyages.id, { onDelete: 'cascade' }),
+      userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+      displayName: text('display_name').notNull(),
+      /** 1-based finishing rank (by coins desc). */
+      placement: integer('placement').notNull(),
+      coins: integer('coins').notNull(),
+      isWinner: boolean('is_winner').notNull().default(false),
+      piratesEncountered: integer('pirates_encountered').notNull().default(0),
+      biggestBank: integer('biggest_bank').notNull().default(0),
+      maxStreak: integer('max_streak').notNull().default(0),
+   },
+   (t) => ({
+      voyageIdx: index('voyage_players_voyage_idx').on(t.voyageId),
+      userIdx: index('voyage_players_user_idx').on(t.userId),
+   }),
+);
+
 export type DbUser = typeof users.$inferSelect;
 export type DbUserInsert = typeof users.$inferInsert;
 export type DbGame = typeof games.$inferSelect;
@@ -218,3 +265,7 @@ export type DbGameEventInsert = typeof gameEvents.$inferInsert;
 export type DbUserStats = typeof userStats.$inferSelect;
 export type DbUserAchievement = typeof userAchievements.$inferSelect;
 export type DbUserAchievementInsert = typeof userAchievements.$inferInsert;
+export type DbVoyage = typeof voyages.$inferSelect;
+export type DbVoyageInsert = typeof voyages.$inferInsert;
+export type DbVoyagePlayer = typeof voyagePlayers.$inferSelect;
+export type DbVoyagePlayerInsert = typeof voyagePlayers.$inferInsert;

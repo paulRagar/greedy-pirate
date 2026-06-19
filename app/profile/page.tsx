@@ -1,14 +1,19 @@
 import { eq } from 'drizzle-orm';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { db } from '@/server/db/client';
 import { userAchievements, userStats, users } from '@/server/db/schema';
 import { getSupabaseServer } from '@/server/supabase/server';
+import { fetchVoyagesForUser } from '@/server/voyages';
 import { ACHIEVEMENTS } from '@/lib/achievements';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { AccountUpgrade } from '@/client/auth/AccountUpgrade';
 import { AccountSettings } from '@/client/auth/AccountSettings';
 import { ProfileNameHeader } from './ProfileNameHeader';
 import { StatInfo } from './StatInfo';
+import { VoyageCard } from './VoyageCard';
+
+const RECENT_VOYAGES_PREVIEW = 3;
 
 export const dynamic = 'force-dynamic';
 
@@ -110,6 +115,10 @@ export default async function ProfilePage({
       where: eq(userAchievements.userId, user.id),
    });
    const unlockedCodes = new Set(unlockedRows.map((row) => row.code));
+
+   // One extra so we know whether to show "See all" without a count query.
+   const recentVoyages = await fetchVoyagesForUser(user.id, RECENT_VOYAGES_PREVIEW + 1);
+   const hasMoreVoyages = recentVoyages.length > RECENT_VOYAGES_PREVIEW;
 
    const gamesPlayed = stats?.gamesPlayed ?? 0;
    const gamesWon = stats?.gamesWon ?? 0;
@@ -238,6 +247,35 @@ export default async function ProfilePage({
                   );
                })}
             </ul>
+         </section>
+
+         <section className='flex flex-col gap-2'>
+            <div className='flex items-center justify-between gap-2'>
+               <h2 className='pirate-display text-2xl text-[color:var(--color-gold-200)]'>Recent voyages</h2>
+               {hasMoreVoyages && (
+                  <Link
+                     href='/profile/voyages'
+                     className='rounded-lg px-2 py-1 text-sm font-semibold text-[color:var(--color-teal-300)] transition-colors hover:text-[color:var(--color-teal-200)]'
+                  >
+                     See all →
+                  </Link>
+               )}
+            </div>
+            {recentVoyages.length === 0 ? (
+               <PiratePanel variant='deep'>
+                  <p className='text-sm text-[color:var(--color-cream-200)]/70'>
+                     No online voyages yet. Start a room and plunder some treasure!
+                  </p>
+               </PiratePanel>
+            ) : (
+               <ul className='flex flex-col gap-2'>
+                  {recentVoyages.slice(0, RECENT_VOYAGES_PREVIEW).map((voyage) => (
+                     <li key={voyage.id}>
+                        <VoyageCard voyage={voyage} youId={user.id} />
+                     </li>
+                  ))}
+               </ul>
+            )}
          </section>
 
          {profile?.email && <AccountSettings currentEmail={profile.email} />}
