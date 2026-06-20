@@ -1,0 +1,24 @@
+app/play-local/PlayLocalClient.tsx
+  s_6d16b72296eb9d::t_925342bf6892e2 160
+  s_6d16b72296eb9d::t_cbed81fd6a3833 17
+  s_6d16b72296eb9d::t_daeef6594dda5d 216-217,219
+src/ui/game-room/StreakBoard.tsx
+  s_6d16b72296eb9d::t_7f3cc346c39cab 1-9,13-18,29-31
+  s_6d16b72296eb9d::t_f50ea6f8967345 10-12,19-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "14c032a019c9ea78cd92dceb415ba7f9d6ba771f",
+  "prompts": {},
+  "sessions": {
+    "s_6d16b72296eb9d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "87dac023-7d21-41fd-8da9-2ea1f6e9dc00",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
