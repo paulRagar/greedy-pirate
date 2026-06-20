@@ -226,6 +226,7 @@ export async function finalizeContinuationCore(
       version: result.seq,
       continuation: null,
       hostId: result.hostId,
+      readyIds: [], // fresh round — everyone must ready up again
    });
 
    return { ok: true, finalized: true };

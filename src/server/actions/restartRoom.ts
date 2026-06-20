@@ -135,6 +135,7 @@ export async function restartRoom(input: z.input<typeof InputSchema>): Promise<R
       actorId: user.id,
       eventType: 'RESTART',
       version: seq,
+      readyIds: [], // fresh round — everyone must ready up again
    });
 
    return { ok: true };
