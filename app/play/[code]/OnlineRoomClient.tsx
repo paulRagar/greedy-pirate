@@ -1603,52 +1603,56 @@ function Play({
                   mine={isCurrent && !isSpectator}
                />
             )}
-            {isComplete ? null : isSpectator ? (
-               <div className='flex items-center justify-between gap-3 rounded-2xl border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-3 py-2 text-sm'>
-                  <span className='text-[color:var(--color-cream-200)]/75'>Spectating the voyage</span>
-                  <PirateButton
-                     variant='ghost'
-                     size='sm'
-                     onClick={handleLeaveSpectator}
-                     loading={leavingSpectate || navLeaving}
-                  >
-                     Leave room
-                  </PirateButton>
-               </div>
-            ) : handingOff ? (
-               // Pirate revealed or the shot clock ran out — no decision left.
-               // Name who's up next instead of a timer, then auto-advance.
-               <p className='animate-pulse text-center text-sm font-semibold text-[color:var(--color-gold-300)]'>
-                  The helm passes to {nextHolder?.name ?? 'the next pirate'}…
-               </p>
-            ) : !isCurrent ? (
-               <p className='animate-pulse text-center text-sm text-[color:var(--color-cream-200)]/70'>
-                  Waiting on {currentPlayer?.name ?? 'the helm'}…
-               </p>
-            ) : (
-               <div className='flex gap-3'>
-                  <PirateButton
-                     variant='primary'
-                     size='lg'
-                     fullWidth
-                     onClick={handleDraw}
-                     loading={pending === 'draw'}
-                     disabled={!canDraw || pending !== null}
-                  >
-                     Plunder
-                  </PirateButton>
-                  <PirateButton
-                     variant='secondary'
-                     size='lg'
-                     fullWidth
-                     onClick={handleBank}
-                     loading={pending === 'bank'}
-                     disabled={!canBank || pending !== null}
-                  >
-                     Bury It
-                  </PirateButton>
-               </div>
-            )}
+            {/* Fixed-height decision slot so the cards don't shift between a
+                button row, a waiting line, or nothing (game end). */}
+            <div className='flex min-h-[64px] items-center justify-center'>
+               {isComplete ? null : isSpectator ? (
+                  <div className='flex w-full items-center justify-between gap-3 rounded-2xl border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-3 py-2 text-sm'>
+                     <span className='text-[color:var(--color-cream-200)]/75'>Spectating the voyage</span>
+                     <PirateButton
+                        variant='ghost'
+                        size='sm'
+                        onClick={handleLeaveSpectator}
+                        loading={leavingSpectate || navLeaving}
+                     >
+                        Leave room
+                     </PirateButton>
+                  </div>
+               ) : handingOff ? (
+                  // Pirate revealed or the shot clock ran out — no decision left.
+                  // Name who's up next instead of a timer, then auto-advance.
+                  <p className='animate-pulse text-center text-sm font-semibold text-[color:var(--color-gold-300)]'>
+                     The helm passes to {nextHolder?.name ?? 'the next pirate'}…
+                  </p>
+               ) : !isCurrent ? (
+                  <p className='animate-pulse text-center text-sm text-[color:var(--color-cream-200)]/70'>
+                     Waiting on {currentPlayer?.name ?? 'the helm'}…
+                  </p>
+               ) : (
+                  <div className='flex w-full gap-3'>
+                     <PirateButton
+                        variant='primary'
+                        size='lg'
+                        fullWidth
+                        onClick={handleDraw}
+                        loading={pending === 'draw'}
+                        disabled={!canDraw || pending !== null}
+                     >
+                        Plunder
+                     </PirateButton>
+                     <PirateButton
+                        variant='secondary'
+                        size='lg'
+                        fullWidth
+                        onClick={handleBank}
+                        loading={pending === 'bank'}
+                        disabled={!canBank || pending !== null}
+                     >
+                        Bury It
+                     </PirateButton>
+                  </div>
+               )}
+            </div>
          </div>
 
          <VictoryModal

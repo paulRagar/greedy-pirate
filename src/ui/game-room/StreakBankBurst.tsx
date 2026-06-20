@@ -26,6 +26,11 @@ export function StreakBankBurst({ coins, amount, onDone }: Props) {
    const chestRef = useRef<HTMLDivElement>(null);
    const [go, setGo] = useState(false);
 
+   // Hold onDone in a ref so the self-dismiss timer runs once on mount — a new
+   // onDone identity each parent render (common online) must not reset it.
+   const onDoneRef = useRef(onDone);
+   onDoneRef.current = onDone;
+
    useEffect(() => {
       const chips = chipsRef.current;
       const chest = chestRef.current;
@@ -40,12 +45,12 @@ export function StreakBankBurst({ coins, amount, onDone }: Props) {
          });
       }
       const raf = requestAnimationFrame(() => setGo(true));
-      const t = setTimeout(onDone, 950);
+      const t = setTimeout(() => onDoneRef.current(), 950);
       return () => {
          cancelAnimationFrame(raf);
          clearTimeout(t);
       };
-   }, [onDone]);
+   }, []);
 
    return (
       <div className='relative flex h-28 w-full flex-col items-center justify-start gap-1.5' aria-hidden='true'>

@@ -54,6 +54,7 @@ export function useGameJuice(snap: JuiceSnapshot) {
          haptics.heavy();
          setShakeKey((k) => k + 1);
          if (p.streak.length > 0) {
+            setBankFx(null); // a robbery is never a bank — drop any lingering chest
             setSinkFx((fx) => ({ key: (fx?.key ?? 0) + 1, coins: p.streak }));
          }
       }
@@ -72,6 +73,7 @@ export function useGameJuice(snap: JuiceSnapshot) {
                ? [...p.streak, snap.currentCardValue]
                : p.streak;
          haptics.success();
+         setSinkFx(null); // a bank is never a robbery — drop any lingering sink
          setBankFx((fx) => ({ key: (fx?.key ?? 0) + 1, amount, coins: coins.length > 0 ? coins : [amount] }));
       }
 

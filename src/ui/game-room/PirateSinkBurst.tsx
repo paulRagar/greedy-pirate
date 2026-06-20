@@ -23,6 +23,11 @@ export function PirateSinkBurst({ coins, onDone }: Props) {
    const [go, setGo] = useState(false);
    const sum = coins.reduce((a, b) => a + b, 0);
 
+   // Hold onDone in a ref so the self-dismiss timer runs once on mount — a new
+   // onDone identity each parent render (common online) must not reset it.
+   const onDoneRef = useRef(onDone);
+   onDoneRef.current = onDone;
+
    useEffect(() => {
       const chips = chipsRef.current;
       const target = document.querySelector('[aria-label="Discard"]');
@@ -37,12 +42,12 @@ export function PirateSinkBurst({ coins, onDone }: Props) {
          });
       }
       const raf = requestAnimationFrame(() => setGo(true));
-      const t = setTimeout(onDone, 1000);
+      const t = setTimeout(() => onDoneRef.current(), 1000);
       return () => {
          cancelAnimationFrame(raf);
          clearTimeout(t);
       };
-   }, [onDone]);
+   }, []);
 
    return (
       <div className='relative flex h-28 w-full flex-col items-center justify-start gap-1.5' aria-hidden='true'>
