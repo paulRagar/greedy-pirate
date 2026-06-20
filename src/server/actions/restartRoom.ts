@@ -69,10 +69,11 @@ export async function restartRoom(input: z.input<typeof InputSchema>): Promise<R
    const { next, spectators, seq } = await db.transaction(async (tx) => {
       // Wipe coins / winner flags on seated players so the lobby restart
       // shows everyone at zero. Also clear continued_at so the next round's
-      // continuation window starts fresh.
+      // continuation window starts fresh, and readyAt so everyone must ready
+      // up again for the new round.
       await tx
          .update(gamePlayers)
-         .set({ coins: 0, isWinner: false, piratesEncountered: 0, continuedAt: null })
+         .set({ coins: 0, isWinner: false, piratesEncountered: 0, continuedAt: null, readyAt: null })
          .where(eq(gamePlayers.gameId, game.id));
 
       // Promote FIFO spectators into open seats before the lobby resets,
@@ -134,6 +135,7 @@ export async function restartRoom(input: z.input<typeof InputSchema>): Promise<R
       actorId: user.id,
       eventType: 'RESTART',
       version: seq,
+      readyIds: [], // fresh round — everyone must ready up again
    });
 
    return { ok: true };

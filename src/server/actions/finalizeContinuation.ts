@@ -128,10 +128,11 @@ export async function finalizeContinuationCore(
          }
       }
 
-      // Reset coins / flags on survivors so the next lobby starts fresh.
+      // Reset coins / flags on survivors so the next lobby starts fresh. Clear
+      // readyAt too — everyone must ready up again for the new round.
       await tx
          .update(gamePlayers)
-         .set({ coins: 0, isWinner: false, piratesEncountered: 0, continuedAt: null })
+         .set({ coins: 0, isWinner: false, piratesEncountered: 0, continuedAt: null, readyAt: null })
          .where(eq(gamePlayers.gameId, game.id));
 
       const carried: Player[] = continuedRows
@@ -225,6 +226,7 @@ export async function finalizeContinuationCore(
       version: result.seq,
       continuation: null,
       hostId: result.hostId,
+      readyIds: [], // fresh round — everyone must ready up again
    });
 
    return { ok: true, finalized: true };

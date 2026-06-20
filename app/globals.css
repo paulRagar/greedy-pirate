@@ -352,6 +352,39 @@
    transform: rotateY(180deg);
 }
 
+/* Deal-flip: the card lifts off the deck (left), sweeps to the discard pile
+   (right) and rotates back→front in one motion. --deal-from is the deck offset
+   (one card width + the inter-card gap), set by the deck/discard layout. */
+.deal-card {
+   transform-style: preserve-3d;
+}
+.deal-card.is-back {
+   transform: translateX(var(--deal-from, -110%)) rotateY(0deg);
+}
+.deal-card.is-dealt {
+   transform: rotateY(180deg);
+}
+.deal-card.animate-deal-flip {
+   z-index: 30;
+   animation: deal-flip 440ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes deal-flip {
+   0% {
+      transform: translateX(var(--deal-from, -110%)) rotateY(0deg);
+   }
+   100% {
+      transform: translateX(0) rotateY(180deg);
+   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .deal-card.animate-deal-flip {
+      animation: none;
+      transform: rotateY(180deg);
+   }
+}
+
 @keyframes coin-pop {
    0% { transform: translateY(8px) scale(0.6); opacity: 0; }
    60% { transform: translateY(-2px) scale(1.1); opacity: 1; }
@@ -608,6 +641,29 @@
    animation: bank-amount-rise 900ms ease-out both;
 }
 
+/* Victory modal entrance — scale up and fade in. */
+@keyframes modal-pop {
+   0% { transform: scale(0.9); opacity: 0; }
+   100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-modal-pop {
+   animation: modal-pop 280ms cubic-bezier(0.2, 0.85, 0.4, 1.1) both;
+}
+
+/* Bank: each streak chip slides to the chest at center (per-chip --bank-dx/dy)
+   and shrinks away as it drops in. */
+@keyframes coin-bank {
+   0% { transform: translate(0, 0) scale(1); opacity: 1; }
+   70% { opacity: 1; }
+   100% { transform: translate(var(--bank-dx, 0), var(--bank-dy, 14px)) scale(0.15); opacity: 0; }
+}
+
+.animate-coin-bank {
+   animation: coin-bank 400ms cubic-bezier(0.5, 0, 0.75, 0.2) both;
+   will-change: transform, opacity;
+}
+
 /* Hero Ken Burns — slow breathing pan for the landing backdrop.
    Scale never drops below 1.08 so parallax offsets (±14px) never
    expose the image edges. */
@@ -670,7 +726,8 @@
    }
    .animate-toast-in,
    .animate-trophy-pop,
-   .animate-chest-pop {
+   .animate-chest-pop,
+   .animate-modal-pop {
       animation-duration: 1ms;
    }
    .route-enter,
@@ -678,6 +735,7 @@
    .animate-ship-sail,
    .animate-coin-fly,
    .animate-bank-amount,
+   .animate-coin-bank,
    .animate-score-bump {
       animation: none;
    }

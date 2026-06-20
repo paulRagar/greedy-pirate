@@ -77,7 +77,10 @@ export function TurnClock({ deadlineMs, totalMs, mine = false }: Props) {
 
    return (
       <div
-         className='flex items-center gap-2'
+         // Fixed height so the bar stays put whether or not the seconds readout
+         // (shown only on your own turn) is present — otherwise the cards above
+         // shift between turns.
+         className='flex h-5 items-center gap-2'
          role='timer'
          aria-label={`${seconds} second${seconds === 1 ? '' : 's'} left on the turn`}
       >

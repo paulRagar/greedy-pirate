@@ -33,14 +33,15 @@ import { continueIntoNextRound } from '@/server/actions/continueIntoNextRound';
 import { jumpShip } from '@/server/actions/jumpShip';
 import { finalizeContinuation } from '@/server/actions/finalizeContinuation';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
-import { PirateCard } from '@/ui/pirate-card/PirateCard';
 import { PirateModal } from '@/ui/pirate-modal/PirateModal';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { BustVignette } from '@/ui/effects/BustVignette';
-import { ChestBurst } from '@/ui/effects/ChestBurst';
 import { CrewGrid } from '@/ui/game-room/CrewGrid';
+import { DeckDiscard } from '@/ui/game-room/DeckDiscard';
 import { ScoreRibbon } from '@/ui/game-room/ScoreRibbon';
-import { StreakStrip } from '@/ui/game-room/StreakStrip';
+import { StreakBoard } from '@/ui/game-room/StreakBoard';
+import { StreakBankBurst } from '@/ui/game-room/StreakBankBurst';
+import { PirateSinkBurst } from '@/ui/game-room/PirateSinkBurst';
 import { TurnClock, useCountdown } from '@/ui/game-room/TurnClock';
 import { VictoryModal } from '@/ui/game-room/VictoryModal';
 import { useGameToast } from '@/ui/toast/PirateToast';
@@ -70,6 +71,10 @@ interface Props {
    initialTurnDeadline: string | null;
    initialReadyIds: string[];
 }
+
+// Deal animation (~440ms) plus a beat to see the final card resolve before the
+// victory modal.
+const VICTORY_DELAY_MS = 1100;
 
 export default function OnlineRoomClient({
    gameId,
@@ -1309,7 +1314,6 @@ function Play({
    const [error, setError] = useState<string | null>(null);
    const [drawingCard, setDrawingCard] = useState(false);
    const [leavingSpectate, setLeavingSpectate] = useState(false);
-   const { toastElement, showToast } = useGameToast();
 
    const isHost = userId === hostId;
    const handleLeaveSpectator = async () => {
@@ -1318,10 +1322,12 @@ function Play({
       onLeave();
    };
 
-   // Clear the draw-pending flag whenever the broadcast lands with a new card.
+   // Clear the draw-pending flag when the broadcast reveals the card (or the
+   // turn moves). NOT on deckCount — that drops optimistically at draw start,
+   // before the reveal, which would deal the stale card early.
    useEffect(() => {
       setDrawingCard(false);
-   }, [state.currentCard, state.turnIndex, state.deckCount]);
+   }, [state.currentCard, state.turnIndex]);
 
    const currentPlayer = state.players[state.turnIndex];
    const isCurrent = currentPlayer?.id === userId;
@@ -1361,13 +1367,15 @@ function Play({
          status: state.status,
          turnIndex: state.turnIndex,
          currentCardKind: state.currentCard?.kind ?? null,
+         currentCardValue: state.currentCard?.kind === 'gold' ? state.currentCard.value : null,
          streakLength: state.currentStreak.length,
+         streak: state.currentStreak.map((c) => c.value),
          players: state.players.map((p) => ({ id: p.id, coins: p.coins })),
          isMyTurn: isCurrent,
       }),
       [state.status, state.turnIndex, state.currentCard, state.currentStreak, state.players, isCurrent],
    );
-   const { bankFx, clearBankFx, shakeKey } = useGameJuice(snap);
+   const { bankFx, clearBankFx, sinkFx, clearSinkFx, shakeKey } = useGameJuice(snap);
 
    const announceSnap = useMemo<AnnounceSnapshot>(
       () => ({
@@ -1386,6 +1394,18 @@ function Play({
    useEffect(() => {
       if (shakeKey > 0) setShaking(true);
    }, [shakeKey]);
+
+   // Hold the victory modal until the final card has landed and its streak has
+   // resolved, so players see how the game ended before the standings appear.
+   const [showVictory, setShowVictory] = useState(false);
+   useEffect(() => {
+      if (!isComplete) {
+         setShowVictory(false);
+         return;
+      }
+      const t = setTimeout(() => setShowVictory(true), VICTORY_DELAY_MS);
+      return () => clearTimeout(t);
+   }, [isComplete]);
 
    // Auto-forfeit win: if everyone else has dropped off the presence
    // channel and I'm the only one left in an active game, declare myself
@@ -1488,12 +1508,6 @@ function Play({
       });
    }, [iAmAbsent, state.status, code]);
 
-   // Pirate reveal — toast for everyone watching, once per reveal.
-   useEffect(() => {
-      if (isPirate && !isComplete) showToast('Robbed!', 'blood');
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, [isPirate]);
-
    const wrap = async (
       label: 'draw' | 'bank' | 'end',
       fn: () => Promise<{ ok: boolean; error?: string }>,
@@ -1520,7 +1534,6 @@ function Play({
    };
 
    const handleBank = () => {
-      showToast(`Banked ${streakSum}!`, 'gold');
       void wrap(
          'bank',
          () => bankOnline(code),
@@ -1537,8 +1550,6 @@ function Play({
       >
          {announcer}
          {isPirate && !isComplete && <BustVignette />}
-         {toastElement}
-         {bankFx && <ChestBurst key={bankFx.key} amount={bankFx.amount} onDone={clearBankFx} />}
 
          <ScoreRibbon
             players={state.players.filter((p) => onlineIds.has(p.id) || p.id === userId)}
@@ -1562,81 +1573,92 @@ function Play({
          </div>
 
          <div className='relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-2'>
-            <div className='relative flex min-h-0 w-full flex-1 justify-center'>
-               <PirateCard card={drawingCard ? null : state.currentCard} />
-               {drawingCard && (
-                  <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
-                     <div className='pirate-display animate-pulse rounded-full border border-[color:var(--color-gold-500)]/50 bg-black/70 px-4 py-1.5 text-sm text-[color:var(--color-gold-300)]'>
-                        Plunderin&apos;…
-                     </div>
-                  </div>
-               )}
+            <div className='relative flex min-h-0 w-full flex-1 items-center justify-center'>
+               <DeckDiscard currentCard={state.currentCard} deckCount={state.deckCount} drawing={drawingCard} />
             </div>
-            <StreakStrip streak={state.currentStreak} />
+            {/* Live streak wins so a fresh draw shows the total instantly; a
+                bank/sink burst plays only while the streak is empty. */}
+            {state.currentStreak.length > 0 ? (
+               <StreakBoard streak={state.currentStreak} />
+            ) : bankFx ? (
+               <StreakBankBurst key={bankFx.key} coins={bankFx.coins} amount={bankFx.amount} onDone={clearBankFx} />
+            ) : sinkFx ? (
+               <PirateSinkBurst key={sinkFx.key} coins={sinkFx.coins} onDone={clearSinkFx} />
+            ) : (
+               <StreakBoard streak={state.currentStreak} />
+            )}
          </div>
 
          {error && <p className='text-center text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
 
-         <div className='z-20 mt-auto flex flex-col gap-2 pt-2 safe-bottom'>
-            {/* Fuse only while there's a live decision — during a hand-off
-                (pirate or expired clock) we show the hand-off line instead. */}
-            {!isComplete && !handingOff && deadlineMs !== null && (
-               <TurnClock
-                  deadlineMs={deadlineMs}
-                  totalMs={TURN_CLOCK_MS}
-                  mine={isCurrent && !isSpectator}
-               />
-            )}
-            {isComplete ? null : isSpectator ? (
-               <div className='flex items-center justify-between gap-3 rounded-2xl border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-3 py-2 text-sm'>
-                  <span className='text-[color:var(--color-cream-200)]/75'>Spectating the voyage</span>
-                  <PirateButton
-                     variant='ghost'
-                     size='sm'
-                     onClick={handleLeaveSpectator}
-                     loading={leavingSpectate || navLeaving}
-                  >
-                     Leave room
-                  </PirateButton>
-               </div>
-            ) : handingOff ? (
-               // Pirate revealed or the shot clock ran out — no decision left.
-               // Name who's up next instead of a timer, then auto-advance.
-               <p className='animate-pulse text-center text-sm font-semibold text-[color:var(--color-gold-300)]'>
-                  The helm passes to {nextHolder?.name ?? 'the next pirate'}…
-               </p>
-            ) : !isCurrent ? (
-               <p className='animate-pulse text-center text-sm text-[color:var(--color-cream-200)]/70'>
-                  Waiting on {currentPlayer?.name ?? 'the helm'}…
-               </p>
-            ) : (
-               <div className='flex gap-3'>
-                  <PirateButton
-                     variant='primary'
-                     size='lg'
-                     fullWidth
-                     onClick={handleDraw}
-                     loading={pending === 'draw'}
-                     disabled={!canDraw || pending !== null}
-                  >
-                     Plunder
-                  </PirateButton>
-                  <PirateButton
-                     variant='secondary'
-                     size='lg'
-                     fullWidth
-                     onClick={handleBank}
-                     loading={pending === 'bank'}
-                     disabled={!canBank || pending !== null}
-                  >
-                     Bury It
-                  </PirateButton>
-               </div>
-            )}
+         {/* min-h reserves the action-row height so hiding it at game end doesn't
+             drop the cards. */}
+         <div className='z-20 mt-auto flex min-h-[64px] flex-col justify-end gap-2 pt-2 safe-bottom'>
+            {/* Fixed-height clock slot so the cards don't shift when the fuse
+                disappears during a hand-off (pirate / expired clock). */}
+            <div className='h-5'>
+               {!isComplete && !handingOff && deadlineMs !== null && (
+                  <TurnClock
+                     deadlineMs={deadlineMs}
+                     totalMs={TURN_CLOCK_MS}
+                     mine={isCurrent && !isSpectator}
+                  />
+               )}
+            </div>
+            {/* Fixed-height decision slot so the cards don't shift between a
+                button row, a waiting line, or nothing (game end). */}
+            <div className='flex min-h-[64px] items-center justify-center'>
+               {isComplete ? null : isSpectator ? (
+                  <div className='flex w-full items-center justify-between gap-3 rounded-2xl border border-dashed border-[color:var(--color-surface-border)] bg-[color:var(--color-deep-700)]/45 px-3 py-2 text-sm'>
+                     <span className='text-[color:var(--color-cream-200)]/75'>Spectating the voyage</span>
+                     <PirateButton
+                        variant='ghost'
+                        size='sm'
+                        onClick={handleLeaveSpectator}
+                        loading={leavingSpectate || navLeaving}
+                     >
+                        Leave room
+                     </PirateButton>
+                  </div>
+               ) : handingOff ? (
+                  // Pirate revealed or the shot clock ran out — no decision left.
+                  // Name who's up next instead of a timer, then auto-advance.
+                  <p className='animate-pulse text-center text-sm font-semibold text-[color:var(--color-gold-300)]'>
+                     The helm passes to {nextHolder?.name ?? 'the next pirate'}…
+                  </p>
+               ) : !isCurrent ? (
+                  <p className='animate-pulse text-center text-sm text-[color:var(--color-cream-200)]/70'>
+                     Waiting on {currentPlayer?.name ?? 'the helm'}…
+                  </p>
+               ) : (
+                  <div className='flex w-full gap-3'>
+                     <PirateButton
+                        variant='primary'
+                        size='lg'
+                        fullWidth
+                        onClick={handleDraw}
+                        loading={pending === 'draw'}
+                        disabled={!canDraw || pending !== null}
+                     >
+                        Plunder
+                     </PirateButton>
+                     <PirateButton
+                        variant='secondary'
+                        size='lg'
+                        fullWidth
+                        onClick={handleBank}
+                        loading={pending === 'bank'}
+                        disabled={!canBank || pending !== null}
+                     >
+                        Bury It
+                     </PirateButton>
+                  </div>
+               )}
+            </div>
          </div>
 
          <VictoryModal
-            open={isComplete}
+            open={showVictory}
             winner={winner}
             ranked={ranked}
             youId={userId}
@@ -1693,8 +1715,16 @@ function StatusBanner({
    isCurrent: boolean;
    streakSum: number;
 }) {
+   // The running total below the cards shows the booty now, so the banner
+   // prompts the action instead of repeating the number.
    let title = isCurrent ? `Yer turn, ${currentName ?? 'sailor'}!` : currentName ? `${currentName} is at the helm` : '';
-   let subtitle = `Booty in hand: ${streakSum}`;
+   let subtitle = isCurrent
+      ? streakSum > 0
+         ? 'Push yer luck, or bury the loot.'
+         : 'Plunder to start yer streak.'
+      : streakSum > 0
+        ? `${currentName ?? 'They'} be pressin' their luck…`
+        : 'Awaitin’ the first plunder…';
    let titleClass = 'text-[color:var(--color-gold-300)]';
    if (isComplete) {
       title = 'The deck is empty.';

@@ -10,13 +10,13 @@ import { DEFAULT_VARIANT } from '@/game/rules';
 import type { DeckVariant, PlayerInit } from '@/game/types';
 import { cn } from '@/lib/cn';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
-import { PirateCard } from '@/ui/pirate-card/PirateCard';
 import { BustVignette } from '@/ui/effects/BustVignette';
-import { ChestBurst } from '@/ui/effects/ChestBurst';
+import { DeckDiscard } from '@/ui/game-room/DeckDiscard';
 import { ScoreRibbon } from '@/ui/game-room/ScoreRibbon';
-import { StreakStrip } from '@/ui/game-room/StreakStrip';
+import { StreakBoard } from '@/ui/game-room/StreakBoard';
+import { StreakBankBurst } from '@/ui/game-room/StreakBankBurst';
+import { PirateSinkBurst } from '@/ui/game-room/PirateSinkBurst';
 import { VictoryModal } from '@/ui/game-room/VictoryModal';
-import { useGameToast } from '@/ui/toast/PirateToast';
 
 interface Props {
    variant?: DeckVariant;
@@ -26,13 +26,16 @@ type StoredPlayer = { id: string; name: string };
 
 const PLAYERS_KEY = 'players';
 
+// Deal animation (~440ms) plus a beat to see the final card resolve (bank or
+// sink) before the modal.
+const VICTORY_DELAY_MS = 1100;
+
 export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
    const router = useRouter();
    const [changingCrew, startChangeCrew] = useTransition();
    const state = useGameStore((s) => s.state);
    const dispatch = useGameStore((s) => s.dispatch);
    const reset = useGameStore((s) => s.reset);
-   const { toastElement, showToast } = useGameToast();
 
    const startedFor = useRef<string | null>(null);
 
@@ -75,13 +78,18 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
          status: state.status,
          turnIndex: state.turnIndex,
          currentCardKind: state.currentCard?.kind ?? null,
+         currentCardValue: state.currentCard?.kind === 'gold' ? state.currentCard.value : null,
          streakLength: state.currentStreak.length,
+         streak: state.currentStreak.map((c) => c.value),
          players: state.players.map((p) => ({ id: p.id, coins: p.coins })),
          isMyTurn: true, // hot-seat — every turn is "yours"
       }),
       [state],
    );
-   const { bankFx, clearBankFx, shakeKey } = useGameJuice(snap);
+   // Bank/sink bursts are derived from state transitions (the engine clears the
+   // streak the instant a pirate or bank lands, so the hook captures the lost
+   // coins from the previous snapshot).
+   const { bankFx, clearBankFx, sinkFx, clearSinkFx, shakeKey } = useGameJuice(snap);
 
    const announceSnap = useMemo<AnnounceSnapshot>(
       () => ({
@@ -101,18 +109,23 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
       if (shakeKey > 0) setShaking(true);
    }, [shakeKey]);
 
-   // Pirate reveal moment — toast once per reveal.
+   // Hold the victory modal until the final card has landed and players have had
+   // a beat to register it was the last one.
+   const [showVictory, setShowVictory] = useState(false);
    useEffect(() => {
-      if (isPirate) showToast('Robbed!', 'blood');
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, [isPirate]);
+      if (!isComplete) {
+         setShowVictory(false);
+         return;
+      }
+      const t = setTimeout(() => setShowVictory(true), VICTORY_DELAY_MS);
+      return () => clearTimeout(t);
+   }, [isComplete]);
 
    const handleDraw = () => {
       dispatch({ type: 'DRAW' });
    };
 
    const handleBank = () => {
-      showToast(`Banked ${streakSum}!`, 'gold');
       dispatch({ type: 'BANK' });
    };
 
@@ -141,8 +154,6 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
       >
          {announcer}
          {isPirate && !isComplete && <BustVignette />}
-         {toastElement}
-         {bankFx && <ChestBurst key={bankFx.key} amount={bankFx.amount} onDone={clearBankFx} />}
 
          <ScoreRibbon players={state.players} currentPlayerId={currentPlayer?.id} />
 
@@ -154,14 +165,26 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
          />
 
          <div className='relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-2'>
-            <div className='relative flex min-h-0 w-full flex-1 justify-center'>
-               <PirateCard card={state.currentCard} />
+            <div className='relative flex min-h-0 w-full flex-1 items-center justify-center'>
+               <DeckDiscard currentCard={state.currentCard} deckCount={state.deck.length} />
             </div>
-            <StreakStrip streak={state.currentStreak} />
+            {/* Live streak wins so a fresh draw shows the total instantly; a
+                bank/sink burst plays only while the streak is empty. */}
+            {state.currentStreak.length > 0 ? (
+               <StreakBoard streak={state.currentStreak} />
+            ) : bankFx ? (
+               <StreakBankBurst key={bankFx.key} coins={bankFx.coins} amount={bankFx.amount} onDone={clearBankFx} />
+            ) : sinkFx ? (
+               <PirateSinkBurst key={sinkFx.key} coins={sinkFx.coins} onDone={clearSinkFx} />
+            ) : (
+               <StreakBoard streak={state.currentStreak} />
+            )}
          </div>
 
-         <div className='z-20 mt-auto px-0 pt-2 safe-bottom'>
-            {isPirate ? (
+         {/* Reserve the action-row height so hiding the buttons at game end
+             doesn't drop the cards down a few pixels. */}
+         <div className='z-20 mt-auto min-h-[64px] px-0 pt-2 safe-bottom'>
+            {isComplete ? null : isPirate ? (
                <PirateButton variant='tertiary' size='lg' fullWidth onClick={() => dispatch({ type: 'END_TURN' })}>
                   Pass the Helm
                </PirateButton>
@@ -178,7 +201,7 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
          </div>
 
          <VictoryModal
-            open={isComplete}
+            open={showVictory}
             winner={winner}
             ranked={ranked}
             actions={
@@ -213,8 +236,10 @@ function StatusBanner({
    playerName: string | undefined;
    streakSum: number;
 }) {
+   // The running total below the cards now shows the booty, so the banner just
+   // prompts the action rather than repeating the number.
    let title = playerName ? `${playerName}, it be yer turn!` : '';
-   let subtitle = `Booty in hand: ${streakSum}`;
+   let subtitle = streakSum > 0 ? 'Push yer luck, or bury the loot.' : 'Plunder to start yer streak.';
    let titleClass = 'text-[color:var(--color-gold-300)]';
    if (isComplete) {
       title = 'The deck is empty.';

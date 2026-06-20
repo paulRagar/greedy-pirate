@@ -43,7 +43,7 @@ export function VictoryModal({
    return (
       <>
          <GoldRain />
-         <PirateModal open dismissible={false} ariaLabel={`${winner.name} wins`}>
+         <PirateModal open dismissible={false} ariaLabel={`${winner.name} wins`} className='animate-modal-pop'>
             <div className='flex flex-col gap-3'>
                <div className='flex flex-col items-center gap-2 text-center'>
                   <div className='animate-trophy-pop'>

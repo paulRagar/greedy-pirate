@@ -16,17 +16,24 @@ export type JuiceSnapshot = {
    status: GameStatus;
    turnIndex: number;
    currentCardKind: 'gold' | 'pirate' | null;
+   /** Value of the revealed card when it's gold (else null) — used to include
+       the final auto-banked card in the bank burst. */
+   currentCardValue: number | null;
    streakLength: number;
+   /** The current streak's coin values, in draw order. */
+   streak: number[];
    players: ReadonlyArray<{ id: string; coins: number }>;
    /** Local hot-seat mode passes true — every turn is "yours". */
    isMyTurn: boolean;
 };
 
-export type BankFx = { key: number; amount: number } | null;
+export type BankFx = { key: number; amount: number; coins: number[] } | null;
+export type SinkFx = { key: number; coins: number[] } | null;
 
 export function useGameJuice(snap: JuiceSnapshot) {
    const prev = useRef<JuiceSnapshot | null>(null);
    const [bankFx, setBankFx] = useState<BankFx>(null);
+   const [sinkFx, setSinkFx] = useState<SinkFx>(null);
    const [turnKey, setTurnKey] = useState(0);
    const [shakeKey, setShakeKey] = useState(0);
 
@@ -38,28 +45,42 @@ export function useGameJuice(snap: JuiceSnapshot) {
       const becameActive = p.status !== 'active' && snap.status === 'active';
       if (becameActive || snap.status === 'lobby') return;
 
-      if (snap.status === 'active') {
-         if (snap.streakLength > p.streakLength) {
+      if (snap.streakLength > p.streakLength) {
+         haptics.tap();
+      }
+
+      // Pirate revealed — sink the streak that was just lost into the card.
+      if (snap.currentCardKind === 'pirate' && p.currentCardKind !== 'pirate') {
+         haptics.heavy();
+         setShakeKey((k) => k + 1);
+         if (p.streak.length > 0) {
+            setBankFx(null); // a robbery is never a bank — drop any lingering chest
+            setSinkFx((fx) => ({ key: (fx?.key ?? 0) + 1, coins: p.streak }));
+         }
+      }
+
+      // A player banked — coins went up. The banked coins are the streak from the
+      // previous snapshot, plus the final card if this draw auto-banked the deck.
+      const banked = snap.players.find((pl) => {
+         const old = p.players.find((o) => o.id === pl.id);
+         return old !== undefined && pl.coins > old.coins;
+      });
+      if (banked) {
+         const old = p.players.find((o) => o.id === banked.id)!;
+         const amount = banked.coins - old.coins;
+         const coins =
+            snap.status === 'complete' && snap.currentCardKind === 'gold' && snap.currentCardValue !== null
+               ? [...p.streak, snap.currentCardValue]
+               : p.streak;
+         haptics.success();
+         setSinkFx(null); // a bank is never a robbery — drop any lingering sink
+         setBankFx((fx) => ({ key: (fx?.key ?? 0) + 1, amount, coins: coins.length > 0 ? coins : [amount] }));
+      }
+
+      if (snap.turnIndex !== p.turnIndex) {
+         setTurnKey((k) => k + 1);
+         if (snap.isMyTurn) {
             haptics.tap();
-         }
-         if (snap.currentCardKind === 'pirate' && p.currentCardKind !== 'pirate') {
-            haptics.heavy();
-            setShakeKey((k) => k + 1);
-         }
-         const banked = snap.players.find((pl) => {
-            const old = p.players.find((o) => o.id === pl.id);
-            return old !== undefined && pl.coins > old.coins;
-         });
-         if (banked) {
-            const old = p.players.find((o) => o.id === banked.id)!;
-            haptics.success();
-            setBankFx((fx) => ({ key: (fx?.key ?? 0) + 1, amount: banked.coins - old.coins }));
-         }
-         if (snap.turnIndex !== p.turnIndex) {
-            setTurnKey((k) => k + 1);
-            if (snap.isMyTurn) {
-               haptics.tap();
-            }
          }
       }
    }, [snap]);
@@ -67,6 +88,8 @@ export function useGameJuice(snap: JuiceSnapshot) {
    return {
       bankFx,
       clearBankFx: () => setBankFx(null),
+      sinkFx,
+      clearSinkFx: () => setSinkFx(null),
       turnKey,
       shakeKey,
    };
