@@ -1594,15 +1594,17 @@ function Play({
          {/* min-h reserves the action-row height so hiding it at game end doesn't
              drop the cards. */}
          <div className='z-20 mt-auto flex min-h-[64px] flex-col justify-end gap-2 pt-2 safe-bottom'>
-            {/* Fuse only while there's a live decision — during a hand-off
-                (pirate or expired clock) we show the hand-off line instead. */}
-            {!isComplete && !handingOff && deadlineMs !== null && (
-               <TurnClock
-                  deadlineMs={deadlineMs}
-                  totalMs={TURN_CLOCK_MS}
-                  mine={isCurrent && !isSpectator}
-               />
-            )}
+            {/* Fixed-height clock slot so the cards don't shift when the fuse
+                disappears during a hand-off (pirate / expired clock). */}
+            <div className='h-5'>
+               {!isComplete && !handingOff && deadlineMs !== null && (
+                  <TurnClock
+                     deadlineMs={deadlineMs}
+                     totalMs={TURN_CLOCK_MS}
+                     mine={isCurrent && !isSpectator}
+                  />
+               )}
+            </div>
             {/* Fixed-height decision slot so the cards don't shift between a
                 button row, a waiting line, or nothing (game end). */}
             <div className='flex min-h-[64px] items-center justify-center'>
