@@ -1309,7 +1309,6 @@ function Play({
    const [error, setError] = useState<string | null>(null);
    const [drawingCard, setDrawingCard] = useState(false);
    const [leavingSpectate, setLeavingSpectate] = useState(false);
-   const { toastElement, showToast } = useGameToast();
 
    const isHost = userId === hostId;
    const handleLeaveSpectator = async () => {
@@ -1488,12 +1487,6 @@ function Play({
       });
    }, [iAmAbsent, state.status, code]);
 
-   // Pirate reveal — toast for everyone watching, once per reveal.
-   useEffect(() => {
-      if (isPirate && !isComplete) showToast('Robbed!', 'blood');
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, [isPirate]);
-
    const wrap = async (
       label: 'draw' | 'bank' | 'end',
       fn: () => Promise<{ ok: boolean; error?: string }>,
@@ -1520,7 +1513,6 @@ function Play({
    };
 
    const handleBank = () => {
-      showToast(`Banked ${streakSum}!`, 'gold');
       void wrap(
          'bank',
          () => bankOnline(code),
@@ -1537,7 +1529,6 @@ function Play({
       >
          {announcer}
          {isPirate && !isComplete && <BustVignette />}
-         {toastElement}
          {bankFx && <ChestBurst key={bankFx.key} amount={bankFx.amount} onDone={clearBankFx} />}
 
          <ScoreRibbon

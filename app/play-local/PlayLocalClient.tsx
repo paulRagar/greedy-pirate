@@ -15,8 +15,8 @@ import { DeckDiscard } from '@/ui/game-room/DeckDiscard';
 import { ScoreRibbon } from '@/ui/game-room/ScoreRibbon';
 import { StreakBoard } from '@/ui/game-room/StreakBoard';
 import { StreakBankBurst } from '@/ui/game-room/StreakBankBurst';
+import { PirateSinkBurst } from '@/ui/game-room/PirateSinkBurst';
 import { VictoryModal } from '@/ui/game-room/VictoryModal';
-import { useGameToast } from '@/ui/toast/PirateToast';
 
 interface Props {
    variant?: DeckVariant;
@@ -32,7 +32,6 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
    const state = useGameStore((s) => s.state);
    const dispatch = useGameStore((s) => s.dispatch);
    const reset = useGameStore((s) => s.reset);
-   const { toastElement, showToast } = useGameToast();
 
    const startedFor = useRef<string | null>(null);
 
@@ -88,6 +87,13 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
    const [bankBurst, setBankBurst] = useState<{ key: number; coins: number[]; amount: number } | null>(null);
    const bankBurstKey = useRef(0);
 
+   // Pirate sink: the streak is wiped the instant a pirate is drawn, so we stash
+   // the about-to-be-lost coins on every draw and replay them flying into the
+   // pirate card if that draw turns out to be a robbery.
+   const [sinkBurst, setSinkBurst] = useState<{ key: number; coins: number[] } | null>(null);
+   const sinkBurstKey = useRef(0);
+   const pendingSunk = useRef<number[]>([]);
+
    const announceSnap = useMemo<AnnounceSnapshot>(
       () => ({
          status: state.status,
@@ -106,18 +112,21 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
       if (shakeKey > 0) setShaking(true);
    }, [shakeKey]);
 
-   // Pirate reveal moment — toast once per reveal.
+   // Pirate reveal moment — fly the just-lost streak into the pirate card.
    useEffect(() => {
-      if (isPirate) showToast('Robbed!', 'blood');
+      if (isPirate && !isComplete && pendingSunk.current.length > 0) {
+         setSinkBurst({ key: (sinkBurstKey.current += 1), coins: pendingSunk.current });
+      }
       // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [isPirate]);
 
    const handleDraw = () => {
+      // Stash what we'd lose so the sink burst has the coins if this is a pirate.
+      pendingSunk.current = state.currentStreak.map((c) => c.value);
       dispatch({ type: 'DRAW' });
    };
 
    const handleBank = () => {
-      showToast(`Banked ${streakSum}!`, 'gold');
       setBankBurst({
          key: (bankBurstKey.current += 1),
          coins: state.currentStreak.map((c) => c.value),
@@ -151,7 +160,6 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
       >
          {announcer}
          {isPirate && !isComplete && <BustVignette />}
-         {toastElement}
 
          <ScoreRibbon players={state.players} currentPlayerId={currentPlayer?.id} />
 
@@ -173,6 +181,8 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
                   amount={bankBurst.amount}
                   onDone={() => setBankBurst(null)}
                />
+            ) : sinkBurst ? (
+               <PirateSinkBurst key={sinkBurst.key} coins={sinkBurst.coins} onDone={() => setSinkBurst(null)} />
             ) : (
                <StreakBoard streak={state.currentStreak} />
             )}
