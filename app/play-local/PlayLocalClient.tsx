@@ -11,10 +11,10 @@ import type { DeckVariant, PlayerInit } from '@/game/types';
 import { cn } from '@/lib/cn';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { BustVignette } from '@/ui/effects/BustVignette';
-import { ChestBurst } from '@/ui/effects/ChestBurst';
 import { DeckDiscard } from '@/ui/game-room/DeckDiscard';
 import { ScoreRibbon } from '@/ui/game-room/ScoreRibbon';
 import { StreakBoard } from '@/ui/game-room/StreakBoard';
+import { StreakBankBurst } from '@/ui/game-room/StreakBankBurst';
 import { VictoryModal } from '@/ui/game-room/VictoryModal';
 import { useGameToast } from '@/ui/toast/PirateToast';
 
@@ -81,7 +81,12 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
       }),
       [state],
    );
-   const { bankFx, clearBankFx, shakeKey } = useGameJuice(snap);
+   const { shakeKey } = useGameJuice(snap);
+
+   // Bank burst: captured at bank time (the engine clears the streak immediately)
+   // so the chips can slide into the chest after they've gone from state.
+   const [bankBurst, setBankBurst] = useState<{ key: number; coins: number[]; amount: number } | null>(null);
+   const bankBurstKey = useRef(0);
 
    const announceSnap = useMemo<AnnounceSnapshot>(
       () => ({
@@ -113,6 +118,11 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
 
    const handleBank = () => {
       showToast(`Banked ${streakSum}!`, 'gold');
+      setBankBurst({
+         key: (bankBurstKey.current += 1),
+         coins: state.currentStreak.map((c) => c.value),
+         amount: streakSum,
+      });
       dispatch({ type: 'BANK' });
    };
 
@@ -142,7 +152,6 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
          {announcer}
          {isPirate && !isComplete && <BustVignette />}
          {toastElement}
-         {bankFx && <ChestBurst key={bankFx.key} amount={bankFx.amount} onDone={clearBankFx} />}
 
          <ScoreRibbon players={state.players} currentPlayerId={currentPlayer?.id} />
 
@@ -157,7 +166,16 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
             <div className='relative flex min-h-0 w-full flex-1 items-center justify-center'>
                <DeckDiscard currentCard={state.currentCard} deckCount={state.deck.length} />
             </div>
-            <StreakBoard streak={state.currentStreak} />
+            {bankBurst ? (
+               <StreakBankBurst
+                  key={bankBurst.key}
+                  coins={bankBurst.coins}
+                  amount={bankBurst.amount}
+                  onDone={() => setBankBurst(null)}
+               />
+            ) : (
+               <StreakBoard streak={state.currentStreak} />
+            )}
          </div>
 
          <div className='z-20 mt-auto px-0 pt-2 safe-bottom'>

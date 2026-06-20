@@ -641,6 +641,19 @@
    animation: bank-amount-rise 900ms ease-out both;
 }
 
+/* Bank: each streak chip slides to the chest at center (per-chip --bank-dx/dy)
+   and shrinks away as it drops in. */
+@keyframes coin-bank {
+   0% { transform: translate(0, 0) scale(1); opacity: 1; }
+   70% { opacity: 1; }
+   100% { transform: translate(var(--bank-dx, 0), var(--bank-dy, 14px)) scale(0.15); opacity: 0; }
+}
+
+.animate-coin-bank {
+   animation: coin-bank 400ms cubic-bezier(0.5, 0, 0.75, 0.2) both;
+   will-change: transform, opacity;
+}
+
 /* Hero Ken Burns — slow breathing pan for the landing backdrop.
    Scale never drops below 1.08 so parallax offsets (±14px) never
    expose the image edges. */
@@ -711,6 +724,7 @@
    .animate-ship-sail,
    .animate-coin-fly,
    .animate-bank-amount,
+   .animate-coin-bank,
    .animate-score-bump {
       animation: none;
    }
