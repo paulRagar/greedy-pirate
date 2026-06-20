@@ -1,0 +1,34 @@
+src/ui/game-room/DeckDiscard.tsx
+  s_6d16b72296eb9d::t_e4281d4756a85c 34-37,42,44,46
+src/client/hooks/useGameJuice.ts
+  s_6d16b72296eb9d::t_e6a7df356a851a 19-21,23-24,30-31,36,48-57,59-81,89-90
+app/play-local/PlayLocalClient.tsx
+  s_6d16b72296eb9d::t_ee74768bc6d4ff 81,83,89-92
+  s_6d16b72296eb9d::t_52a5ea4afa436b 171-178
+app/play/[code]/OnlineRoomClient.tsx
+  s_6d16b72296eb9d::t_14a8aeda1cca83 1398-1409
+  s_6d16b72296eb9d::t_32db5ff9aa96de 75-78
+  s_6d16b72296eb9d::t_c16d300f662f6a 1325-1327,1330
+  s_6d16b72296eb9d::t_6642081fb3e679 1370,1372,1378
+  s_6d16b72296eb9d::t_dd60d3815bf230 1712-1713,1715-1721
+  s_6d16b72296eb9d::t_bdbab6acf9f0cc 1576-1577,1579-1589
+  s_6d16b72296eb9d::t_21c166c2d33b3f 1655
+  s_6d16b72296eb9d::t_de27778fac212c 40,42-44
+  s_6d16b72296eb9d::t_90197a84d5182f 1594-1596
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "90775f39a21f33bd3f14472082b79e289019ae09",
+  "prompts": {},
+  "sessions": {
+    "s_6d16b72296eb9d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "87dac023-7d21-41fd-8da9-2ea1f6e9dc00",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
