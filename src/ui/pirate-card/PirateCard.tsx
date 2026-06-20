@@ -1,13 +1,43 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { Card as GameCard } from '@/game/types';
 
 interface Props {
    card: GameCard | null;
+   /**
+    * When true (default) the card plays the deal animation — sweeping off the
+    * deck and rotating face-up — once on mount. Render each freshly drawn card
+    * as its own (keyed) instance so a new mount replays the deal. Set false for
+    * a card resting underneath on the discard pile (no animation, no re-shake).
+    */
+   deal?: boolean;
    className?: string;
 }
 
-export function PirateCard({ card, className }: Props) {
+type Phase = 'back' | 'dealing' | 'front';
+
+export function PirateCard({ card, deal = true, className }: Props) {
    const isPirate = card?.kind === 'pirate';
+
+   // 'back' = facing down over the deck, 'dealing' = sweeping deck→discard while
+   // rotating, 'front' = settled face-up on the pile. A dealt card mounts on the
+   // back and animates in; a resting card mounts straight to the front.
+   const [phase, setPhase] = useState<Phase>(card && deal ? 'back' : 'front');
+
+   useEffect(() => {
+      if (!card || !deal) return;
+      const reduce =
+         typeof window !== 'undefined' &&
+         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) {
+         setPhase('front');
+         return;
+      }
+      const id = requestAnimationFrame(() => setPhase('dealing'));
+      return () => cancelAnimationFrame(id);
+   }, [card, deal]);
 
    return (
       <div
@@ -15,11 +45,23 @@ export function PirateCard({ card, className }: Props) {
             // Height-driven so the card flexes with leftover viewport space.
             // Width-only would reflow; constraining both axes drops aspect-ratio.
             'card-flip-container aspect-[3/4] h-full max-h-[346px]',
-            isPirate && 'animate-bust-shake',
+            // Shake only the card actively being dealt — a resting (deal=false)
+            // pirate on the pile is dead and must not jitter again.
+            isPirate && deal && phase === 'front' && 'animate-bust-shake',
             className,
          )}
       >
-         <div className={cn('relative h-full w-full card-flip', card ? 'is-flipped' : '')}>
+         <div
+            className={cn(
+               'relative h-full w-full deal-card',
+               phase === 'back' && 'is-back',
+               phase === 'dealing' && 'animate-deal-flip',
+               phase === 'front' && 'is-dealt',
+            )}
+            onAnimationEnd={(e) => {
+               if (e.animationName === 'deal-flip') setPhase('front');
+            }}
+         >
             <CardBack className='card-face absolute inset-0' />
             <CardFront className='card-face card-face-back absolute inset-0' card={card} />
          </div>
@@ -29,7 +71,7 @@ export function PirateCard({ card, className }: Props) {
 
 /* ────────────────────────── Card back ────────────────────────── */
 
-function CardBack({ className }: { className?: string }) {
+export function CardBack({ className }: { className?: string }) {
    return (
       <div
          className={cn(

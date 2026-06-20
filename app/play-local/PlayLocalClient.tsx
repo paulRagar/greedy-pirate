@@ -10,9 +10,9 @@ import { DEFAULT_VARIANT } from '@/game/rules';
 import type { DeckVariant, PlayerInit } from '@/game/types';
 import { cn } from '@/lib/cn';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
-import { PirateCard } from '@/ui/pirate-card/PirateCard';
 import { BustVignette } from '@/ui/effects/BustVignette';
 import { ChestBurst } from '@/ui/effects/ChestBurst';
+import { DeckDiscard } from '@/ui/game-room/DeckDiscard';
 import { ScoreRibbon } from '@/ui/game-room/ScoreRibbon';
 import { StreakStrip } from '@/ui/game-room/StreakStrip';
 import { VictoryModal } from '@/ui/game-room/VictoryModal';
@@ -154,8 +154,8 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
          />
 
          <div className='relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-2'>
-            <div className='relative flex min-h-0 w-full flex-1 justify-center'>
-               <PirateCard card={state.currentCard} />
+            <div className='relative flex min-h-0 w-full flex-1 items-center justify-center'>
+               <DeckDiscard currentCard={state.currentCard} deckCount={state.deck.length} />
             </div>
             <StreakStrip streak={state.currentStreak} />
          </div>
