@@ -26,6 +26,10 @@ type StoredPlayer = { id: string; name: string };
 
 const PLAYERS_KEY = 'players';
 
+// Deal animation (~440ms) plus a beat to see the final card resolve (bank or
+// sink) before the modal.
+const VICTORY_DELAY_MS = 1100;
+
 export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
    const router = useRouter();
    const [changingCrew, startChangeCrew] = useTransition();
@@ -112,6 +116,27 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
       if (shakeKey > 0) setShaking(true);
    }, [shakeKey]);
 
+   // Hold the victory modal until the final card has landed and players have had
+   // a beat to register it was the last one.
+   const [showVictory, setShowVictory] = useState(false);
+   useEffect(() => {
+      if (!isComplete) {
+         setShowVictory(false);
+         return;
+      }
+      const t = setTimeout(() => setShowVictory(true), VICTORY_DELAY_MS);
+      return () => clearTimeout(t);
+   }, [isComplete]);
+
+   // A new draw started a fresh streak — drop any lingering bank/sink burst so
+   // the live total shows immediately instead of waiting for the burst to finish.
+   useEffect(() => {
+      if (state.currentStreak.length > 0) {
+         setBankBurst(null);
+         setSinkBurst(null);
+      }
+   }, [state.currentStreak.length]);
+
    // Pirate reveal moment — fly the just-lost streak into the pirate card.
    useEffect(() => {
       if (isPirate && !isComplete && pendingSunk.current.length > 0) {
@@ -124,6 +149,24 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
       // Stash what we'd lose so the sink burst has the coins if this is a pirate.
       pendingSunk.current = state.currentStreak.map((c) => c.value);
       dispatch({ type: 'DRAW' });
+
+      // Last card: the turn won't end normally (game completes), so play the
+      // streak's resolution here — gold banks into the chest, a pirate sinks it.
+      const next = useGameStore.getState().state;
+      if (next.status === 'complete' && next.currentCard) {
+         if (next.currentCard.kind === 'pirate') {
+            if (pendingSunk.current.length > 0) {
+               setSinkBurst({ key: (sinkBurstKey.current += 1), coins: pendingSunk.current });
+            }
+         } else {
+            const coins = [...pendingSunk.current, next.currentCard.value];
+            setBankBurst({
+               key: (bankBurstKey.current += 1),
+               coins,
+               amount: coins.reduce((a, b) => a + b, 0),
+            });
+         }
+      }
    };
 
    const handleBank = () => {
@@ -188,8 +231,10 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
             )}
          </div>
 
-         <div className='z-20 mt-auto px-0 pt-2 safe-bottom'>
-            {isPirate ? (
+         {/* Reserve the action-row height so hiding the buttons at game end
+             doesn't drop the cards down a few pixels. */}
+         <div className='z-20 mt-auto min-h-[64px] px-0 pt-2 safe-bottom'>
+            {isComplete ? null : isPirate ? (
                <PirateButton variant='tertiary' size='lg' fullWidth onClick={() => dispatch({ type: 'END_TURN' })}>
                   Pass the Helm
                </PirateButton>
@@ -206,7 +251,7 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
          </div>
 
          <VictoryModal
-            open={isComplete}
+            open={showVictory}
             winner={winner}
             ranked={ranked}
             actions={

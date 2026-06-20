@@ -45,7 +45,7 @@ export function PirateSinkBurst({ coins, onDone }: Props) {
    }, [onDone]);
 
    return (
-      <div className='relative flex min-h-[88px] w-full flex-col items-center justify-start gap-1.5' aria-hidden='true'>
+      <div className='relative flex h-28 w-full flex-col items-center justify-start gap-1.5' aria-hidden='true'>
          {/* The lost total — flashes red and fades as the loot is dragged away. */}
          <span
             className='pirate-display text-5xl leading-none text-[color:var(--color-coral-400)] drop-shadow-[0_2px_8px_rgb(0_0_0/0.5)] transition-opacity duration-300 sm:text-6xl'

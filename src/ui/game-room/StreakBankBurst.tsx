@@ -48,7 +48,7 @@ export function StreakBankBurst({ coins, amount, onDone }: Props) {
    }, [onDone]);
 
    return (
-      <div className='relative flex min-h-[88px] w-full flex-col items-center justify-start gap-1.5' aria-hidden='true'>
+      <div className='relative flex h-28 w-full flex-col items-center justify-start gap-1.5' aria-hidden='true'>
          {/* Total in its resting position, drifting up and fading as it's banked. */}
          <span className='animate-bank-amount pirate-display text-5xl leading-none text-[color:var(--color-gold-300)] drop-shadow-[0_2px_8px_rgb(0_0_0/0.5)] sm:text-6xl'>
             {amount}

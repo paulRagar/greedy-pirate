@@ -641,6 +641,16 @@
    animation: bank-amount-rise 900ms ease-out both;
 }
 
+/* Victory modal entrance — scale up and fade in. */
+@keyframes modal-pop {
+   0% { transform: scale(0.9); opacity: 0; }
+   100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-modal-pop {
+   animation: modal-pop 280ms cubic-bezier(0.2, 0.85, 0.4, 1.1) both;
+}
+
 /* Bank: each streak chip slides to the chest at center (per-chip --bank-dx/dy)
    and shrinks away as it drops in. */
 @keyframes coin-bank {
@@ -716,7 +726,8 @@
    }
    .animate-toast-in,
    .animate-trophy-pop,
-   .animate-chest-pop {
+   .animate-chest-pop,
+   .animate-modal-pop {
       animation-duration: 1ms;
    }
    .route-enter,

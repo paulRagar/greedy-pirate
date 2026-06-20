@@ -16,7 +16,7 @@ export function StreakBoard({ streak }: { streak: ReadonlyArray<GoldCard> }) {
    const active = streak.length > 0;
 
    return (
-      <div className='flex min-h-[88px] w-full flex-col items-center justify-start gap-1.5'>
+      <div className='flex h-28 w-full flex-col items-center justify-start gap-1.5'>
          {active && (
             <>
                <CountUpNumber

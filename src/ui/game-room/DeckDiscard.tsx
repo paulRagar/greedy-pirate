@@ -50,7 +50,7 @@ export function DeckDiscard({ currentCard, deckCount, drawing = false }: Props) 
       >
          {/* Deck — left */}
          <CardSlot label='Deck'>
-            {deckEmpty ? <EmptyFace label='Deck dry' /> : <CardBack className='absolute inset-0 h-full w-full' />}
+            {deckEmpty ? <EmptyFace /> : <CardBack className='absolute inset-0 h-full w-full' />}
          </CardSlot>
 
          {/* Discard — right. Empty outline sits at the bottom so it persists until
