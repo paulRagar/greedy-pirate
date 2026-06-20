@@ -1,0 +1,28 @@
+src/ui/game-room/PirateSinkBurst.tsx
+  s_6d16b72296eb9d::t_c7edc5a292b689 26-30,45,50
+src/ui/game-room/TurnClock.tsx
+  s_6d16b72296eb9d::t_8e9c9e773e6b92 80-83
+src/client/hooks/useGameJuice.ts
+  s_6d16b72296eb9d::t_746783c353c186 57
+  s_6d16b72296eb9d::t_26d385341a22b4 76
+src/ui/game-room/StreakBankBurst.tsx
+  s_6d16b72296eb9d::t_fa75543da485ff 29-33,48,53
+app/play/[code]/OnlineRoomClient.tsx
+  s_6d16b72296eb9d::t_fa2b1f7309534b 1606-1655
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "26fc68144ab11ab2b0e92bcd9f72ad522db79336",
+  "prompts": {},
+  "sessions": {
+    "s_6d16b72296eb9d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "87dac023-7d21-41fd-8da9-2ea1f6e9dc00",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
