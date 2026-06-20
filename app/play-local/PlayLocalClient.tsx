@@ -78,25 +78,18 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
          status: state.status,
          turnIndex: state.turnIndex,
          currentCardKind: state.currentCard?.kind ?? null,
+         currentCardValue: state.currentCard?.kind === 'gold' ? state.currentCard.value : null,
          streakLength: state.currentStreak.length,
+         streak: state.currentStreak.map((c) => c.value),
          players: state.players.map((p) => ({ id: p.id, coins: p.coins })),
          isMyTurn: true, // hot-seat — every turn is "yours"
       }),
       [state],
    );
-   const { shakeKey } = useGameJuice(snap);
-
-   // Bank burst: captured at bank time (the engine clears the streak immediately)
-   // so the chips can slide into the chest after they've gone from state.
-   const [bankBurst, setBankBurst] = useState<{ key: number; coins: number[]; amount: number } | null>(null);
-   const bankBurstKey = useRef(0);
-
-   // Pirate sink: the streak is wiped the instant a pirate is drawn, so we stash
-   // the about-to-be-lost coins on every draw and replay them flying into the
-   // pirate card if that draw turns out to be a robbery.
-   const [sinkBurst, setSinkBurst] = useState<{ key: number; coins: number[] } | null>(null);
-   const sinkBurstKey = useRef(0);
-   const pendingSunk = useRef<number[]>([]);
+   // Bank/sink bursts are derived from state transitions (the engine clears the
+   // streak the instant a pirate or bank lands, so the hook captures the lost
+   // coins from the previous snapshot).
+   const { bankFx, clearBankFx, sinkFx, clearSinkFx, shakeKey } = useGameJuice(snap);
 
    const announceSnap = useMemo<AnnounceSnapshot>(
       () => ({
@@ -128,53 +121,11 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
       return () => clearTimeout(t);
    }, [isComplete]);
 
-   // A new draw started a fresh streak — drop any lingering bank/sink burst so
-   // the live total shows immediately instead of waiting for the burst to finish.
-   useEffect(() => {
-      if (state.currentStreak.length > 0) {
-         setBankBurst(null);
-         setSinkBurst(null);
-      }
-   }, [state.currentStreak.length]);
-
-   // Pirate reveal moment — fly the just-lost streak into the pirate card.
-   useEffect(() => {
-      if (isPirate && !isComplete && pendingSunk.current.length > 0) {
-         setSinkBurst({ key: (sinkBurstKey.current += 1), coins: pendingSunk.current });
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, [isPirate]);
-
    const handleDraw = () => {
-      // Stash what we'd lose so the sink burst has the coins if this is a pirate.
-      pendingSunk.current = state.currentStreak.map((c) => c.value);
       dispatch({ type: 'DRAW' });
-
-      // Last card: the turn won't end normally (game completes), so play the
-      // streak's resolution here — gold banks into the chest, a pirate sinks it.
-      const next = useGameStore.getState().state;
-      if (next.status === 'complete' && next.currentCard) {
-         if (next.currentCard.kind === 'pirate') {
-            if (pendingSunk.current.length > 0) {
-               setSinkBurst({ key: (sinkBurstKey.current += 1), coins: pendingSunk.current });
-            }
-         } else {
-            const coins = [...pendingSunk.current, next.currentCard.value];
-            setBankBurst({
-               key: (bankBurstKey.current += 1),
-               coins,
-               amount: coins.reduce((a, b) => a + b, 0),
-            });
-         }
-      }
    };
 
    const handleBank = () => {
-      setBankBurst({
-         key: (bankBurstKey.current += 1),
-         coins: state.currentStreak.map((c) => c.value),
-         amount: streakSum,
-      });
       dispatch({ type: 'BANK' });
    };
 
@@ -217,15 +168,14 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
             <div className='relative flex min-h-0 w-full flex-1 items-center justify-center'>
                <DeckDiscard currentCard={state.currentCard} deckCount={state.deck.length} />
             </div>
-            {bankBurst ? (
-               <StreakBankBurst
-                  key={bankBurst.key}
-                  coins={bankBurst.coins}
-                  amount={bankBurst.amount}
-                  onDone={() => setBankBurst(null)}
-               />
-            ) : sinkBurst ? (
-               <PirateSinkBurst key={sinkBurst.key} coins={sinkBurst.coins} onDone={() => setSinkBurst(null)} />
+            {/* Live streak wins so a fresh draw shows the total instantly; a
+                bank/sink burst plays only while the streak is empty. */}
+            {state.currentStreak.length > 0 ? (
+               <StreakBoard streak={state.currentStreak} />
+            ) : bankFx ? (
+               <StreakBankBurst key={bankFx.key} coins={bankFx.coins} amount={bankFx.amount} onDone={clearBankFx} />
+            ) : sinkFx ? (
+               <PirateSinkBurst key={sinkFx.key} coins={sinkFx.coins} onDone={clearSinkFx} />
             ) : (
                <StreakBoard streak={state.currentStreak} />
             )}

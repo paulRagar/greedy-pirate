@@ -31,15 +31,19 @@ type PileCard = { card: GameCard; seq: number };
 export function DeckDiscard({ currentCard, deckCount, drawing = false }: Props) {
    const deckEmpty = deckCount <= 0;
 
+   // While a draw is in flight (online), deckCount drops optimistically but the
+   // real card only arrives on the broadcast — ignore the stale card until then.
+   const effectiveCard = drawing ? null : currentCard;
+
    // deckCount strictly decreases per draw, so it's a unique ordered draw id.
    const [pile, setPile] = useState<PileCard[]>([]);
    const lastSeq = useRef<number | null>(null);
    useEffect(() => {
-      if (currentCard && deckCount !== lastSeq.current) {
+      if (effectiveCard && deckCount !== lastSeq.current) {
          lastSeq.current = deckCount;
-         setPile((prev) => [...prev, { card: currentCard, seq: deckCount }].slice(-2));
+         setPile((prev) => [...prev, { card: effectiveCard, seq: deckCount }].slice(-2));
       }
-   }, [currentCard, deckCount]);
+   }, [effectiveCard, deckCount]);
 
    return (
       <div
