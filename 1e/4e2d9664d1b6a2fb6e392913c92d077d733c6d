@@ -1,0 +1,28 @@
+src/ui/game-room/StreakBankBurst.tsx
+  s_6d16b72296eb9d::t_a101ac384777d5 10,19-22,51-72,75
+  s_6d16b72296eb9d::t_fc607a42f7e52a 1-9,11-18,23-50,73-74,76-82
+app/play-local/PlayLocalClient.tsx
+  s_6d16b72296eb9d::t_bf02a13ca62323 17
+  s_6d16b72296eb9d::t_fdd583eab7d53b 169-178
+  s_6d16b72296eb9d::t_8fe9e7532320e7 121-125
+  s_6d16b72296eb9d::t_1fa7db6519d51e 84-89
+app/globals.css
+  s_6d16b72296eb9d::t_85440e8046921c 644-656
+  s_6d16b72296eb9d::t_31a184fd92b16f 727
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "1e4e2d9664d1b6a2fb6e392913c92d077d733c6d",
+  "prompts": {},
+  "sessions": {
+    "s_6d16b72296eb9d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "87dac023-7d21-41fd-8da9-2ea1f6e9dc00",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
