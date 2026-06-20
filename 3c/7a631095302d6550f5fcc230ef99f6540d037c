@@ -1,0 +1,39 @@
+src/ui/game-room/VictoryModal.tsx
+  s_6d16b72296eb9d::t_c3e0ebe236b742 46
+src/ui/game-room/PirateSinkBurst.tsx
+  s_6d16b72296eb9d::t_9ae73141bc2a45 48
+src/ui/game-room/StreakBoard.tsx
+  s_6d16b72296eb9d::t_65adbbda48d6b0 19
+app/play-local/PlayLocalClient.tsx
+  s_6d16b72296eb9d::t_445b4b5edeea81 29-31
+  s_6d16b72296eb9d::t_9e3421b97b1e0d 254
+  s_6d16b72296eb9d::t_9665642ad1b6fb 131-139
+  s_6d16b72296eb9d::t_5a226985e1eef7 119-130
+  s_6d16b72296eb9d::t_5d91a9b1a8cdf2 237
+  s_6d16b72296eb9d::t_0012bd7e3e5e81 152-169
+  s_6d16b72296eb9d::t_2363aa55b0811a 234-236
+  s_6d16b72296eb9d::t_e2c1e20492dffe 32
+src/ui/game-room/DeckDiscard.tsx
+  s_6d16b72296eb9d::t_d494ca49b050ef 53
+src/ui/game-room/StreakBankBurst.tsx
+  s_6d16b72296eb9d::t_6734e0d2c22c66 51
+app/globals.css
+  s_6d16b72296eb9d::t_378bbe7a76378a 729-730
+  s_6d16b72296eb9d::t_c8c4e1fe1ce8a9 644-653
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "3c7a631095302d6550f5fcc230ef99f6540d037c",
+  "prompts": {},
+  "sessions": {
+    "s_6d16b72296eb9d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "87dac023-7d21-41fd-8da9-2ea1f6e9dc00",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
