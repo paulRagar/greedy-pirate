@@ -1,0 +1,21 @@
+src/server/actions/restartRoom.ts
+  s_6d16b72296eb9d::t_924942bf57612a 72-73,76
+src/server/actions/finalizeContinuation.ts
+  s_6d16b72296eb9d::t_9b53348d1ddcf9 131-132,135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "56f24d33837d1c77a4bcce7a5f844bc6ef8be6ab",
+  "prompts": {},
+  "sessions": {
+    "s_6d16b72296eb9d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "87dac023-7d21-41fd-8da9-2ea1f6e9dc00",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
