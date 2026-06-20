@@ -14,7 +14,7 @@ import { BustVignette } from '@/ui/effects/BustVignette';
 import { ChestBurst } from '@/ui/effects/ChestBurst';
 import { DeckDiscard } from '@/ui/game-room/DeckDiscard';
 import { ScoreRibbon } from '@/ui/game-room/ScoreRibbon';
-import { StreakStrip } from '@/ui/game-room/StreakStrip';
+import { StreakBoard } from '@/ui/game-room/StreakBoard';
 import { VictoryModal } from '@/ui/game-room/VictoryModal';
 import { useGameToast } from '@/ui/toast/PirateToast';
 
@@ -157,7 +157,7 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
             <div className='relative flex min-h-0 w-full flex-1 items-center justify-center'>
                <DeckDiscard currentCard={state.currentCard} deckCount={state.deck.length} />
             </div>
-            <StreakStrip streak={state.currentStreak} />
+            <StreakBoard streak={state.currentStreak} />
          </div>
 
          <div className='z-20 mt-auto px-0 pt-2 safe-bottom'>
@@ -213,8 +213,10 @@ function StatusBanner({
    playerName: string | undefined;
    streakSum: number;
 }) {
+   // The running total below the cards now shows the booty, so the banner just
+   // prompts the action rather than repeating the number.
    let title = playerName ? `${playerName}, it be yer turn!` : '';
-   let subtitle = `Booty in hand: ${streakSum}`;
+   let subtitle = streakSum > 0 ? 'Push yer luck, or bury the loot.' : 'Plunder to start yer streak.';
    let titleClass = 'text-[color:var(--color-gold-300)]';
    if (isComplete) {
       title = 'The deck is empty.';
