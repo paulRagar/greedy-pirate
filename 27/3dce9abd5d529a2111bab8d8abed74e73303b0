@@ -1,0 +1,24 @@
+src/ui/game-room/PirateSinkBurst.tsx
+  s_6d16b72296eb9d::t_f76c2c997fe54e 1-74
+app/play-local/PlayLocalClient.tsx
+  s_6d16b72296eb9d::t_75f37754ab69af 90-96
+  s_6d16b72296eb9d::t_2c30c607d70609 115,117-119,124-125
+  s_6d16b72296eb9d::t_84c6db8e397292 184-185
+  s_6d16b72296eb9d::t_93f1b95b9a7324 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "273dce9abd5d529a2111bab8d8abed74e73303b0",
+  "prompts": {},
+  "sessions": {
+    "s_6d16b72296eb9d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "87dac023-7d21-41fd-8da9-2ea1f6e9dc00",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
