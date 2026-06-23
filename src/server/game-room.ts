@@ -12,7 +12,7 @@ import { broadcastLobbyEvent, broadcastRoomState } from './realtime/broadcast';
 import { fetchSpectators, promoteSpectators } from './spectators';
 import { CONTINUATION_WINDOW_MS, fetchContinuation } from './continuation';
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 import { initialState, reduce } from '@/game/engine';
 import { PIRATE_PASS_MS, TURN_CLOCK_MS } from '@/game/rules';
 import { toPublic } from '@/game/public';
@@ -72,6 +72,7 @@ export type EventType =
    | 'PLAYER_LEAVE'
    | 'START_GAME'
    | 'DRAW'
+   | 'RESOLVE_MULTIPLIER'
    | 'BANK'
    | 'END_TURN'
    | 'SKIP_TURN'
@@ -249,7 +250,11 @@ export async function applyAction(
       // A revealed pirate carries no decision — pass on a short fuse instead of
       // the full turn clock. (Only ever set on the pirate-revealing DRAW; the
       // next holder's turn resets to the full clock.)
-      const clockMs = next.currentCard?.kind === 'pirate' ? PIRATE_PASS_MS : TURN_CLOCK_MS;
+      // Pirate and Davey Jones both reveal a no-decision card that just hands
+      // off — give them the short fuse, not the full turn clock.
+      const turnEnderRevealed =
+         next.currentCard?.kind === 'pirate' || next.currentCard?.kind === 'davey_jones';
+      const clockMs = turnEnderRevealed ? PIRATE_PASS_MS : TURN_CLOCK_MS;
       const turnDeadline =
          next.status !== 'active'
             ? null

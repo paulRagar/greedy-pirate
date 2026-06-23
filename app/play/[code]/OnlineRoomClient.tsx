@@ -12,11 +12,14 @@ import { useGameJuice, type JuiceSnapshot } from '@/client/hooks/useGameJuice';
 import { useGameAnnouncer } from '@/client/hooks/useGameAnnouncer';
 import type { AnnounceSnapshot } from '@/client/a11y/gameAnnouncement';
 import type { PublicGameState, RoomState, RoomSpectatorView } from '@/game/public';
+import type { Card } from '@/game/types';
+import { SpecialCardStatus } from '@/ui/game-room/SpecialCardStatus';
 import {
    bankOnline,
    drawOnline,
    leaveActiveGame,
    markPresentOnline,
+   resolveMultiplierOnline,
    skipAbsentTurn,
    timeoutTurn,
 } from '@/server/actions/gameTurnActions';
@@ -1310,9 +1313,12 @@ function Play({
    achieverIds: ReadonlySet<string>;
    yourUnlocks: readonly string[];
 }) {
-   const [pending, setPending] = useState<null | 'draw' | 'bank' | 'end'>(null);
+   const [pending, setPending] = useState<null | 'draw' | 'bank' | 'end' | 'multiplier'>(null);
    const [error, setError] = useState<string | null>(null);
    const [drawingCard, setDrawingCard] = useState(false);
+   // Spyglass peek — the next few cards, handed back by drawOnline to this
+   // player only (never broadcast). Shown while the Spyglass is the face-up card.
+   const [peek, setPeek] = useState<Card[]>([]);
    const [leavingSpectate, setLeavingSpectate] = useState(false);
 
    const isHost = userId === hostId;
@@ -1332,6 +1338,9 @@ function Play({
    const currentPlayer = state.players[state.turnIndex];
    const isCurrent = currentPlayer?.id === userId;
    const isPirate = state.currentCard?.kind === 'pirate';
+   const isDavey = state.currentCard?.kind === 'davey_jones';
+   const turnEnder = isPirate || isDavey; // revealed card with no decision — just hands off
+   const pendingMultiplier = state.pendingDecision?.kind === 'multiplier';
    const isComplete = state.status === 'complete';
    // Who the helm passes to once this turn ends — mirrors the engine's
    // advanceTurn (skip past absent seats). Used to name the next player during
@@ -1355,12 +1364,23 @@ function Play({
    const handingOff =
       !isComplete &&
       state.status === 'active' &&
-      (isPirate || (deadlineMs !== null && clockRemaining <= 0));
+      (turnEnder || (deadlineMs !== null && clockRemaining <= 0));
    const winner = state.winnerId ? (state.players.find((p) => p.id === state.winnerId) ?? null) : null;
    const ranked = isComplete ? [...state.players].sort((a, b) => b.coins - a.coins) : [];
    const streakSum = state.currentStreak.reduce((sum, c) => sum + c.value, 0);
-   const canDraw = state.status === 'active' && isCurrent && !isPirate && state.deckCount > 0;
-   const canBank = state.status === 'active' && isCurrent && !isPirate && state.currentStreak.length > 0;
+   const canDraw =
+      state.status === 'active' &&
+      isCurrent &&
+      !turnEnder &&
+      !pendingMultiplier &&
+      state.deckCount > 0;
+   const canBank =
+      state.status === 'active' &&
+      isCurrent &&
+      !turnEnder &&
+      !pendingMultiplier &&
+      !state.bankLocked &&
+      state.currentStreak.length > 0;
 
    const snap = useMemo<JuiceSnapshot>(
       () => ({
@@ -1509,7 +1529,7 @@ function Play({
    }, [iAmAbsent, state.status, code]);
 
    const wrap = async (
-      label: 'draw' | 'bank' | 'end',
+      label: 'draw' | 'bank' | 'end' | 'multiplier',
       fn: () => Promise<{ ok: boolean; error?: string }>,
       optimistic?: () => void,
    ) => {
@@ -1526,11 +1546,20 @@ function Play({
 
    const handleDraw = () => {
       setDrawingCard(true);
-      void wrap(
-         'draw',
-         () => drawOnline(code),
-         () => applyOptimistic(optimisticDrawStart),
-      );
+      setPending('draw');
+      setError(null);
+      setPeek([]); // a fresh draw clears any prior Spyglass peek
+      applyOptimistic(optimisticDrawStart);
+      void drawOnline(code).then((result) => {
+         setPending(null);
+         if (!result.ok) {
+            setError(result.error ?? 'Failed');
+            setDrawingCard(false);
+            return;
+         }
+         // Spyglass: stash the private peek; the broadcast carries no deck.
+         if (result.peek) setPeek(result.peek);
+      });
    };
 
    const handleBank = () => {
@@ -1539,6 +1568,11 @@ function Play({
          () => bankOnline(code),
          () => applyOptimistic((prev) => optimisticBank(prev, userId)),
       );
+   };
+
+   const handleResolveMultiplier = (secure: boolean) => {
+      // The toss has no randomness; the server reconciles the window + lock.
+      void wrap('multiplier', () => resolveMultiplierOnline(code, secure));
    };
 
    return (
@@ -1589,6 +1623,16 @@ function Play({
             )}
          </div>
 
+         {!isComplete && (
+            <SpecialCardStatus
+               peek={state.currentCard?.kind === 'spyglass' ? peek : []}
+               daveyToss={state.daveyToss}
+               multiplierRemaining={state.multiplierRemaining}
+               bankLocked={state.bankLocked}
+               amuletArmed={state.amuletArmed}
+            />
+         )}
+
          {error && <p className='text-center text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
 
          {/* min-h reserves the action-row height so hiding it at game end doesn't
@@ -1618,6 +1662,29 @@ function Play({
                         loading={leavingSpectate || navLeaving}
                      >
                         Leave room
+                     </PirateButton>
+                  </div>
+               ) : isCurrent && pendingMultiplier ? (
+                  <div className='flex w-full gap-3'>
+                     <PirateButton
+                        variant='secondary'
+                        size='lg'
+                        fullWidth
+                        onClick={() => handleResolveMultiplier(true)}
+                        loading={pending === 'multiplier'}
+                        disabled={pending !== null}
+                     >
+                        Bank, then Ride
+                     </PirateButton>
+                     <PirateButton
+                        variant='primary'
+                        size='lg'
+                        fullWidth
+                        onClick={() => handleResolveMultiplier(false)}
+                        loading={pending === 'multiplier'}
+                        disabled={pending !== null}
+                     >
+                        Let it Ride
                      </PirateButton>
                   </div>
                ) : handingOff ? (
