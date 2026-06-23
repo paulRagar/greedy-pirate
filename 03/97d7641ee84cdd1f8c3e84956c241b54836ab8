@@ -1,0 +1,38 @@
+src/server/game-room.ts
+  s_c8c5d107f2449c::t_9c99c33b1c9f97 187-192
+  s_c8c5d107f2449c::t_6857fc71e7c8b3 60-65
+src/game/public.ts
+  s_c8c5d107f2449c::t_ed7cac45a45642 1
+  s_c8c5d107f2449c::t_60d49228a211df 20-27
+  s_c8c5d107f2449c::t_0a008a285c5701 56-59
+src/client/hooks/useGameJuice.ts
+  s_c8c5d107f2449c::t_b88011a66c4a77 18
+  s_c8c5d107f2449c::t_a90e29fea53a2c 4
+src/game/engine.ts
+  s_c8c5d107f2449c::t_93c812165ffa57 120
+  s_c8c5d107f2449c::t_f401e52d5083f2 108-113
+  s_c8c5d107f2449c::t_e7af9d49789780 168
+  s_c8c5d107f2449c::t_a2ff8f3af4023b 44-49
+  s_c8c5d107f2449c::t_08addd17742471 263-274,279-281,285
+src/game/engine.test.ts
+  s_c8c5d107f2449c::t_c736a0f741a4ce 108-121
+src/game/types.ts
+  s_c8c5d107f2449c::t_d52decbdd1844b 18-25
+  s_c8c5d107f2449c::t_35574b30da6390 54-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "0397d7641ee84cdd1f8c3e84956c241b54836ab8",
+  "prompts": {},
+  "sessions": {
+    "s_c8c5d107f2449c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1a04c13-68b8-4407-ab8d-90580ae8af86",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
