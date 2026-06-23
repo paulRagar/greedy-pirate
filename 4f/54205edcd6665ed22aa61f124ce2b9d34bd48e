@@ -1,0 +1,41 @@
+src/server/actions/gameTurnActions.ts
+  s_c8c5d107f2449c::t_9521d4c7ff06de 6
+  s_c8c5d107f2449c::t_d7f2bbe279d04d 87,96-137
+  s_c8c5d107f2449c::t_c6a28788117918 10-11,14-18,20-30
+  s_c8c5d107f2449c::t_1452e686672e5b 19
+src/server/game-room.ts
+  s_c8c5d107f2449c::t_5507810c23352a 253-257
+  s_c8c5d107f2449c::t_86a9cbf40d17dd 15
+  s_c8c5d107f2449c::t_ce67c8319f7f21 75
+src/ui/game-room/SpecialCardStatus.tsx
+  s_c8c5d107f2449c::t_422c9ad59938f8 1-71
+app/play/[code]/OnlineRoomClient.tsx
+  s_c8c5d107f2449c::t_09a1aab190286c 15-16,22
+  s_c8c5d107f2449c::t_395ef17d6a3c6f 1532,1549-1562,1573-1575
+  s_c8c5d107f2449c::t_154644904cc147 1367
+  s_c8c5d107f2449c::t_792edb2e55a3df 1626-1635
+  s_c8c5d107f2449c::t_15013dc600178e 1667-1689
+  s_c8c5d107f2449c::t_502be6fe8cff24 1316,1319-1321
+  s_c8c5d107f2449c::t_464c960d802501 1341-1343
+  s_c8c5d107f2449c::t_738e0eacbaecce 1371-1383
+app/play-local/PlayLocalClient.tsx
+  s_c8c5d107f2449c::t_5d0a994d5bb3fb 197-206,210-229
+  s_c8c5d107f2449c::t_82cafcf78ddfe8 69-72,78-87
+  s_c8c5d107f2449c::t_635af0bb5303f0 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "4f54205edcd6665ed22aa61f124ce2b9d34bd48e",
+  "prompts": {},
+  "sessions": {
+    "s_c8c5d107f2449c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1a04c13-68b8-4407-ab8d-90580ae8af86",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
