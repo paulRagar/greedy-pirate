@@ -1,0 +1,30 @@
+app/play-local/page.tsx
+  s_c8c5d107f2449c::t_d107a067f025ff 18
+app/setup/SetupClient.tsx
+  s_c8c5d107f2449c::t_5470d08103f55a 49,51
+  s_c8c5d107f2449c::t_9a5d2cfa734fc1 23
+  s_c8c5d107f2449c::t_9d36f1ce1818b6 139-168
+  s_c8c5d107f2449c::t_1557073118149b 9
+  s_c8c5d107f2449c::t_5b492f2e58241c 105-119
+app/play/new/NewRoomClient.tsx
+  s_c8c5d107f2449c::t_d3edbde66aeedd 125-172
+  s_c8c5d107f2449c::t_a87733b2fa58c0 13,19
+  s_c8c5d107f2449c::t_c0112804530070 80-103
+  s_c8c5d107f2449c::t_ecacb98df0c168 37-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "b92c0bfebff5ff9560538947250c647db5a884ff",
+  "prompts": {},
+  "sessions": {
+    "s_c8c5d107f2449c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1a04c13-68b8-4407-ab8d-90580ae8af86",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
