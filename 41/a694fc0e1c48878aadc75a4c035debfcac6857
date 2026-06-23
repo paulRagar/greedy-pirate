@@ -1,0 +1,30 @@
+src/game/engine.ts
+  s_c8c5d107f2449c::t_38cb334ac20d9a 1
+  s_c8c5d107f2449c::t_e5cec3b7e11312 94
+src/game/rules.ts
+  s_c8c5d107f2449c::t_f4142bafd9cd5e 6
+src/game/types.ts
+  s_c8c5d107f2449c::t_c76a52beb57e73 7
+src/game/deck.ts
+  s_c8c5d107f2449c::t_d90603f13e3005 1,34-37,42-84
+src/game/deck.test.ts
+  s_c8c5d107f2449c::t_ad9b1a44732e62 1-47
+src/server/db/schema.ts
+  s_c8c5d107f2449c::t_9622dbf0eac32a 50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "41a694fc0e1c48878aadc75a4c035debfcac6857",
+  "prompts": {},
+  "sessions": {
+    "s_c8c5d107f2449c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1a04c13-68b8-4407-ab8d-90580ae8af86",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
