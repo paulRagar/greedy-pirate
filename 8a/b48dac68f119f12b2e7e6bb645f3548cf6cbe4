@@ -1,0 +1,59 @@
+src/game/types.ts
+  s_c8c5d107f2449c::t_052283d1e4eeb8 3-16
+  s_c8c5d107f2449c::t_51befca950bdec 51-60,63-64
+  s_c8c5d107f2449c::t_ed66cd3f5b4e2c 112
+  s_c8c5d107f2449c::t_cf046828396d81 101-102
+src/game/rules.ts
+  s_c8c5d107f2449c::t_66ae5bb1914d30 10-19
+src/game/deck.ts
+  s_c8c5d107f2449c::t_7bf88071755fa9 76-83
+  s_c8c5d107f2449c::t_ac9b5de108f931 6-10
+src/game/public.ts
+  s_c8c5d107f2449c::t_178d7bf2d0e591 1-9
+  s_c8c5d107f2449c::t_8b694e8899c038 70
+  s_c8c5d107f2449c::t_bac59b80612d0b 36-37
+src/game/deck.test.ts
+  s_c8c5d107f2449c::t_8f60a9027b9ed7 34,43-50
+src/client/a11y/gameAnnouncement.ts
+  s_c8c5d107f2449c::t_942dd3a9260782 11
+  s_c8c5d107f2449c::t_ecb2a8641a963b 46-48,53-68
+  s_c8c5d107f2449c::t_f84e57a15deed0 1
+src/game/engine.ts
+  s_c8c5d107f2449c::t_31accc85211b67 500
+  s_c8c5d107f2449c::t_b3e7eab6f689b8 140
+  s_c8c5d107f2449c::t_73d7a4d2da9cb4 74
+  s_c8c5d107f2449c::t_7b4f328a76b495 87-88
+  s_c8c5d107f2449c::t_a83fe3e4ed9400 147,154,157-220,224,227-230,232,235-264,269-273,281-282,284-312,314-386
+  s_c8c5d107f2449c::t_03b620065a18a6 400-404
+  s_c8c5d107f2449c::t_07e9bf90977449 2-9,11-12,18-22,25-34
+src/game/special-cards.test.ts
+  s_c8c5d107f2449c::t_bda5ea2e1f79b0 68
+  s_c8c5d107f2449c::t_c25df9cce278f1 1-50,52-67,69-108,110-132,134-184
+  s_c8c5d107f2449c::t_761f154ebc69e3 51
+  s_c8c5d107f2449c::t_093d1e8ef8d1c5 133
+  s_c8c5d107f2449c::t_8d9a6ffe52fc16 109
+src/server/game-room.ts
+  s_c8c5d107f2449c::t_3c4121150a57a4 66
+  s_c8c5d107f2449c::t_3a2fec8429a420 194
+src/game/engine.test.ts
+  s_c8c5d107f2449c::t_9dc8feef3fca7e 471-481
+src/ui/pirate-card/PirateCard.tsx
+  s_c8c5d107f2449c::t_5c4ce69c2370b7 200-215,218-271
+  s_c8c5d107f2449c::t_a758eeccf4c5ac 216-217
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "8ab48dac68f119f12b2e7e6bb645f3548cf6cbe4",
+  "prompts": {},
+  "sessions": {
+    "s_c8c5d107f2449c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1a04c13-68b8-4407-ab8d-90580ae8af86",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
