@@ -49,6 +49,20 @@ export function useGameJuice(snap: JuiceSnapshot) {
          haptics.tap();
       }
 
+      // Cursed Seas reveals get a tactile flourish — Davey Jones hits hardest.
+      if (snap.currentCardKind !== p.currentCardKind) {
+         if (snap.currentCardKind === 'davey_jones') {
+            haptics.heavy();
+         } else if (
+            snap.currentCardKind === 'monkey' ||
+            snap.currentCardKind === 'multiplier' ||
+            snap.currentCardKind === 'spyglass' ||
+            snap.currentCardKind === 'amulet'
+         ) {
+            haptics.tap();
+         }
+      }
+
       // Pirate revealed — sink the streak that was just lost into the card.
       if (snap.currentCardKind === 'pirate' && p.currentCardKind !== 'pirate') {
          haptics.heavy();

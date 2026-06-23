@@ -35,9 +35,10 @@ function reduce(state: GameState, action: GameAction): GameState;
 | `PLAYER_JOIN` | status='lobby', not full, id unique | Append player with 0 coins |
 | `PLAYER_LEAVE` | status='lobby' | Remove player |
 | `START_GAME` | status='lobby', ≥ MIN_PLAYERS | Shuffle deck (seeded), transition to 'active' |
-| `DRAW` | status='active', deck non-empty, no pirate currently revealed | Reveal top card. Gold → append to streak. Pirate → wipe streak, increment pirate count. Last card → auto-complete (gold auto-banks). |
-| `BANK` | status='active', streak non-empty, no pirate revealed | Sum streak → current player coins. Advance turn. |
-| `END_TURN` | status='active', pirate currently revealed | Advance turn. |
+| `DRAW` | status='active', deck non-empty, no pirate/Davey revealed, no pending decision | Reveal top card. Gold → append to streak (2× while a Cursed Doubloon window runs). Pirate → wipe streak (or, if `amuletArmed`, keep half + bank it), increment pirate count. Special cards resolve per `game-rules.md`. Last card → auto-complete (gold auto-banks). |
+| `RESOLVE_MULTIPLIER` | status='active', `pendingDecision.kind === 'multiplier'` | `secure` banks the standing streak first; either way opens a 3-card 2× window with `bankLocked`. |
+| `BANK` | status='active', streak non-empty, no pirate revealed, **not `bankLocked`** | Sum streak → current player coins. Advance turn. |
+| `END_TURN` | status='active', pirate **or Davey Jones** currently revealed | Advance turn. |
 | `SKIP_TURN` | status='active', names current holder | Disconnect: drop streak, mark player absent, advance (future turns bypass them). |
 | `MARK_PRESENT` | — | Reconnect: clear the absent flag. No-op if not absent. |
 | `TIMEOUT_TURN` | status='active', names current holder | Shot clock expired: bank a standing streak else pass with 0, advance. Never marks absent. |
