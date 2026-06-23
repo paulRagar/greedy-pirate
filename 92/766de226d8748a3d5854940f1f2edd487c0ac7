@@ -1,0 +1,23 @@
+.claude/docs/game-rules.md
+  s_c8c5d107f2449c::t_9169ff03c7a9ce 43,45-61
+src/client/hooks/useGameJuice.ts
+  s_c8c5d107f2449c::t_6a0c11525a3eff 52-65
+src/game/CLAUDE.md
+  s_c8c5d107f2449c::t_645a4477a1608c 38-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "92766de226d8748a3d5854940f1f2edd487c0ac7",
+  "prompts": {},
+  "sessions": {
+    "s_c8c5d107f2449c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1a04c13-68b8-4407-ab8d-90580ae8af86",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
