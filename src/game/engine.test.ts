@@ -468,10 +468,17 @@ describe('telemetry', () => {
 
    it('resets telemetry on START_GAME', () => {
       const started = startGame(buildLobby(p('a'), p('b')));
-      expect(started.telemetry).toEqual({
-         a: { maxStreakLength: 0, biggestBank: 0, piratesEncountered: 0 },
-         b: { maxStreakLength: 0, biggestBank: 0, piratesEncountered: 0 },
-      });
+      const zero = {
+         maxStreakLength: 0,
+         biggestBank: 0,
+         piratesEncountered: 0,
+         amuletsSaved: 0,
+         monkeyStolen: 0,
+         monkeyLost: 0,
+         daveyWins: 0,
+         daveyLosses: 0,
+      };
+      expect(started.telemetry).toEqual({ a: zero, b: zero });
    });
 });
 

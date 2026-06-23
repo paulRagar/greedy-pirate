@@ -3,6 +3,11 @@ import type { Card, Deck, DeckVariant, GoldCard, PirateCard } from './types';
 
 const GOLD = (value: number): GoldCard => ({ kind: 'gold', value });
 const PIRATE: PirateCard = { kind: 'pirate' };
+const SPYGLASS: Card = { kind: 'spyglass' };
+const AMULET: Card = { kind: 'amulet' };
+const MULTIPLIER: Card = { kind: 'multiplier' };
+const MONKEY: Card = { kind: 'monkey' };
+const DAVEY_JONES: Card = { kind: 'davey_jones' };
 
 const repeat = <T>(item: T, n: number): T[] => Array.from({ length: n }, () => item);
 
@@ -68,8 +73,14 @@ function buildCursedDeck(rng: Rng): Deck {
    const goldCount = randInt(rng, 33, 43);
    const cards: Card[] = [...repeat<Card>(PIRATE, pirates)];
    for (let i = 0; i < goldCount; i++) cards.push(GOLD(randomGoldValue(rng)));
-   // Special cards are appended by later card tickets, then the whole deck is
-   // shuffled by the caller — so position never depends on insertion order.
+   // Special cards — rarity per design: utility commoner, swing cards rare.
+   // Counts jitter slightly per game so even the special mix can't be memorized.
+   cards.push(...repeat<Card>(SPYGLASS, randInt(rng, 2, 3)));
+   cards.push(...repeat<Card>(MONKEY, randInt(rng, 1, 2)));
+   cards.push(...repeat<Card>(AMULET, 1));
+   cards.push(...repeat<Card>(MULTIPLIER, 1));
+   cards.push(...repeat<Card>(DAVEY_JONES, 1));
+   // Caller shuffles, so insertion order never affects play.
    return cards;
 }
 

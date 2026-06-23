@@ -197,7 +197,78 @@ export function CardBack({ className }: { className?: string }) {
 function CardFront({ card, className }: { card: GameCard | null; className?: string }) {
    if (!card) return <div className={className} />;
    if (card.kind === 'pirate') return <PirateFace className={className} />;
-   return <GoldFace className={className} value={card.value} />;
+   if (card.kind === 'gold') return <GoldFace className={className} value={card.value} />;
+   return <SpecialFace kind={card.kind} className={className} />;
+}
+
+/* ─────────── Cursed Seas special cards (parchment + emblem) ─────────── */
+
+type SpecialKind = 'spyglass' | 'amulet' | 'multiplier' | 'monkey' | 'davey_jones';
+
+const SPECIAL_FACES: Record<
+   SpecialKind,
+   { emblem: string; title: string; tagline: string; border: string; glow: string }
+> = {
+   spyglass: {
+      emblem: '🔭',
+      title: 'Spyglass',
+      tagline: 'Peer beyond the fog',
+      border: 'var(--color-wood-700)',
+      glow: 'teal-glow',
+   },
+   amulet: {
+      emblem: '🧿',
+      title: 'Amulet',
+      tagline: 'Half spared from ruin',
+      border: 'var(--color-gold-500)',
+      glow: 'treasure-glow',
+   },
+   multiplier: {
+      emblem: '✨',
+      title: 'Cursed Doubloon',
+      tagline: 'Double — or be damned',
+      border: 'var(--color-coral-500)',
+      glow: 'coral-glow',
+   },
+   monkey: {
+      emblem: '🐒',
+      title: 'Monkey',
+      tagline: 'Nimble thieving fingers',
+      border: 'var(--color-wood-600)',
+      glow: 'treasure-glow',
+   },
+   davey_jones: {
+      emblem: '☠️',
+      title: 'Davey Jones',
+      tagline: 'The locker calls your gold',
+      border: 'var(--color-blood-800)',
+      glow: 'coral-glow',
+   },
+};
+
+function SpecialFace({ kind, className }: { kind: SpecialKind; className?: string }) {
+   const f = SPECIAL_FACES[kind];
+   return (
+      <div
+         className={cn(
+            'relative flex flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border-2 bg-[color:var(--color-parchment-100)] px-3 py-5 text-center card-shadow',
+            f.glow,
+            className,
+         )}
+         style={{ borderColor: f.border }}
+      >
+         <span aria-hidden='true' className='text-[3.25rem] leading-none drop-shadow-sm'>
+            {f.emblem}
+         </span>
+         <span
+            className='font-semibold tracking-wide text-[color:var(--color-wood-900)]'
+            style={{ font: '600 1.05rem var(--font-display)' }}
+         >
+            {f.title}
+         </span>
+         <span className='text-xs leading-snug text-[color:var(--color-wood-700)]'>{f.tagline}</span>
+      </div>
+   );
 }
 
 function PirateFace({ className }: { className?: string }) {

@@ -63,6 +63,7 @@ export function parseEngineState(row: DbGame): GameState {
       multiplierRemaining: raw.multiplierRemaining ?? 0,
       bankLocked: raw.bankLocked ?? false,
       pendingDecision: raw.pendingDecision ?? null,
+      daveyToss: raw.daveyToss ?? null,
    };
 }
 
@@ -190,6 +191,7 @@ function serializeState(state: GameState): Record<string, unknown> {
       multiplierRemaining: state.multiplierRemaining,
       bankLocked: state.bankLocked,
       pendingDecision: state.pendingDecision,
+      daveyToss: state.daveyToss,
    };
 }
 

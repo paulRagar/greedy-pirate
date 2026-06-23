@@ -31,7 +31,7 @@ describe('buildDeck — cursed (randomized)', () => {
       expect(shapes.size).toBeGreaterThan(1);
    });
 
-   it('stays within the designed bounds', () => {
+   it('stays within the designed bounds and includes the special cards', () => {
       for (const seed of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
          const d = buildDeck('cursed', rngFor(seed));
          const pirates = count(d, 'pirate');
@@ -40,8 +40,14 @@ describe('buildDeck — cursed (randomized)', () => {
          expect(pirates).toBeLessThanOrEqual(13);
          expect(gold).toBeGreaterThanOrEqual(33);
          expect(gold).toBeLessThanOrEqual(43);
-         // Only gold + pirates for now (special cards land in later tickets).
-         expect(pirates + gold).toBe(d.length);
+         // Special-card rarity: Spyglass 2–3, Monkey 1–2, Amulet/Doubloon/Davey 1 each.
+         expect(count(d, 'spyglass')).toBeGreaterThanOrEqual(2);
+         expect(count(d, 'spyglass')).toBeLessThanOrEqual(3);
+         expect(count(d, 'monkey')).toBeGreaterThanOrEqual(1);
+         expect(count(d, 'monkey')).toBeLessThanOrEqual(2);
+         expect(count(d, 'amulet')).toBe(1);
+         expect(count(d, 'multiplier')).toBe(1);
+         expect(count(d, 'davey_jones')).toBe(1);
       }
    });
 });

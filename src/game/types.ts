@@ -1,6 +1,19 @@
 export type GoldCard = { readonly kind: 'gold'; readonly value: number };
 export type PirateCard = { readonly kind: 'pirate' };
-export type Card = GoldCard | PirateCard;
+/** Cursed Seas special cards. Each is a stateless marker; the effect lives on GameState. */
+export type SpyglassCard = { readonly kind: 'spyglass' };
+export type AmuletCard = { readonly kind: 'amulet' };
+export type MultiplierCard = { readonly kind: 'multiplier' };
+export type MonkeyCard = { readonly kind: 'monkey' };
+export type DaveyJonesCard = { readonly kind: 'davey_jones' };
+export type Card =
+   | GoldCard
+   | PirateCard
+   | SpyglassCard
+   | AmuletCard
+   | MultiplierCard
+   | MonkeyCard
+   | DaveyJonesCard;
 
 export type Deck = ReadonlyArray<Card>;
 
@@ -35,7 +48,20 @@ export type PlayerTelemetry = {
    readonly biggestBank: number;
    /** Pirates drawn on this player's own turns. */
    readonly piratesEncountered: number;
+   /** Pirates softened by an Amulet (half the streak saved instead of wiped). */
+   readonly amuletsSaved: number;
+   /** Coins this player stole from rivals via the Monkey. */
+   readonly monkeyStolen: number;
+   /** Coins this player lost to a rival's Monkey. */
+   readonly monkeyLost: number;
+   /** Davey Jones coin tosses won. */
+   readonly daveyWins: number;
+   /** Davey Jones coin tosses lost. */
+   readonly daveyLosses: number;
 };
+
+/** Outcome of a Davey Jones forced wager, surfaced for the toss-reveal animation. */
+export type DaveyToss = { readonly won: boolean; readonly amount: number };
 
 export type GameState = {
    readonly status: GameStatus;
@@ -72,6 +98,8 @@ export type GameState = {
    readonly bankLocked: boolean;
    /** Turn-scoped: a revealed card awaiting the holder's decision before DRAW. */
    readonly pendingDecision: PendingDecision | null;
+   /** Transient: the just-resolved Davey Jones toss, for the reveal beat. Cleared on hand-off. */
+   readonly daveyToss: DaveyToss | null;
 };
 
 export type PlayerInit = { readonly id: string; readonly name: string };
@@ -81,6 +109,7 @@ export type GameAction =
    | { readonly type: 'PLAYER_LEAVE'; readonly playerId: string }
    | { readonly type: 'START_GAME'; readonly seed: string; readonly variant?: DeckVariant }
    | { readonly type: 'DRAW' }
+   | { readonly type: 'RESOLVE_MULTIPLIER'; readonly secure: boolean }
    | { readonly type: 'BANK' }
    | { readonly type: 'END_TURN' }
    | { readonly type: 'SKIP_TURN'; readonly playerId: string }

@@ -1,4 +1,12 @@
-import type { Card, DeckVariant, GameStatus, GameState, GoldCard, PendingDecision } from './types';
+import type {
+   Card,
+   DaveyToss,
+   DeckVariant,
+   GameStatus,
+   GameState,
+   GoldCard,
+   PendingDecision,
+} from './types';
 
 export type PublicPlayer = {
    readonly id: string;
@@ -25,6 +33,8 @@ export type PublicGameState = {
    readonly amuletArmed: boolean;
    /** A revealed card awaiting the holder's decision before DRAW. */
    readonly pendingDecision: PendingDecision | null;
+   /** The just-resolved Davey Jones toss, for the reveal beat (outcome is public). */
+   readonly daveyToss: DaveyToss | null;
 };
 
 export type RoomMetadata = {
@@ -57,5 +67,6 @@ export function toPublic(state: GameState): PublicGameState {
       bankLocked: state.bankLocked,
       amuletArmed: state.amuletArmed,
       pendingDecision: state.pendingDecision,
+      daveyToss: state.daveyToss,
    };
 }
