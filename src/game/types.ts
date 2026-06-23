@@ -4,7 +4,7 @@ export type Card = GoldCard | PirateCard;
 
 export type Deck = ReadonlyArray<Card>;
 
-export type DeckVariant = 'greedy' | 'even_greedier' | 'super_greedy';
+export type DeckVariant = 'greedy' | 'even_greedier' | 'super_greedy' | 'cursed';
 
 export type Player = {
    readonly id: string;

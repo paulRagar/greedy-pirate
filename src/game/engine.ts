@@ -1,4 +1,4 @@
-import { DECKS } from './deck';
+import { buildDeck } from './deck';
 import { DEFAULT_VARIANT, MAX_PLAYERS, MIN_PLAYERS } from './rules';
 import { createRng, seedFromString, shuffle } from './shuffle';
 import type { GameAction, GameState, GoldCard, Player, PlayerTelemetry } from './types';
@@ -90,9 +90,8 @@ function handleLeave(state: GameState, playerId: string): GameState {
 function handleStart(state: GameState, seed: string, variant = state.variant): GameState {
    assert(state.status === 'lobby', 'game already started');
    assert(state.players.length >= MIN_PLAYERS, `need at least ${MIN_PLAYERS} players`);
-   const base = DECKS[variant];
    const rng = createRng(seedFromString(seed));
-   const deck = shuffle(base, rng);
+   const deck = shuffle(buildDeck(variant, rng), rng);
    return {
       ...state,
       status: 'active',
