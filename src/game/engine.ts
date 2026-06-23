@@ -41,6 +41,12 @@ export const initialState: GameState = {
    winnerId: null,
    absentIds: [],
    telemetry: {},
+   rngSeed: '',
+   rngCursor: 0,
+   amuletArmed: false,
+   multiplierRemaining: 0,
+   bankLocked: false,
+   pendingDecision: null,
 };
 
 export function reduce(state: GameState, action: GameAction): GameState {
@@ -99,12 +105,19 @@ function handleStart(state: GameState, seed: string, variant = state.variant): G
       winnerId: null,
       absentIds: [],
       telemetry: Object.fromEntries(state.players.map((p) => [p.id, EMPTY_TELEMETRY])),
+      rngSeed: seed,
+      rngCursor: 0,
+      amuletArmed: false,
+      multiplierRemaining: 0,
+      bankLocked: false,
+      pendingDecision: null,
    };
 }
 
 function handleDraw(state: GameState): GameState {
    assert(state.status === 'active', 'game not active');
    assert(state.currentCard?.kind !== 'pirate', 'pirate revealed; end turn before drawing');
+   assert(state.pendingDecision === null, 'resolve the revealed card before drawing');
    assert(state.deck.length > 0, 'deck empty');
 
    const top = state.deck[0];
@@ -152,6 +165,7 @@ function handleDraw(state: GameState): GameState {
 function handleBank(state: GameState): GameState {
    assert(state.status === 'active', 'game not active');
    assert(state.currentCard?.kind !== 'pirate', 'cannot bank after pirate');
+   assert(!state.bankLocked, 'cannot bank during a Cursed Doubloon window');
    assert(state.currentStreak.length > 0, 'no streak to bank');
    const banked = bankToCurrentPlayer(state);
    return advanceTurn({ ...banked, currentCard: null, currentStreak: [] });
@@ -246,19 +260,29 @@ function bankToCurrentPlayer(state: GameState): GameState {
 
 function advanceTurn(state: GameState): GameState {
    if (state.players.length === 0) return state;
-   const n = state.players.length;
-   let next = (state.turnIndex + 1) % n;
+   // Every turn hand-off clears turn-scoped special-card effects so they can
+   // never leak into the next player's turn. Routing all hand-offs through here
+   // means no caller can forget. (rngSeed/rngCursor persist for the whole game.)
+   const base: GameState = {
+      ...state,
+      amuletArmed: false,
+      multiplierRemaining: 0,
+      bankLocked: false,
+      pendingDecision: null,
+   };
+   const n = base.players.length;
+   let next = (base.turnIndex + 1) % n;
    // Walk past anyone flagged absent. If everyone is absent, fall back
    // to the original advance — the table is effectively empty but the
    // engine refuses to loop forever.
    for (let i = 0; i < n; i++) {
-      const candidate = state.players[next];
-      if (candidate && !state.absentIds.includes(candidate.id)) {
-         return { ...state, turnIndex: next };
+      const candidate = base.players[next];
+      if (candidate && !base.absentIds.includes(candidate.id)) {
+         return { ...base, turnIndex: next };
       }
       next = (next + 1) % n;
    }
-   return { ...state, turnIndex: (state.turnIndex + 1) % n };
+   return { ...base, turnIndex: (base.turnIndex + 1) % n };
 }
 
 function complete(state: GameState): GameState {

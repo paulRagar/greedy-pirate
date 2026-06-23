@@ -1,4 +1,4 @@
-import type { Card, DeckVariant, GameStatus, GameState, GoldCard } from './types';
+import type { Card, DeckVariant, GameStatus, GameState, GoldCard, PendingDecision } from './types';
 
 export type PublicPlayer = {
    readonly id: string;
@@ -17,6 +17,14 @@ export type PublicGameState = {
    readonly winnerId: string | null;
    readonly deckCount: number;
    readonly absentIds: ReadonlyArray<string>;
+   /** Gold cards left in the active 2× window (0 = no multiplier running). */
+   readonly multiplierRemaining: number;
+   /** Banking blocked while a forced-push multiplier window runs. */
+   readonly bankLocked: boolean;
+   /** An Amulet is armed to soften the next pirate this turn. */
+   readonly amuletArmed: boolean;
+   /** A revealed card awaiting the holder's decision before DRAW. */
+   readonly pendingDecision: PendingDecision | null;
 };
 
 export type RoomMetadata = {
@@ -45,5 +53,9 @@ export function toPublic(state: GameState): PublicGameState {
       winnerId: state.winnerId,
       deckCount: state.deck.length,
       absentIds: state.absentIds,
+      multiplierRemaining: state.multiplierRemaining,
+      bankLocked: state.bankLocked,
+      amuletArmed: state.amuletArmed,
+      pendingDecision: state.pendingDecision,
    };
 }

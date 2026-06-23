@@ -57,6 +57,12 @@ export function parseEngineState(row: DbGame): GameState {
       winnerId: raw.winnerId ?? null,
       absentIds: (raw.absentIds ?? []) as GameState['absentIds'],
       telemetry: (raw.telemetry ?? {}) as GameState['telemetry'],
+      rngSeed: raw.rngSeed ?? '',
+      rngCursor: raw.rngCursor ?? 0,
+      amuletArmed: raw.amuletArmed ?? false,
+      multiplierRemaining: raw.multiplierRemaining ?? 0,
+      bankLocked: raw.bankLocked ?? false,
+      pendingDecision: raw.pendingDecision ?? null,
    };
 }
 
@@ -178,6 +184,12 @@ function serializeState(state: GameState): Record<string, unknown> {
       winnerId: state.winnerId,
       absentIds: state.absentIds,
       telemetry: state.telemetry,
+      rngSeed: state.rngSeed,
+      rngCursor: state.rngCursor,
+      amuletArmed: state.amuletArmed,
+      multiplierRemaining: state.multiplierRemaining,
+      bankLocked: state.bankLocked,
+      pendingDecision: state.pendingDecision,
    };
 }
 

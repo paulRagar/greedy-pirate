@@ -105,6 +105,20 @@ describe('START_GAME', () => {
       expect(s.status).toBe('active');
       expect(s.deck.length).toBe(DECKS.greedy.length);
    });
+
+   it('retains the seed on state with a zeroed rng cursor', () => {
+      const s = startGame(buildLobby(p('a'), p('b')), 'keep-me');
+      expect(s.rngSeed).toBe('keep-me');
+      expect(s.rngCursor).toBe(0);
+   });
+
+   it('zeroes turn-scoped special-card effect state', () => {
+      const s = startGame(buildLobby(p('a'), p('b')));
+      expect(s.amuletArmed).toBe(false);
+      expect(s.multiplierRemaining).toBe(0);
+      expect(s.bankLocked).toBe(false);
+      expect(s.pendingDecision).toBeNull();
+   });
 });
 
 describe('DRAW gold', () => {

@@ -15,6 +15,15 @@ export type Player = {
 export type GameStatus = 'lobby' | 'active' | 'complete';
 
 /**
+ * A revealed card that parks the turn awaiting a player choice before any
+ * further DRAW. Mirrors the pirate-revealed gate, but for cards that offer a
+ * decision rather than a forced pass. Currently only the Cursed Doubloon
+ * (multiplier): the holder chooses whether to bank their standing streak before
+ * the 2× window opens. Extend the union as more interactive cards land.
+ */
+export type PendingDecision = { readonly kind: 'multiplier' };
+
+/**
  * Per-player personal bests accrued over a single game. Surfaced to the
  * persistence layer at completion to light up the dead `user_stats` columns
  * and feed achievements — never broadcast in the public state.
@@ -42,6 +51,27 @@ export type GameState = {
    readonly absentIds: ReadonlyArray<string>;
    /** Per-player personal bests, keyed by player id. */
    readonly telemetry: Readonly<Record<string, PlayerTelemetry>>;
+   /**
+    * The START_GAME seed, retained on state so deterministic randomness
+    * (e.g. Davey Jones' coin toss) survives past the initial shuffle. Never
+    * broadcast — exposing it would let a client predict tosses and deck order.
+    */
+   readonly rngSeed: string;
+   /**
+    * Monotonic counter of consumed random *events* (not deck draws). Combined
+    * with `rngSeed` to derive a per-event PRNG stream, so replaying the same
+    * action list reproduces the same outcomes. Namespaced away from the shuffle
+    * stream, so adding tosses never perturbs the deck order. Never broadcast.
+    */
+   readonly rngCursor: number;
+   /** Turn-scoped: an Amulet is armed to soften the next pirate this turn. */
+   readonly amuletArmed: boolean;
+   /** Turn-scoped: gold cards left in the active 2× window (0 = no multiplier). */
+   readonly multiplierRemaining: number;
+   /** Turn-scoped: banking is blocked while a forced-push multiplier window runs. */
+   readonly bankLocked: boolean;
+   /** Turn-scoped: a revealed card awaiting the holder's decision before DRAW. */
+   readonly pendingDecision: PendingDecision | null;
 };
 
 export type PlayerInit = { readonly id: string; readonly name: string };

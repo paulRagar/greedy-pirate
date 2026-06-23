@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { GameStatus } from '@/game/types';
+import type { Card, GameStatus } from '@/game/types';
 import { haptics } from '@/client/juice/haptics';
 
 /**
@@ -15,7 +15,7 @@ import { haptics } from '@/client/juice/haptics';
 export type JuiceSnapshot = {
    status: GameStatus;
    turnIndex: number;
-   currentCardKind: 'gold' | 'pirate' | null;
+   currentCardKind: Card['kind'] | null;
    /** Value of the revealed card when it's gold (else null) — used to include
        the final auto-banked card in the bank burst. */
    currentCardValue: number | null;
