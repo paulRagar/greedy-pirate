@@ -1157,40 +1157,39 @@ function Lobby({
             )}
          </PiratePanel>
 
-         {readyUpPhase && (
-            <PiratePanel variant='deep' className='flex flex-col gap-2 p-3'>
-               <span className='text-xs uppercase tracking-[0.2em] text-[color:var(--color-cream-200)]/60'>
-                  Deck
-               </span>
-               {isHost ? (
-                  <div className='flex gap-2' role='radiogroup' aria-label='Deck type'>
-                     <DeckChoiceButton
-                        selected={!cursed}
-                        disabled={deckPending}
-                        onClick={() => chooseDeck('even_greedier')}
-                        title='Classic'
-                        subtitle='Gold & pirates'
-                     />
-                     <DeckChoiceButton
-                        selected={cursed}
-                        disabled={deckPending}
-                        onClick={() => chooseDeck('cursed')}
-                        title='Cursed Seas'
-                        subtitle='+ special cards'
-                     />
-                  </div>
-               ) : (
-                  <span className='pirate-display text-lg text-[color:var(--color-gold-300)]'>
-                     {cursed ? 'Cursed Seas' : 'Classic'}
-                     <span className='ml-2 align-middle text-xs text-[color:var(--color-cream-200)]/55'>
-                        · the captain&apos;s call
-                     </span>
+         <div className='scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto'>
+            {readyUpPhase && (
+               <div className='flex flex-col gap-2'>
+                  <span className='text-xs uppercase tracking-[0.2em] text-[color:var(--color-cream-200)]/60'>
+                     Deck
                   </span>
-               )}
-            </PiratePanel>
-         )}
-
-         <div className='scrollbar-none min-h-0 flex-1 overflow-y-auto'>
+                  {isHost ? (
+                     <div className='flex gap-2' role='radiogroup' aria-label='Deck type'>
+                        <DeckChoiceButton
+                           selected={!cursed}
+                           disabled={deckPending}
+                           onClick={() => chooseDeck('even_greedier')}
+                           title='Classic'
+                           subtitle='Gold & pirates'
+                        />
+                        <DeckChoiceButton
+                           selected={cursed}
+                           disabled={deckPending}
+                           onClick={() => chooseDeck('cursed')}
+                           title='Cursed Seas'
+                           subtitle='+ special cards'
+                        />
+                     </div>
+                  ) : (
+                     <span className='pirate-display text-lg text-[color:var(--color-gold-300)]'>
+                        {cursed ? 'Cursed Seas' : 'Classic'}
+                        <span className='ml-2 align-middle text-xs text-[color:var(--color-cream-200)]/55'>
+                           · the captain&apos;s call
+                        </span>
+                     </span>
+                  )}
+               </div>
+            )}
             <CrewGrid
                players={visiblePlayers}
                capacity={MAX_PLAYERS}
