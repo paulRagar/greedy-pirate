@@ -371,14 +371,19 @@ function drawDaveyJones(
 function handleResolveMultiplier(state: GameState, secure: boolean): GameState {
    assert(state.status === 'active', 'game not active');
    assert(state.pendingDecision?.kind === 'multiplier', 'no Cursed Doubloon decision pending');
-   // secure → bank the standing streak now (locked in safe), then open a fresh
-   // 2× window. ride → keep the whole streak at risk under the window.
-   const banked =
-      secure && state.currentStreak.length > 0
-         ? { ...bankToCurrentPlayer(state), currentStreak: [] }
-         : state;
+   if (secure) {
+      // Decline the curse: bank the standing streak (if any) and END the turn.
+      // There is no bank-and-keep-drawing — declining means walking away safe.
+      const banked =
+         state.currentStreak.length > 0
+            ? { ...bankToCurrentPlayer(state), currentStreak: [] }
+            : state;
+      return advanceTurn({ ...banked, currentCard: null });
+   }
+   // Take the chance: open a forced-push 2× window — the next 3 gold cards are
+   // doubled, but banking is locked until the window closes (or a pirate ends it).
    return {
-      ...banked,
+      ...state,
       currentCard: null,
       pendingDecision: null,
       multiplierRemaining: MULTIPLIER_WINDOW,

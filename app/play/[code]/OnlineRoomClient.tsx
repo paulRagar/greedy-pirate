@@ -1667,16 +1667,6 @@ function Play({
                ) : isCurrent && pendingMultiplier ? (
                   <div className='flex w-full gap-3'>
                      <PirateButton
-                        variant='secondary'
-                        size='lg'
-                        fullWidth
-                        onClick={() => handleResolveMultiplier(true)}
-                        loading={pending === 'multiplier'}
-                        disabled={pending !== null}
-                     >
-                        Bank, then Ride
-                     </PirateButton>
-                     <PirateButton
                         variant='primary'
                         size='lg'
                         fullWidth
@@ -1684,7 +1674,17 @@ function Play({
                         loading={pending === 'multiplier'}
                         disabled={pending !== null}
                      >
-                        Let it Ride
+                        Double or Bust
+                     </PirateButton>
+                     <PirateButton
+                        variant='secondary'
+                        size='lg'
+                        fullWidth
+                        onClick={() => handleResolveMultiplier(true)}
+                        loading={pending === 'multiplier'}
+                        disabled={pending !== null}
+                     >
+                        Bank &amp; Run
                      </PirateButton>
                   </div>
                ) : handingOff ? (

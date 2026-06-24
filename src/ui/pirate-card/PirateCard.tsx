@@ -226,7 +226,7 @@ const SPECIAL_FACES: Record<
    multiplier: {
       emblem: '✨',
       title: 'Cursed Doubloon',
-      tagline: 'Double — or be damned',
+      tagline: 'Double the next 3 — or bank & run',
       border: 'var(--color-coral-500)',
       glow: 'coral-glow',
    },

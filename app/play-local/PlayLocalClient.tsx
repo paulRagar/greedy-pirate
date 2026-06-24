@@ -210,20 +210,20 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
             {isComplete ? null : pendingMultiplier ? (
                <div className='flex gap-3'>
                   <PirateButton
-                     variant='secondary'
-                     size='lg'
-                     fullWidth
-                     onClick={() => dispatch({ type: 'RESOLVE_MULTIPLIER', secure: true })}
-                  >
-                     Bank, then Ride
-                  </PirateButton>
-                  <PirateButton
                      variant='primary'
                      size='lg'
                      fullWidth
                      onClick={() => dispatch({ type: 'RESOLVE_MULTIPLIER', secure: false })}
                   >
-                     Let it Ride
+                     Double or Bust
+                  </PirateButton>
+                  <PirateButton
+                     variant='secondary'
+                     size='lg'
+                     fullWidth
+                     onClick={() => dispatch({ type: 'RESOLVE_MULTIPLIER', secure: true })}
+                  >
+                     Bank &amp; Run
                   </PirateButton>
                </div>
             ) : turnEnder ? (

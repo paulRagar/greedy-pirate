@@ -93,14 +93,17 @@ describe('Cursed Doubloon (multiplier)', () => {
       expect(s.players.find((x) => x.id === actor)!.coins).toBe(12);
    });
 
-   it('SECURE banks the standing streak first, then opens a fresh window', () => {
+   it('DECLINE (secure) banks the standing streak and ends the turn — no window', () => {
       let s = active([gold(5), { kind: 'multiplier' }, gold(2)]);
       const actor = s.players[s.turnIndex]!.id;
       s = dispatch(s, { type: 'DRAW' }, { type: 'DRAW' }); // streak [5], then multiplier
       s = reduce(s, { type: 'RESOLVE_MULTIPLIER', secure: true });
       expect(s.players.find((x) => x.id === actor)!.coins).toBe(5); // 5 banked safely
       expect(s.currentStreak).toEqual([]);
-      expect(s.multiplierRemaining).toBe(3);
+      expect(s.multiplierRemaining).toBe(0); // no window — declined
+      expect(s.bankLocked).toBe(false);
+      expect(s.currentCard).toBeNull();
+      expect(s.players[s.turnIndex]!.id).not.toBe(actor); // turn ended
    });
 });
 
