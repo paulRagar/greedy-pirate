@@ -1,0 +1,27 @@
+src/ui/pirate-card/PirateCard.tsx
+  s_c8c5d107f2449c::t_869f3451334f6c 229
+src/game/engine.ts
+  s_c8c5d107f2449c::t_f67dfa76d44119 374-384,386
+app/play-local/PlayLocalClient.tsx
+  s_c8c5d107f2449c::t_76a94e4b6dedf1 213,216,218,221,224,226
+app/play/[code]/OnlineRoomClient.tsx
+  s_c8c5d107f2449c::t_a4da965e6e3f0c 1670,1673,1677,1680,1683,1687
+src/game/special-cards.test.ts
+  s_c8c5d107f2449c::t_f450181357ab8e 96,103-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "b5783ae4ef4316d96aad28577bda9245908ed6ad",
+  "prompts": {},
+  "sessions": {
+    "s_c8c5d107f2449c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1a04c13-68b8-4407-ab8d-90580ae8af86",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
