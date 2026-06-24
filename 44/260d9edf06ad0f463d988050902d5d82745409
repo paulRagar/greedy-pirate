@@ -1,0 +1,35 @@
+src/game/engine.ts
+  s_c8c5d107f2449c::t_14427aeacaf5bc 299-302
+src/ui/game-room/MonkeyHeist.tsx
+  s_c8c5d107f2449c::t_bbe2e03bf4da48 1-63
+src/game/types.ts
+  s_c8c5d107f2449c::t_c6d417c1311447 1-6
+src/ui/game-room/StreakStrip.tsx
+  s_c8c5d107f2449c::t_2022e86d35c718 29-42
+app/play/[code]/OnlineRoomClient.tsx
+  s_c8c5d107f2449c::t_5a715a93e52942 17
+  s_c8c5d107f2449c::t_464486ddc74ad3 1419-1430
+  s_c8c5d107f2449c::t_9bf1bc21c47839 1600-1602
+app/play-local/PlayLocalClient.tsx
+  s_c8c5d107f2449c::t_8ec929e7744f7d 126-137
+  s_c8c5d107f2449c::t_4f6e07945bfdfe 183-185
+  s_c8c5d107f2449c::t_1aba9474304777 16
+app/globals.css
+  s_c8c5d107f2449c::t_0a0b952db6f8c8 667-683
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "44260d9edf06ad0f463d988050902d5d82745409",
+  "prompts": {},
+  "sessions": {
+    "s_c8c5d107f2449c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1a04c13-68b8-4407-ab8d-90580ae8af86",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
