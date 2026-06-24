@@ -1,6 +1,7 @@
 'use client';
 
 import { PirateCard } from '@/ui/pirate-card/PirateCard';
+import { DaveyCoinFlip } from '@/ui/game-room/DaveyCoinFlip';
 import type { Card, DaveyToss } from '@/game/types';
 
 type Props = {
@@ -41,19 +42,7 @@ export function SpecialCardStatus({ peek, daveyToss, multiplierRemaining = 0, ba
             </div>
          )}
 
-         {daveyToss && (
-            <span
-               className={
-                  daveyToss.won
-                     ? 'pirate-display text-lg text-[color:var(--color-gold-300)]'
-                     : 'pirate-display text-lg text-[color:var(--color-coral-400)]'
-               }
-            >
-               {daveyToss.won
-                  ? `Davey's coin favours you — +${daveyToss.amount} clawed back!`
-                  : `Davey takes ${daveyToss.amount} to the locker…`}
-            </span>
-         )}
+         {daveyToss && <DaveyCoinFlip won={daveyToss.won} amount={daveyToss.amount} />}
 
          {multiplierRemaining > 0 && (
             <span className='rounded-full bg-[color:var(--color-coral-600)]/20 px-3 py-1 text-sm font-semibold text-[color:var(--color-coral-400)]'>
