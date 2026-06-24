@@ -10,13 +10,11 @@ import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { cn } from '@/lib/cn';
 
 type Visibility = 'public' | 'private';
-type DeckChoice = 'classic' | 'cursed';
 
 export default function NewRoomClient() {
    const router = useRouter();
    const { ready } = useCurrentUser();
    const [visibility, setVisibility] = useState<Visibility>('private');
-   const [deck, setDeck] = useState<DeckChoice>('classic');
    const [submitting, setSubmitting] = useState(false);
    const [navigating, startNavigation] = useTransition();
    const [error, setError] = useState<string | null>(null);
@@ -34,11 +32,8 @@ export default function NewRoomClient() {
    const charter = async () => {
       setSubmitting(true);
       setError(null);
-      const res = await createRoom({
-         isPublic: visibility === 'public',
-         // Classic maps to the default gold+pirate deck; Cursed adds specials.
-         variant: deck === 'cursed' ? 'cursed' : undefined,
-      });
+      // Deck type is chosen by the captain in the waiting room, not here.
+      const res = await createRoom({ isPublic: visibility === 'public' });
       if (res.ok) {
          startNavigation(() => router.push(`/play/${res.code}`));
       } else {
@@ -77,30 +72,6 @@ export default function NewRoomClient() {
             />
          </PiratePanel>
 
-         <PiratePanel variant='deep' className='flex flex-col gap-3'>
-            <span className='text-xs uppercase tracking-[0.2em] text-[color:var(--color-cream-200)]/60'>
-               Choose the deck
-            </span>
-            <DeckOption
-               value='classic'
-               current={deck}
-               onSelect={setDeck}
-               title='Classic Seas'
-               subtitle='Gold and pirates. The pure push-your-luck voyage.'
-               tag='Classic'
-               tagTone='teal'
-            />
-            <DeckOption
-               value='cursed'
-               current={deck}
-               onSelect={setDeck}
-               title='Cursed Seas'
-               subtitle='Adds special cards — Spyglass, Amulet, Cursed Doubloon, Monkey & the dreaded Davey Jones.'
-               tag='New'
-               tagTone='coral'
-            />
-         </PiratePanel>
-
          {error && <p className='text-center text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
 
          <div className='mt-auto flex flex-col gap-2 pt-2 safe-bottom'>
@@ -119,54 +90,6 @@ export default function NewRoomClient() {
             </PirateLinkButton>
          </div>
       </main>
-   );
-}
-
-function DeckOption({
-   value,
-   current,
-   onSelect,
-   title,
-   subtitle,
-   tag,
-   tagTone,
-}: {
-   value: DeckChoice;
-   current: DeckChoice;
-   onSelect: (v: DeckChoice) => void;
-   title: string;
-   subtitle: string;
-   tag: string;
-   tagTone: 'teal' | 'coral';
-}) {
-   const selected = current === value;
-   return (
-      <button
-         type='button'
-         onClick={() => onSelect(value)}
-         className={cn(
-            'flex flex-col items-start gap-1 rounded-2xl border-2 px-4 py-3 text-left transition-all',
-            selected
-               ? 'border-[color:var(--color-gold-400)] bg-[color:var(--color-deep-700)]/70 shadow-[0_0_24px_-8px_rgb(255_215_120/0.55)]'
-               : 'border-[color:var(--color-surface-border)] bg-[color:var(--color-abyss-900)]/40 hover:border-[color:var(--color-gold-500)]/50',
-         )}
-         aria-pressed={selected}
-      >
-         <div className='flex w-full items-center justify-between gap-2'>
-            <span className='pirate-display text-xl text-[color:var(--color-gold-300)]'>{title}</span>
-            <span
-               className={cn(
-                  'shrink-0 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider',
-                  tagTone === 'teal'
-                     ? 'bg-[color:var(--color-teal-400)]/15 text-[color:var(--color-teal-400)]'
-                     : 'bg-[color:var(--color-coral-500)]/15 text-[color:var(--color-coral-400)]',
-               )}
-            >
-               {tag}
-            </span>
-         </div>
-         <span className='text-sm text-[color:var(--color-cream-200)]/75'>{subtitle}</span>
-      </button>
    );
 }
 

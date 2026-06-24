@@ -25,6 +25,7 @@ import {
    timeoutTurn,
 } from '@/server/actions/gameTurnActions';
 import { startOnlineGame } from '@/server/actions/startOnlineGame';
+import { setRoomDeckVariant } from '@/server/actions/setRoomDeckVariant';
 import { setReady, beginBoarding, startGameDroppingUnready } from '@/server/actions/readyActions';
 import { endGameByForfeit } from '@/server/actions/restartRoom';
 import { leaveSpectator } from '@/server/actions/spectatorActions';
@@ -887,6 +888,39 @@ function optimisticDrawStart(prev: PublicGameState): PublicGameState {
    };
 }
 
+function DeckChoiceButton({
+   selected,
+   disabled,
+   onClick,
+   title,
+   subtitle,
+}: {
+   selected: boolean;
+   disabled?: boolean;
+   onClick: () => void;
+   title: string;
+   subtitle: string;
+}) {
+   return (
+      <button
+         type='button'
+         role='radio'
+         aria-checked={selected}
+         disabled={disabled}
+         onClick={onClick}
+         className={cn(
+            'flex flex-1 flex-col items-center gap-0.5 rounded-2xl border-2 px-3 py-2.5 text-center transition-all disabled:opacity-60',
+            selected
+               ? 'border-[color:var(--color-gold-400)] bg-[color:var(--color-deep-700)]/70 shadow-[0_0_24px_-8px_rgb(255_215_120/0.55)]'
+               : 'border-[color:var(--color-surface-border)] bg-[color:var(--color-abyss-900)]/40',
+         )}
+      >
+         <span className='pirate-display text-base text-[color:var(--color-gold-300)]'>{title}</span>
+         <span className='text-[11px] text-[color:var(--color-cream-200)]/70'>{subtitle}</span>
+      </button>
+   );
+}
+
 function Lobby({
    state,
    userId,
@@ -935,6 +969,16 @@ function Lobby({
    const [togglingVis, setTogglingVis] = useState(false);
    const [publicState, setPublicState] = useState(isPublic);
    useEffect(() => setPublicState(isPublic), [isPublic]);
+   const [deckPending, setDeckPending] = useState(false);
+   const cursed = state.variant === 'cursed';
+   const chooseDeck = async (variant: 'even_greedier' | 'cursed') => {
+      if (state.variant === variant) return;
+      setDeckPending(true);
+      setError(null);
+      const res = await setRoomDeckVariant({ code, variant });
+      setDeckPending(false);
+      if (!res.ok) setError(res.error);
+   };
    const toggleVisibility = async () => {
       setTogglingVis(true);
       const next = !publicState;
@@ -1112,6 +1156,39 @@ function Lobby({
                </button>
             )}
          </PiratePanel>
+
+         {readyUpPhase && (
+            <PiratePanel variant='deep' className='flex flex-col gap-2 p-3'>
+               <span className='text-xs uppercase tracking-[0.2em] text-[color:var(--color-cream-200)]/60'>
+                  Deck
+               </span>
+               {isHost ? (
+                  <div className='flex gap-2' role='radiogroup' aria-label='Deck type'>
+                     <DeckChoiceButton
+                        selected={!cursed}
+                        disabled={deckPending}
+                        onClick={() => chooseDeck('even_greedier')}
+                        title='Classic'
+                        subtitle='Gold & pirates'
+                     />
+                     <DeckChoiceButton
+                        selected={cursed}
+                        disabled={deckPending}
+                        onClick={() => chooseDeck('cursed')}
+                        title='Cursed Seas'
+                        subtitle='+ special cards'
+                     />
+                  </div>
+               ) : (
+                  <span className='pirate-display text-lg text-[color:var(--color-gold-300)]'>
+                     {cursed ? 'Cursed Seas' : 'Classic'}
+                     <span className='ml-2 align-middle text-xs text-[color:var(--color-cream-200)]/55'>
+                        · the captain&apos;s call
+                     </span>
+                  </span>
+               )}
+            </PiratePanel>
+         )}
 
          <div className='scrollbar-none min-h-0 flex-1 overflow-y-auto'>
             <CrewGrid
