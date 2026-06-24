@@ -26,11 +26,20 @@ export function StreakStrip({ streak }: { streak: ReadonlyArray<GoldCard> }) {
                className='scrollbar-none flex max-w-full items-center gap-1.5 overflow-x-auto px-3 [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]'
             >
                {streak.map((card, i) => (
-                  <span
-                     key={i}
-                     className='animate-coin-pop inline-flex h-8 min-w-[30px] shrink-0 items-center justify-center rounded-full border border-[color:var(--color-gold-600)] bg-gradient-to-b from-[color:var(--color-gold-200)] to-[color:var(--color-gold-500)] px-2 text-sm font-bold text-[color:var(--color-wood-900)] shadow-[0_2px_6px_rgb(0_0_0/0.45),0_0_10px_rgb(255_182_39/0.35),inset_0_1px_0_rgb(255_255_255/0.6)]'
-                  >
-                     {card.value}
+                  <span key={i} className='relative shrink-0'>
+                     <span
+                        className='animate-coin-pop inline-flex h-8 min-w-[30px] items-center justify-center rounded-full border border-[color:var(--color-gold-600)] bg-gradient-to-b from-[color:var(--color-gold-200)] to-[color:var(--color-gold-500)] px-2 text-sm font-bold text-[color:var(--color-wood-900)] shadow-[0_2px_6px_rgb(0_0_0/0.45),0_0_10px_rgb(255_182_39/0.35),inset_0_1px_0_rgb(255_255_255/0.6)]'
+                     >
+                        {card.value}
+                     </span>
+                     {card.source === 'monkey' && (
+                        <span
+                           aria-label='stolen by the Monkey'
+                           className='absolute -right-1 -top-1.5 text-[11px] leading-none drop-shadow-[0_1px_1px_rgb(0_0_0/0.6)]'
+                        >
+                           🐒
+                        </span>
+                     )}
                   </span>
                ))}
             </div>

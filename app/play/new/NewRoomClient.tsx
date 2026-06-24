@@ -32,6 +32,7 @@ export default function NewRoomClient() {
    const charter = async () => {
       setSubmitting(true);
       setError(null);
+      // Deck type is chosen by the captain in the waiting room, not here.
       const res = await createRoom({ isPublic: visibility === 'public' });
       if (res.ok) {
          startNavigation(() => router.push(`/play/${res.code}`));

@@ -12,6 +12,8 @@ import { cn } from '@/lib/cn';
 import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { BustVignette } from '@/ui/effects/BustVignette';
 import { DeckDiscard } from '@/ui/game-room/DeckDiscard';
+import { SpecialCardStatus } from '@/ui/game-room/SpecialCardStatus';
+import { MonkeyHeist } from '@/ui/game-room/MonkeyHeist';
 import { ScoreRibbon } from '@/ui/game-room/ScoreRibbon';
 import { StreakBoard } from '@/ui/game-room/StreakBoard';
 import { StreakBankBurst } from '@/ui/game-room/StreakBankBurst';
@@ -65,13 +67,27 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
 
    const currentPlayer = state.players[state.turnIndex];
    const isPirate = state.currentCard?.kind === 'pirate';
+   const isDavey = state.currentCard?.kind === 'davey_jones';
+   const isSpyglass = state.currentCard?.kind === 'spyglass';
+   const pendingMultiplier = state.pendingDecision?.kind === 'multiplier';
+   // Davey ends the turn only on a lost toss; a win keeps the turn live.
+   const daveyEnded = isDavey && !state.daveyToss?.won;
+   const turnEnder = isPirate || daveyEnded; // revealed card that ends the turn (await Pass)
    const isComplete = state.status === 'complete';
    const isBootstrapping = state.status === 'lobby';
    const winner = state.winnerId ? (state.players.find((p) => p.id === state.winnerId) ?? null) : null;
    const ranked = isComplete ? [...state.players].sort((a, b) => b.coins - a.coins) : [];
    const streakSum = state.currentStreak.reduce((sum, c) => sum + c.value, 0);
-   const canDraw = state.status === 'active' && !isPirate && state.deck.length > 0;
-   const canBank = state.status === 'active' && !isPirate && state.currentStreak.length > 0;
+   const canDraw =
+      state.status === 'active' && !turnEnder && !pendingMultiplier && state.deck.length > 0;
+   const canBank =
+      state.status === 'active' &&
+      !turnEnder &&
+      !pendingMultiplier &&
+      !state.bankLocked &&
+      state.currentStreak.length > 0;
+   // Local hot-seat holds the full deck, so the Spyglass peek is just the top few.
+   const peek = isSpyglass ? state.deck.slice(0, 3) : [];
 
    const snap = useMemo<JuiceSnapshot>(
       () => ({
@@ -108,6 +124,18 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
    useEffect(() => {
       if (shakeKey > 0) setShaking(true);
    }, [shakeKey]);
+
+   // Monkey heist flourish — fling one coin per robbed rival into the stash.
+   const [heistCoins, setHeistCoins] = useState<number | null>(null);
+   const heistKey = useRef(0);
+   useEffect(() => {
+      if (state.currentCard?.kind !== 'monkey') return;
+      const stolen = state.currentStreak.filter((c) => c.source === 'monkey').length;
+      if (stolen > 0) {
+         heistKey.current += 1;
+         setHeistCoins(stolen);
+      }
+   }, [state.currentCard, state.currentStreak]);
 
    // Hold the victory modal until the final card has landed and players have had
    // a beat to register it was the last one.
@@ -154,6 +182,9 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
       >
          {announcer}
          {isPirate && !isComplete && <BustVignette />}
+         {heistCoins !== null && (
+            <MonkeyHeist key={heistKey.current} count={heistCoins} onDone={() => setHeistCoins(null)} />
+         )}
 
          <ScoreRibbon players={state.players} currentPlayerId={currentPlayer?.id} />
 
@@ -181,10 +212,39 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
             )}
          </div>
 
+         {!isComplete && (
+            <SpecialCardStatus
+               peek={peek}
+               daveyToss={state.daveyToss}
+               multiplierRemaining={state.multiplierRemaining}
+               bankLocked={state.bankLocked}
+               amuletArmed={state.amuletArmed}
+            />
+         )}
+
          {/* Reserve the action-row height so hiding the buttons at game end
              doesn't drop the cards down a few pixels. */}
          <div className='z-20 mt-auto min-h-[64px] px-0 pt-2 safe-bottom'>
-            {isComplete ? null : isPirate ? (
+            {isComplete ? null : pendingMultiplier ? (
+               <div className='flex gap-3'>
+                  <PirateButton
+                     variant='primary'
+                     size='lg'
+                     fullWidth
+                     onClick={() => dispatch({ type: 'RESOLVE_MULTIPLIER', secure: false })}
+                  >
+                     Double or Bust
+                  </PirateButton>
+                  <PirateButton
+                     variant='secondary'
+                     size='lg'
+                     fullWidth
+                     onClick={() => dispatch({ type: 'RESOLVE_MULTIPLIER', secure: true })}
+                  >
+                     Bank &amp; Run
+                  </PirateButton>
+               </div>
+            ) : turnEnder ? (
                <PirateButton variant='tertiary' size='lg' fullWidth onClick={() => dispatch({ type: 'END_TURN' })}>
                   Pass the Helm
                </PirateButton>

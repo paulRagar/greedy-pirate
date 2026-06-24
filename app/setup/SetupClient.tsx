@@ -6,6 +6,7 @@ import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { PiratePanel } from '@/ui/pirate-panel/PiratePanel';
 import { CrewGrid } from '@/ui/game-room/CrewGrid';
 import { MAX_PLAYERS, MIN_PLAYERS } from '@/game/rules';
+import { cn } from '@/lib/cn';
 
 interface Player {
    id: string;
@@ -19,6 +20,7 @@ export default function SetupClient() {
 
    const [playerName, setPlayerName] = useState('');
    const [players, setPlayers] = useState<Player[]>([]);
+   const [deck, setDeck] = useState<'classic' | 'cursed'>('classic');
 
    useEffect(() => {
       try {
@@ -44,8 +46,9 @@ export default function SetupClient() {
 
    const startGame = () => {
       localStorage.setItem('players', JSON.stringify(players));
+      const href = deck === 'cursed' ? '/play-local?variant=cursed' : '/play-local';
       startTransition(() => {
-         router.push('/play-local');
+         router.push(href);
       });
    };
 
@@ -99,7 +102,21 @@ export default function SetupClient() {
             <CrewGrid players={players} capacity={MAX_PLAYERS} onRemove={removePlayer} />
          </div>
 
-         <div className='mt-auto pt-2 safe-bottom'>
+         <div className='mt-auto flex flex-col gap-2 pt-2 safe-bottom'>
+            <div className='flex gap-2' role='radiogroup' aria-label='Deck type'>
+               <DeckToggle
+                  selected={deck === 'classic'}
+                  onSelect={() => setDeck('classic')}
+                  title='Classic'
+                  subtitle='Gold & pirates'
+               />
+               <DeckToggle
+                  selected={deck === 'cursed'}
+                  onSelect={() => setDeck('cursed')}
+                  title='Cursed Seas'
+                  subtitle='+ special cards'
+               />
+            </div>
             <PirateButton
                variant='primary'
                size='lg'
@@ -117,5 +134,35 @@ export default function SetupClient() {
             )}
          </div>
       </main>
+   );
+}
+
+function DeckToggle({
+   selected,
+   onSelect,
+   title,
+   subtitle,
+}: {
+   selected: boolean;
+   onSelect: () => void;
+   title: string;
+   subtitle: string;
+}) {
+   return (
+      <button
+         type='button'
+         role='radio'
+         aria-checked={selected}
+         onClick={onSelect}
+         className={cn(
+            'flex flex-1 flex-col items-center gap-0.5 rounded-2xl border-2 px-3 py-2.5 text-center transition-all',
+            selected
+               ? 'border-[color:var(--color-gold-400)] bg-[color:var(--color-deep-700)]/70 shadow-[0_0_24px_-8px_rgb(255_215_120/0.55)]'
+               : 'border-[color:var(--color-surface-border)] bg-[color:var(--color-abyss-900)]/40',
+         )}
+      >
+         <span className='pirate-display text-base text-[color:var(--color-gold-300)]'>{title}</span>
+         <span className='text-[11px] text-[color:var(--color-cream-200)]/70'>{subtitle}</span>
+      </button>
    );
 }

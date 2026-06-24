@@ -3,9 +3,19 @@ import type { DeckVariant } from './types';
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 10;
 
-export const DECK_VARIANTS = ['greedy', 'even_greedier', 'super_greedy'] as const satisfies readonly DeckVariant[];
+export const DECK_VARIANTS = ['greedy', 'even_greedier', 'super_greedy', 'cursed'] as const satisfies readonly DeckVariant[];
 
 export const DEFAULT_VARIANT: DeckVariant = 'even_greedier';
+
+// ── Cursed Seas special-card tuning ──────────────────────────────────────────
+/** Cursed Doubloon: gold cards doubled (and bank locked) for this many draws. */
+export const MULTIPLIER_WINDOW = 3;
+/** Cursed Doubloon: gold value multiplier during the window. */
+export const MULTIPLIER_FACTOR = 2;
+/** Spyglass: how many upcoming cards the drawer privately sees. */
+export const SPYGLASS_PEEK = 3;
+/** Davey Jones: forced bank wager (or the whole bank if it holds less). */
+export const DAVEY_WAGER = 5;
 
 /**
  * Per-turn shot clock for online play, in milliseconds. A pacing constant

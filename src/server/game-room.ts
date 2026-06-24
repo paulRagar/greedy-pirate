@@ -12,7 +12,7 @@ import { broadcastLobbyEvent, broadcastRoomState } from './realtime/broadcast';
 import { fetchSpectators, promoteSpectators } from './spectators';
 import { CONTINUATION_WINDOW_MS, fetchContinuation } from './continuation';
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 import { initialState, reduce } from '@/game/engine';
 import { PIRATE_PASS_MS, TURN_CLOCK_MS } from '@/game/rules';
 import { toPublic } from '@/game/public';
@@ -57,6 +57,13 @@ export function parseEngineState(row: DbGame): GameState {
       winnerId: raw.winnerId ?? null,
       absentIds: (raw.absentIds ?? []) as GameState['absentIds'],
       telemetry: (raw.telemetry ?? {}) as GameState['telemetry'],
+      rngSeed: raw.rngSeed ?? '',
+      rngCursor: raw.rngCursor ?? 0,
+      amuletArmed: raw.amuletArmed ?? false,
+      multiplierRemaining: raw.multiplierRemaining ?? 0,
+      bankLocked: raw.bankLocked ?? false,
+      pendingDecision: raw.pendingDecision ?? null,
+      daveyToss: raw.daveyToss ?? null,
    };
 }
 
@@ -65,6 +72,7 @@ export type EventType =
    | 'PLAYER_LEAVE'
    | 'START_GAME'
    | 'DRAW'
+   | 'RESOLVE_MULTIPLIER'
    | 'BANK'
    | 'END_TURN'
    | 'SKIP_TURN'
@@ -178,6 +186,13 @@ function serializeState(state: GameState): Record<string, unknown> {
       winnerId: state.winnerId,
       absentIds: state.absentIds,
       telemetry: state.telemetry,
+      rngSeed: state.rngSeed,
+      rngCursor: state.rngCursor,
+      amuletArmed: state.amuletArmed,
+      multiplierRemaining: state.multiplierRemaining,
+      bankLocked: state.bankLocked,
+      pendingDecision: state.pendingDecision,
+      daveyToss: state.daveyToss,
    };
 }
 
@@ -235,7 +250,13 @@ export async function applyAction(
       // A revealed pirate carries no decision — pass on a short fuse instead of
       // the full turn clock. (Only ever set on the pirate-revealing DRAW; the
       // next holder's turn resets to the full clock.)
-      const clockMs = next.currentCard?.kind === 'pirate' ? PIRATE_PASS_MS : TURN_CLOCK_MS;
+      // A pirate, or a Davey Jones whose toss was LOST, reveals a no-decision
+      // card that just hands off — give it the short fuse. A winning Davey toss
+      // keeps the turn live, so it gets the full clock like any active turn.
+      const turnEnderRevealed =
+         next.currentCard?.kind === 'pirate' ||
+         (next.currentCard?.kind === 'davey_jones' && !next.daveyToss?.won);
+      const clockMs = turnEnderRevealed ? PIRATE_PASS_MS : TURN_CLOCK_MS;
       const turnDeadline =
          next.status !== 'active'
             ? null

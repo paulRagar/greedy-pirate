@@ -1,13 +1,37 @@
-import { DECKS } from './deck';
-import { DEFAULT_VARIANT, MAX_PLAYERS, MIN_PLAYERS } from './rules';
+import { buildDeck } from './deck';
+import {
+   DAVEY_WAGER,
+   DEFAULT_VARIANT,
+   MAX_PLAYERS,
+   MIN_PLAYERS,
+   MULTIPLIER_FACTOR,
+   MULTIPLIER_WINDOW,
+} from './rules';
 import { createRng, seedFromString, shuffle } from './shuffle';
-import type { GameAction, GameState, GoldCard, Player, PlayerTelemetry } from './types';
+import type { Rng } from './shuffle';
+import type { Card, GameAction, GameState, GoldCard, Player, PlayerTelemetry } from './types';
 
 const EMPTY_TELEMETRY: PlayerTelemetry = {
    maxStreakLength: 0,
    biggestBank: 0,
    piratesEncountered: 0,
+   amuletsSaved: 0,
+   monkeyStolen: 0,
+   monkeyLost: 0,
+   daveyWins: 0,
+   daveyLosses: 0,
 };
+
+/**
+ * Deterministic per-event RNG, derived from the persisted seed + cursor. Used
+ * for in-game randomness (Davey Jones' toss) that must survive past the shuffle
+ * and reproduce on replay. The `#` namespace keeps this stream independent of
+ * the deck-shuffle stream, so adding tosses never perturbs deck order. Callers
+ * MUST bump `rngCursor` once per consumed event so the next draw differs.
+ */
+function eventRng(state: GameState): Rng {
+   return createRng(seedFromString(`${state.rngSeed}#${state.rngCursor}`));
+}
 
 /** Immutably patch one player's telemetry entry, defaulting from zero. */
 function withTelemetry(
@@ -41,6 +65,13 @@ export const initialState: GameState = {
    winnerId: null,
    absentIds: [],
    telemetry: {},
+   rngSeed: '',
+   rngCursor: 0,
+   amuletArmed: false,
+   multiplierRemaining: 0,
+   bankLocked: false,
+   pendingDecision: null,
+   daveyToss: null,
 };
 
 export function reduce(state: GameState, action: GameAction): GameState {
@@ -53,6 +84,8 @@ export function reduce(state: GameState, action: GameAction): GameState {
          return handleStart(state, action.seed, action.variant);
       case 'DRAW':
          return handleDraw(state);
+      case 'RESOLVE_MULTIPLIER':
+         return handleResolveMultiplier(state, action.secure);
       case 'BANK':
          return handleBank(state);
       case 'END_TURN':
@@ -84,9 +117,8 @@ function handleLeave(state: GameState, playerId: string): GameState {
 function handleStart(state: GameState, seed: string, variant = state.variant): GameState {
    assert(state.status === 'lobby', 'game already started');
    assert(state.players.length >= MIN_PLAYERS, `need at least ${MIN_PLAYERS} players`);
-   const base = DECKS[variant];
    const rng = createRng(seedFromString(seed));
-   const deck = shuffle(base, rng);
+   const deck = shuffle(buildDeck(variant, rng), rng);
    return {
       ...state,
       status: 'active',
@@ -99,42 +131,157 @@ function handleStart(state: GameState, seed: string, variant = state.variant): G
       winnerId: null,
       absentIds: [],
       telemetry: Object.fromEntries(state.players.map((p) => [p.id, EMPTY_TELEMETRY])),
+      rngSeed: seed,
+      rngCursor: 0,
+      amuletArmed: false,
+      multiplierRemaining: 0,
+      bankLocked: false,
+      pendingDecision: null,
+      daveyToss: null,
    };
 }
 
 function handleDraw(state: GameState): GameState {
    assert(state.status === 'active', 'game not active');
    assert(state.currentCard?.kind !== 'pirate', 'pirate revealed; end turn before drawing');
+   // Davey only ends the turn when the toss is lost (or there was nothing to
+   // wager). A winning toss lets the player sail on, so DRAW stays open.
+   assert(!daveyEndedTurn(state), 'Davey Jones took your turn; end turn before drawing');
+   assert(state.pendingDecision === null, 'resolve the revealed card before drawing');
    assert(state.deck.length > 0, 'deck empty');
 
    const top = state.deck[0];
    assert(top, 'deck empty');
    const rest = state.deck.slice(1);
+   const lastCard = rest.length === 0;
    const currentId = state.players[state.turnIndex]?.id;
 
-   if (top.kind === 'pirate') {
+   switch (top.kind) {
+      case 'pirate':
+         return drawPirate(state, top, rest, lastCard, currentId);
+      case 'gold':
+         return drawGold(state, top, rest, lastCard, currentId);
+      case 'monkey':
+         return drawMonkey(state, top, rest, lastCard, currentId);
+      case 'davey_jones':
+         return drawDaveyJones(state, top, rest, lastCard, currentId);
+      case 'spyglass': {
+         // Reveal-only: the next-3 peek is computed by the caller (actor-only).
+         // The card just passes through; the turn continues. As the final card
+         // there's nothing to peek — bank the standing streak and end.
+         const drawn: GameState = { ...state, deck: rest, currentCard: top, daveyToss: null };
+         return lastCard ? complete(bankToCurrentPlayer(drawn)) : drawn;
+      }
+      case 'amulet': {
+         // Arm the one-shot shield; the card passes through, turn continues.
+         const drawn: GameState = {
+            ...state,
+            deck: rest,
+            currentCard: top,
+            amuletArmed: true,
+            daveyToss: null,
+         };
+         return lastCard ? complete(bankToCurrentPlayer(drawn)) : drawn;
+      }
+      case 'multiplier': {
+         // Park for the holder's secure-or-ride decision. As the final card the
+         // 2× window has nothing to act on — bank the standing streak and end.
+         const drawn: GameState = { ...state, deck: rest, currentCard: top, daveyToss: null };
+         if (lastCard) return complete(bankToCurrentPlayer(drawn));
+         return { ...drawn, pendingDecision: { kind: 'multiplier' } };
+      }
+   }
+}
+
+function streakSum(streak: ReadonlyArray<GoldCard>): number {
+   return streak.reduce((acc, c) => acc + c.value, 0);
+}
+
+/**
+ * True when a revealed Davey Jones has ENDED the turn — i.e. the toss was lost
+ * (or there was no bank to wager). A winning toss leaves Davey face-up but the
+ * turn live, so this is false and the player keeps drawing.
+ */
+function daveyEndedTurn(state: GameState): boolean {
+   return state.currentCard?.kind === 'davey_jones' && !state.daveyToss?.won;
+}
+
+function drawPirate(
+   state: GameState,
+   pirate: Card,
+   rest: ReadonlyArray<Card>,
+   lastCard: boolean,
+   currentId: string | undefined,
+): GameState {
+   // Amulet intercept: keep HALF the streak (round down), bank it. The turn
+   // still ends like any pirate (await END_TURN), but the player walks away with
+   // something instead of nothing.
+   if (state.amuletArmed && state.currentStreak.length > 0) {
+      const saved = Math.floor(streakSum(state.currentStreak) / 2);
+      const players = state.players.map((p, i) =>
+         i === state.turnIndex ? { ...p, coins: p.coins + saved } : p,
+      );
+      const telemetry = currentId
+         ? withTelemetry(state.telemetry, currentId, (t) => ({
+              ...t,
+              piratesEncountered: t.piratesEncountered + 1,
+              amuletsSaved: t.amuletsSaved + 1,
+              biggestBank: Math.max(t.biggestBank, saved),
+           }))
+         : state.telemetry;
       const next: GameState = {
          ...state,
          deck: rest,
-         currentCard: top,
+         currentCard: pirate,
          currentStreak: [],
          pirateCount: state.pirateCount + 1,
-         telemetry: currentId
-            ? withTelemetry(state.telemetry, currentId, (t) => ({
-                 ...t,
-                 piratesEncountered: t.piratesEncountered + 1,
-              }))
-            : state.telemetry,
+         amuletArmed: false,
+         players,
+         telemetry,
+         daveyToss: null,
       };
-      return rest.length === 0 ? complete(next) : next;
+      return lastCard ? complete(next) : next;
    }
 
+   const next: GameState = {
+      ...state,
+      deck: rest,
+      currentCard: pirate,
+      currentStreak: [],
+      pirateCount: state.pirateCount + 1,
+      telemetry: currentId
+         ? withTelemetry(state.telemetry, currentId, (t) => ({
+              ...t,
+              piratesEncountered: t.piratesEncountered + 1,
+           }))
+         : state.telemetry,
+      daveyToss: null,
+   };
+   return lastCard ? complete(next) : next;
+}
+
+function drawGold(
+   state: GameState,
+   gold: GoldCard,
+   rest: ReadonlyArray<Card>,
+   lastCard: boolean,
+   currentId: string | undefined,
+): GameState {
+   // Cursed Doubloon window: double the gold value and tick the window down.
+   // When the window closes, the bank-lock lifts too.
+   const inWindow = state.multiplierRemaining > 0;
+   const card: GoldCard = inWindow ? { kind: 'gold', value: gold.value * MULTIPLIER_FACTOR } : gold;
+   const multiplierRemaining = inWindow ? state.multiplierRemaining - 1 : 0;
+   const bankLocked = multiplierRemaining > 0 ? state.bankLocked : false;
    const streakLength = state.currentStreak.length + 1;
    const drawn: GameState = {
       ...state,
       deck: rest,
-      currentCard: top,
-      currentStreak: [...state.currentStreak, top],
+      currentCard: card,
+      currentStreak: [...state.currentStreak, card],
+      multiplierRemaining,
+      bankLocked,
+      daveyToss: null,
       telemetry: currentId
          ? withTelemetry(state.telemetry, currentId, (t) => ({
               ...t,
@@ -142,16 +289,129 @@ function handleDraw(state: GameState): GameState {
            }))
          : state.telemetry,
    };
+   return lastCard ? complete(bankToCurrentPlayer(drawn)) : drawn;
+}
 
-   if (rest.length === 0) {
-      return complete(bankToCurrentPlayer(drawn));
+function drawMonkey(
+   state: GameState,
+   monkey: Card,
+   rest: ReadonlyArray<Card>,
+   lastCard: boolean,
+   currentId: string | undefined,
+): GameState {
+   // Pickpocket 1 coin from every OTHER player who has any; the loot joins the
+   // drawer's streak (still at risk until banked) as a single synthetic coin.
+   const victims = state.players.filter((p, i) => i !== state.turnIndex && p.coins > 0);
+   const steal = victims.length;
+   const players = state.players.map((p, i) => {
+      if (i === state.turnIndex) return p;
+      return p.coins > 0 ? { ...p, coins: p.coins - 1 } : p;
+   });
+   // One coin per robbed rival, each tagged 'monkey' so the line-up badges it
+   // and the heist animation can fly one coin per victim into the stash.
+   const stolen: GoldCard[] = victims.map(() => ({ kind: 'gold', value: 1, source: 'monkey' }));
+   const currentStreak = steal > 0 ? [...state.currentStreak, ...stolen] : state.currentStreak;
+   let telemetry = state.telemetry;
+   if (currentId && steal > 0) {
+      telemetry = withTelemetry(telemetry, currentId, (t) => ({
+         ...t,
+         monkeyStolen: t.monkeyStolen + steal,
+         maxStreakLength: Math.max(t.maxStreakLength, currentStreak.length),
+      }));
+      for (const v of victims) {
+         telemetry = withTelemetry(telemetry, v.id, (t) => ({ ...t, monkeyLost: t.monkeyLost + 1 }));
+      }
    }
-   return drawn;
+   const drawn: GameState = {
+      ...state,
+      deck: rest,
+      currentCard: monkey,
+      players,
+      currentStreak,
+      telemetry,
+      daveyToss: null,
+   };
+   return lastCard ? complete(bankToCurrentPlayer(drawn)) : drawn;
+}
+
+function drawDaveyJones(
+   state: GameState,
+   davey: Card,
+   rest: ReadonlyArray<Card>,
+   lastCard: boolean,
+   currentId: string | undefined,
+): GameState {
+   // The dread of the deck. The streak is dragged under immediately (a pirate-
+   // level loss). Then a forced wager from the BANK — DAVEY_WAGER, or the whole
+   // bank if it holds less — on a deterministic coin toss. Win doubles the
+   // wager into the bank; lose sinks it. The turn ends (await END_TURN). The
+   // only card that can shrink banked treasure. Empty bank → just the streak.
+   const bank = state.players[state.turnIndex]?.coins ?? 0;
+   const wager = Math.min(DAVEY_WAGER, bank);
+   let players = state.players;
+   let daveyToss: GameState['daveyToss'] = null;
+   let rngCursor = state.rngCursor;
+   let telemetry = state.telemetry;
+   let won = false;
+   if (wager > 0) {
+      won = eventRng(state)() < 0.5;
+      rngCursor = state.rngCursor + 1;
+      const delta = won ? wager : -wager;
+      players = state.players.map((p, i) =>
+         i === state.turnIndex ? { ...p, coins: p.coins + delta } : p,
+      );
+      daveyToss = { won, amount: wager };
+      if (currentId) {
+         telemetry = withTelemetry(telemetry, currentId, (t) =>
+            won ? { ...t, daveyWins: t.daveyWins + 1 } : { ...t, daveyLosses: t.daveyLosses + 1 },
+         );
+      }
+   }
+   // The coin decides everything. WIN (2×): keep your streak, take the doubled
+   // wager, and SAIL ON — the turn continues. LOSE (squid) or an empty bank:
+   // the streak is dragged under and the turn ends (await END_TURN, like a
+   // pirate). This all-or-nothing flip is what makes Davey the dread card.
+   const next: GameState = {
+      ...state,
+      deck: rest,
+      currentCard: davey,
+      currentStreak: won ? state.currentStreak : [],
+      players,
+      rngCursor,
+      daveyToss,
+      telemetry,
+   };
+   if (lastCard) return won ? complete(bankToCurrentPlayer(next)) : complete(next);
+   return next;
+}
+
+function handleResolveMultiplier(state: GameState, secure: boolean): GameState {
+   assert(state.status === 'active', 'game not active');
+   assert(state.pendingDecision?.kind === 'multiplier', 'no Cursed Doubloon decision pending');
+   if (secure) {
+      // Decline the curse: bank the standing streak (if any) and END the turn.
+      // There is no bank-and-keep-drawing — declining means walking away safe.
+      const banked =
+         state.currentStreak.length > 0
+            ? { ...bankToCurrentPlayer(state), currentStreak: [] }
+            : state;
+      return advanceTurn({ ...banked, currentCard: null });
+   }
+   // Take the chance: open a forced-push 2× window — the next 3 gold cards are
+   // doubled, but banking is locked until the window closes (or a pirate ends it).
+   return {
+      ...state,
+      currentCard: null,
+      pendingDecision: null,
+      multiplierRemaining: MULTIPLIER_WINDOW,
+      bankLocked: true,
+   };
 }
 
 function handleBank(state: GameState): GameState {
    assert(state.status === 'active', 'game not active');
    assert(state.currentCard?.kind !== 'pirate', 'cannot bank after pirate');
+   assert(!state.bankLocked, 'cannot bank during a Cursed Doubloon window');
    assert(state.currentStreak.length > 0, 'no streak to bank');
    const banked = bankToCurrentPlayer(state);
    return advanceTurn({ ...banked, currentCard: null, currentStreak: [] });
@@ -159,7 +419,13 @@ function handleBank(state: GameState): GameState {
 
 function handleEndTurn(state: GameState): GameState {
    assert(state.status === 'active', 'game not active');
-   assert(state.currentCard?.kind === 'pirate', 'end turn only valid after a pirate draw');
+   // Valid after a pirate, or a Davey Jones that ended the turn (lost toss).
+   // A winning Davey keeps the turn live, so END_TURN is rejected there — the
+   // player banks or draws instead (and never loses the streak they kept).
+   assert(
+      state.currentCard?.kind === 'pirate' || daveyEndedTurn(state),
+      'end turn only valid after a pirate or a lost Davey Jones toss',
+   );
    return advanceTurn({ ...state, currentCard: null });
 }
 
@@ -246,19 +512,30 @@ function bankToCurrentPlayer(state: GameState): GameState {
 
 function advanceTurn(state: GameState): GameState {
    if (state.players.length === 0) return state;
-   const n = state.players.length;
-   let next = (state.turnIndex + 1) % n;
+   // Every turn hand-off clears turn-scoped special-card effects so they can
+   // never leak into the next player's turn. Routing all hand-offs through here
+   // means no caller can forget. (rngSeed/rngCursor persist for the whole game.)
+   const base: GameState = {
+      ...state,
+      amuletArmed: false,
+      multiplierRemaining: 0,
+      bankLocked: false,
+      pendingDecision: null,
+      daveyToss: null,
+   };
+   const n = base.players.length;
+   let next = (base.turnIndex + 1) % n;
    // Walk past anyone flagged absent. If everyone is absent, fall back
    // to the original advance — the table is effectively empty but the
    // engine refuses to loop forever.
    for (let i = 0; i < n; i++) {
-      const candidate = state.players[next];
-      if (candidate && !state.absentIds.includes(candidate.id)) {
-         return { ...state, turnIndex: next };
+      const candidate = base.players[next];
+      if (candidate && !base.absentIds.includes(candidate.id)) {
+         return { ...base, turnIndex: next };
       }
       next = (next + 1) % n;
    }
-   return { ...state, turnIndex: (state.turnIndex + 1) % n };
+   return { ...base, turnIndex: (base.turnIndex + 1) % n };
 }
 
 function complete(state: GameState): GameState {

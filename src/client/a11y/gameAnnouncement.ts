@@ -1,4 +1,4 @@
-import type { GameStatus } from '@/game/types';
+import type { Card, GameStatus } from '@/game/types';
 
 /**
  * Minimal view of game state needed to narrate the core feedback loop to
@@ -8,7 +8,7 @@ import type { GameStatus } from '@/game/types';
 export type AnnounceSnapshot = {
    status: GameStatus;
    turnIndex: number;
-   currentCardKind: 'gold' | 'pirate' | null;
+   currentCardKind: Card['kind'] | null;
    /** Name of the player whose turn it currently is. */
    currentName: string | null;
    /** Name of the winner once the game is complete. */
@@ -43,11 +43,28 @@ export function deriveAnnouncement(
    // First active snapshot or a fresh restart: announce whose turn it is.
    const becameActive = prev === null || prev.status !== 'active';
 
-   const bust =
-      next.currentCardKind === 'pirate' &&
-      (becameActive || prev === null || prev.currentCardKind !== 'pirate');
+   const cardChanged = becameActive || prev === null || prev.currentCardKind !== next.currentCardKind;
+
+   const bust = next.currentCardKind === 'pirate' && cardChanged;
    if (bust) {
       return { message: 'Pirate! Streak lost.', assertive: true };
+   }
+
+   // Davey Jones drags the streak under too — and gambles your banked coins.
+   if (next.currentCardKind === 'davey_jones' && cardChanged) {
+      return { message: 'Davey Jones! Streak lost and your bank is on the line.', assertive: true };
+   }
+
+   // Other Cursed Seas cards — a polite note as each is revealed.
+   if (cardChanged) {
+      const note: Partial<Record<NonNullable<AnnounceSnapshot['currentCardKind']>, string>> = {
+         spyglass: 'Spyglass. Peek at the next three cards.',
+         amulet: 'Amulet armed. Your next pirate spares half your streak.',
+         multiplier: 'Cursed Doubloon. Bank now or ride the double.',
+         monkey: 'Monkey! You snatch a coin from each rival.',
+      };
+      const message = next.currentCardKind ? note[next.currentCardKind] : undefined;
+      if (message) return { message, assertive: false };
    }
 
    const turnChanged = becameActive || (prev !== null && next.turnIndex !== prev.turnIndex);

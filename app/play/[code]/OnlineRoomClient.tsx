@@ -12,15 +12,20 @@ import { useGameJuice, type JuiceSnapshot } from '@/client/hooks/useGameJuice';
 import { useGameAnnouncer } from '@/client/hooks/useGameAnnouncer';
 import type { AnnounceSnapshot } from '@/client/a11y/gameAnnouncement';
 import type { PublicGameState, RoomState, RoomSpectatorView } from '@/game/public';
+import type { Card } from '@/game/types';
+import { SpecialCardStatus } from '@/ui/game-room/SpecialCardStatus';
+import { MonkeyHeist } from '@/ui/game-room/MonkeyHeist';
 import {
    bankOnline,
    drawOnline,
    leaveActiveGame,
    markPresentOnline,
+   resolveMultiplierOnline,
    skipAbsentTurn,
    timeoutTurn,
 } from '@/server/actions/gameTurnActions';
 import { startOnlineGame } from '@/server/actions/startOnlineGame';
+import { setRoomDeckVariant } from '@/server/actions/setRoomDeckVariant';
 import { setReady, beginBoarding, startGameDroppingUnready } from '@/server/actions/readyActions';
 import { endGameByForfeit } from '@/server/actions/restartRoom';
 import { leaveSpectator } from '@/server/actions/spectatorActions';
@@ -883,6 +888,39 @@ function optimisticDrawStart(prev: PublicGameState): PublicGameState {
    };
 }
 
+function DeckChoiceButton({
+   selected,
+   disabled,
+   onClick,
+   title,
+   subtitle,
+}: {
+   selected: boolean;
+   disabled?: boolean;
+   onClick: () => void;
+   title: string;
+   subtitle: string;
+}) {
+   return (
+      <button
+         type='button'
+         role='radio'
+         aria-checked={selected}
+         disabled={disabled}
+         onClick={onClick}
+         className={cn(
+            'flex flex-1 flex-col items-center gap-0.5 rounded-2xl border-2 px-3 py-2.5 text-center transition-all disabled:opacity-60',
+            selected
+               ? 'border-[color:var(--color-gold-400)] bg-[color:var(--color-deep-700)]/70 shadow-[0_0_24px_-8px_rgb(255_215_120/0.55)]'
+               : 'border-[color:var(--color-surface-border)] bg-[color:var(--color-abyss-900)]/40',
+         )}
+      >
+         <span className='pirate-display text-base text-[color:var(--color-gold-300)]'>{title}</span>
+         <span className='text-[11px] text-[color:var(--color-cream-200)]/70'>{subtitle}</span>
+      </button>
+   );
+}
+
 function Lobby({
    state,
    userId,
@@ -931,6 +969,16 @@ function Lobby({
    const [togglingVis, setTogglingVis] = useState(false);
    const [publicState, setPublicState] = useState(isPublic);
    useEffect(() => setPublicState(isPublic), [isPublic]);
+   const [deckPending, setDeckPending] = useState(false);
+   const cursed = state.variant === 'cursed';
+   const chooseDeck = async (variant: 'even_greedier' | 'cursed') => {
+      if (state.variant === variant) return;
+      setDeckPending(true);
+      setError(null);
+      const res = await setRoomDeckVariant({ code, variant });
+      setDeckPending(false);
+      if (!res.ok) setError(res.error);
+   };
    const toggleVisibility = async () => {
       setTogglingVis(true);
       const next = !publicState;
@@ -1109,7 +1157,39 @@ function Lobby({
             )}
          </PiratePanel>
 
-         <div className='scrollbar-none min-h-0 flex-1 overflow-y-auto'>
+         <div className='scrollbar-none flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto'>
+            {readyUpPhase && (
+               <div className='flex flex-col gap-2'>
+                  <span className='text-xs uppercase tracking-[0.2em] text-[color:var(--color-cream-200)]/60'>
+                     Deck
+                  </span>
+                  {isHost ? (
+                     <div className='flex gap-2' role='radiogroup' aria-label='Deck type'>
+                        <DeckChoiceButton
+                           selected={!cursed}
+                           disabled={deckPending}
+                           onClick={() => chooseDeck('even_greedier')}
+                           title='Classic'
+                           subtitle='Gold & pirates'
+                        />
+                        <DeckChoiceButton
+                           selected={cursed}
+                           disabled={deckPending}
+                           onClick={() => chooseDeck('cursed')}
+                           title='Cursed Seas'
+                           subtitle='+ special cards'
+                        />
+                     </div>
+                  ) : (
+                     <span className='pirate-display text-lg text-[color:var(--color-gold-300)]'>
+                        {cursed ? 'Cursed Seas' : 'Classic'}
+                        <span className='ml-2 align-middle text-xs text-[color:var(--color-cream-200)]/55'>
+                           · the captain&apos;s call
+                        </span>
+                     </span>
+                  )}
+               </div>
+            )}
             <CrewGrid
                players={visiblePlayers}
                capacity={MAX_PLAYERS}
@@ -1310,9 +1390,12 @@ function Play({
    achieverIds: ReadonlySet<string>;
    yourUnlocks: readonly string[];
 }) {
-   const [pending, setPending] = useState<null | 'draw' | 'bank' | 'end'>(null);
+   const [pending, setPending] = useState<null | 'draw' | 'bank' | 'end' | 'multiplier'>(null);
    const [error, setError] = useState<string | null>(null);
    const [drawingCard, setDrawingCard] = useState(false);
+   // Spyglass peek — the next few cards, handed back by drawOnline to this
+   // player only (never broadcast). Shown while the Spyglass is the face-up card.
+   const [peek, setPeek] = useState<Card[]>([]);
    const [leavingSpectate, setLeavingSpectate] = useState(false);
 
    const isHost = userId === hostId;
@@ -1332,6 +1415,11 @@ function Play({
    const currentPlayer = state.players[state.turnIndex];
    const isCurrent = currentPlayer?.id === userId;
    const isPirate = state.currentCard?.kind === 'pirate';
+   const isDavey = state.currentCard?.kind === 'davey_jones';
+   // Davey ends the turn only on a lost toss; a winning toss keeps it live.
+   const daveyEnded = isDavey && !state.daveyToss?.won;
+   const turnEnder = isPirate || daveyEnded; // revealed card with no decision — just hands off
+   const pendingMultiplier = state.pendingDecision?.kind === 'multiplier';
    const isComplete = state.status === 'complete';
    // Who the helm passes to once this turn ends — mirrors the engine's
    // advanceTurn (skip past absent seats). Used to name the next player during
@@ -1355,12 +1443,23 @@ function Play({
    const handingOff =
       !isComplete &&
       state.status === 'active' &&
-      (isPirate || (deadlineMs !== null && clockRemaining <= 0));
+      (turnEnder || (deadlineMs !== null && clockRemaining <= 0));
    const winner = state.winnerId ? (state.players.find((p) => p.id === state.winnerId) ?? null) : null;
    const ranked = isComplete ? [...state.players].sort((a, b) => b.coins - a.coins) : [];
    const streakSum = state.currentStreak.reduce((sum, c) => sum + c.value, 0);
-   const canDraw = state.status === 'active' && isCurrent && !isPirate && state.deckCount > 0;
-   const canBank = state.status === 'active' && isCurrent && !isPirate && state.currentStreak.length > 0;
+   const canDraw =
+      state.status === 'active' &&
+      isCurrent &&
+      !turnEnder &&
+      !pendingMultiplier &&
+      state.deckCount > 0;
+   const canBank =
+      state.status === 'active' &&
+      isCurrent &&
+      !turnEnder &&
+      !pendingMultiplier &&
+      !state.bankLocked &&
+      state.currentStreak.length > 0;
 
    const snap = useMemo<JuiceSnapshot>(
       () => ({
@@ -1394,6 +1493,18 @@ function Play({
    useEffect(() => {
       if (shakeKey > 0) setShaking(true);
    }, [shakeKey]);
+
+   // Monkey heist flourish — fires on every client when a Monkey is revealed.
+   const [heistCoins, setHeistCoins] = useState<number | null>(null);
+   const heistKey = useRef(0);
+   useEffect(() => {
+      if (state.currentCard?.kind !== 'monkey') return;
+      const stolen = state.currentStreak.filter((c) => c.source === 'monkey').length;
+      if (stolen > 0) {
+         heistKey.current += 1;
+         setHeistCoins(stolen);
+      }
+   }, [state.currentCard, state.currentStreak]);
 
    // Hold the victory modal until the final card has landed and its streak has
    // resolved, so players see how the game ended before the standings appear.
@@ -1509,7 +1620,7 @@ function Play({
    }, [iAmAbsent, state.status, code]);
 
    const wrap = async (
-      label: 'draw' | 'bank' | 'end',
+      label: 'draw' | 'bank' | 'end' | 'multiplier',
       fn: () => Promise<{ ok: boolean; error?: string }>,
       optimistic?: () => void,
    ) => {
@@ -1526,11 +1637,20 @@ function Play({
 
    const handleDraw = () => {
       setDrawingCard(true);
-      void wrap(
-         'draw',
-         () => drawOnline(code),
-         () => applyOptimistic(optimisticDrawStart),
-      );
+      setPending('draw');
+      setError(null);
+      setPeek([]); // a fresh draw clears any prior Spyglass peek
+      applyOptimistic(optimisticDrawStart);
+      void drawOnline(code).then((result) => {
+         setPending(null);
+         if (!result.ok) {
+            setError(result.error ?? 'Failed');
+            setDrawingCard(false);
+            return;
+         }
+         // Spyglass: stash the private peek; the broadcast carries no deck.
+         if (result.peek) setPeek(result.peek);
+      });
    };
 
    const handleBank = () => {
@@ -1539,6 +1659,11 @@ function Play({
          () => bankOnline(code),
          () => applyOptimistic((prev) => optimisticBank(prev, userId)),
       );
+   };
+
+   const handleResolveMultiplier = (secure: boolean) => {
+      // The toss has no randomness; the server reconciles the window + lock.
+      void wrap('multiplier', () => resolveMultiplierOnline(code, secure));
    };
 
    return (
@@ -1550,6 +1675,9 @@ function Play({
       >
          {announcer}
          {isPirate && !isComplete && <BustVignette />}
+         {heistCoins !== null && (
+            <MonkeyHeist key={heistKey.current} count={heistCoins} onDone={() => setHeistCoins(null)} />
+         )}
 
          <ScoreRibbon
             players={state.players.filter((p) => onlineIds.has(p.id) || p.id === userId)}
@@ -1589,6 +1717,16 @@ function Play({
             )}
          </div>
 
+         {!isComplete && (
+            <SpecialCardStatus
+               peek={state.currentCard?.kind === 'spyglass' ? peek : []}
+               daveyToss={state.daveyToss}
+               multiplierRemaining={state.multiplierRemaining}
+               bankLocked={state.bankLocked}
+               amuletArmed={state.amuletArmed}
+            />
+         )}
+
          {error && <p className='text-center text-sm text-[color:var(--color-coral-500)]'>{error}</p>}
 
          {/* min-h reserves the action-row height so hiding it at game end doesn't
@@ -1618,6 +1756,29 @@ function Play({
                         loading={leavingSpectate || navLeaving}
                      >
                         Leave room
+                     </PirateButton>
+                  </div>
+               ) : isCurrent && pendingMultiplier ? (
+                  <div className='flex w-full gap-3'>
+                     <PirateButton
+                        variant='primary'
+                        size='lg'
+                        fullWidth
+                        onClick={() => handleResolveMultiplier(false)}
+                        loading={pending === 'multiplier'}
+                        disabled={pending !== null}
+                     >
+                        Double or Bust
+                     </PirateButton>
+                     <PirateButton
+                        variant='secondary'
+                        size='lg'
+                        fullWidth
+                        onClick={() => handleResolveMultiplier(true)}
+                        loading={pending === 'multiplier'}
+                        disabled={pending !== null}
+                     >
+                        Bank &amp; Run
                      </PirateButton>
                   </div>
                ) : handingOff ? (

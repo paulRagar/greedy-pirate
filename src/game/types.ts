@@ -1,10 +1,28 @@
-export type GoldCard = { readonly kind: 'gold'; readonly value: number };
+export type GoldCard = {
+   readonly kind: 'gold';
+   readonly value: number;
+   /** Tags a coin pickpocketed by the Monkey, so the streak line-up can badge it. */
+   readonly source?: 'monkey';
+};
 export type PirateCard = { readonly kind: 'pirate' };
-export type Card = GoldCard | PirateCard;
+/** Cursed Seas special cards. Each is a stateless marker; the effect lives on GameState. */
+export type SpyglassCard = { readonly kind: 'spyglass' };
+export type AmuletCard = { readonly kind: 'amulet' };
+export type MultiplierCard = { readonly kind: 'multiplier' };
+export type MonkeyCard = { readonly kind: 'monkey' };
+export type DaveyJonesCard = { readonly kind: 'davey_jones' };
+export type Card =
+   | GoldCard
+   | PirateCard
+   | SpyglassCard
+   | AmuletCard
+   | MultiplierCard
+   | MonkeyCard
+   | DaveyJonesCard;
 
 export type Deck = ReadonlyArray<Card>;
 
-export type DeckVariant = 'greedy' | 'even_greedier' | 'super_greedy';
+export type DeckVariant = 'greedy' | 'even_greedier' | 'super_greedy' | 'cursed';
 
 export type Player = {
    readonly id: string;
@@ -13,6 +31,15 @@ export type Player = {
 };
 
 export type GameStatus = 'lobby' | 'active' | 'complete';
+
+/**
+ * A revealed card that parks the turn awaiting a player choice before any
+ * further DRAW. Mirrors the pirate-revealed gate, but for cards that offer a
+ * decision rather than a forced pass. Currently only the Cursed Doubloon
+ * (multiplier): the holder chooses whether to bank their standing streak before
+ * the 2× window opens. Extend the union as more interactive cards land.
+ */
+export type PendingDecision = { readonly kind: 'multiplier' };
 
 /**
  * Per-player personal bests accrued over a single game. Surfaced to the
@@ -26,7 +53,20 @@ export type PlayerTelemetry = {
    readonly biggestBank: number;
    /** Pirates drawn on this player's own turns. */
    readonly piratesEncountered: number;
+   /** Pirates softened by an Amulet (half the streak saved instead of wiped). */
+   readonly amuletsSaved: number;
+   /** Coins this player stole from rivals via the Monkey. */
+   readonly monkeyStolen: number;
+   /** Coins this player lost to a rival's Monkey. */
+   readonly monkeyLost: number;
+   /** Davey Jones coin tosses won. */
+   readonly daveyWins: number;
+   /** Davey Jones coin tosses lost. */
+   readonly daveyLosses: number;
 };
+
+/** Outcome of a Davey Jones forced wager, surfaced for the toss-reveal animation. */
+export type DaveyToss = { readonly won: boolean; readonly amount: number };
 
 export type GameState = {
    readonly status: GameStatus;
@@ -42,6 +82,29 @@ export type GameState = {
    readonly absentIds: ReadonlyArray<string>;
    /** Per-player personal bests, keyed by player id. */
    readonly telemetry: Readonly<Record<string, PlayerTelemetry>>;
+   /**
+    * The START_GAME seed, retained on state so deterministic randomness
+    * (e.g. Davey Jones' coin toss) survives past the initial shuffle. Never
+    * broadcast — exposing it would let a client predict tosses and deck order.
+    */
+   readonly rngSeed: string;
+   /**
+    * Monotonic counter of consumed random *events* (not deck draws). Combined
+    * with `rngSeed` to derive a per-event PRNG stream, so replaying the same
+    * action list reproduces the same outcomes. Namespaced away from the shuffle
+    * stream, so adding tosses never perturbs the deck order. Never broadcast.
+    */
+   readonly rngCursor: number;
+   /** Turn-scoped: an Amulet is armed to soften the next pirate this turn. */
+   readonly amuletArmed: boolean;
+   /** Turn-scoped: gold cards left in the active 2× window (0 = no multiplier). */
+   readonly multiplierRemaining: number;
+   /** Turn-scoped: banking is blocked while a forced-push multiplier window runs. */
+   readonly bankLocked: boolean;
+   /** Turn-scoped: a revealed card awaiting the holder's decision before DRAW. */
+   readonly pendingDecision: PendingDecision | null;
+   /** Transient: the just-resolved Davey Jones toss, for the reveal beat. Cleared on hand-off. */
+   readonly daveyToss: DaveyToss | null;
 };
 
 export type PlayerInit = { readonly id: string; readonly name: string };
@@ -51,6 +114,7 @@ export type GameAction =
    | { readonly type: 'PLAYER_LEAVE'; readonly playerId: string }
    | { readonly type: 'START_GAME'; readonly seed: string; readonly variant?: DeckVariant }
    | { readonly type: 'DRAW' }
+   | { readonly type: 'RESOLVE_MULTIPLIER'; readonly secure: boolean }
    | { readonly type: 'BANK' }
    | { readonly type: 'END_TURN' }
    | { readonly type: 'SKIP_TURN'; readonly playerId: string }

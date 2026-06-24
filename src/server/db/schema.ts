@@ -47,7 +47,7 @@ export const games = pgTable(
          .references(() => users.id, { onDelete: 'cascade' }),
       mode: text('mode', { enum: ['local', 'online'] }).notNull(),
       deckVariant: text('deck_variant', {
-         enum: ['greedy', 'even_greedier', 'super_greedy'],
+         enum: ['greedy', 'even_greedier', 'super_greedy', 'cursed'],
       }).notNull(),
       status: text('status', { enum: ['lobby', 'active', 'complete', 'abandoned'] }).notNull(),
       isPublic: boolean('is_public').notNull().default(false),

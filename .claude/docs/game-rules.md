@@ -40,8 +40,25 @@ Defined as data in `src/game/deck.ts`. Three variants:
 | `greedy` | 47 | 10 pirates / 37 gold | All 1s |
 | `even_greedier` | 47 | 10 pirates / 37 gold | Mix of 1–5 |
 | `super_greedy` | 98 | 15 pirates / 83 gold | Mix of 1–10 |
+| `cursed` | randomized | 9–13 pirates | Mix of 1–5 + special cards |
 
-**Default:** `even_greedier`. `DEFAULT_VARIANT` in `src/game/rules.ts` controls this. The variant picker is intentionally hidden from the setup UI — users start games without thinking about it. Variants are reachable via the `?variant=` query string for future expansion / direct linking.
+**Default:** `even_greedier`. `DEFAULT_VARIANT` in `src/game/rules.ts` controls this. The classic variant picker is hidden, but players now choose **Classic vs Cursed Seas** in the lobby (online) / setup (local). Variants are also reachable via the `?variant=` query string.
+
+## Cursed Seas (special cards) — GRE-61…68
+
+An **opt-in alternate deck** that adds strategy + comeback swings. Its composition is **generated per game from the seed** (`buildDeck('cursed', rng)` in `deck.ts`) with randomized pirate/gold counts, so remaining pirates can't be tallied. Pirates-remaining is never surfaced in the UI. All special cards **resolve instantly on draw** — there is no hand/inventory.
+
+| Card | Effect |
+|---|---|
+| **Spyglass** | Privately reveals the next 3 cards to the drawer; play continues. The peek is computed by the caller (`drawOnline` returns it to the actor only) and is **never broadcast** — the deck stays server-secret. |
+| **Amulet** | Arms a one-shot shield (`amuletArmed`). The next pirate this turn keeps `floor(streak/2)`, banks it, and ends the turn like any pirate. |
+| **Cursed Doubloon** (multiplier) | Parks `pendingDecision: 'multiplier'`. `RESOLVE_MULTIPLIER { secure }` either banks the standing streak first (secure) or lets it ride, then opens a 3-card 2× window with `bankLocked` until it closes (or a pirate ends the turn). |
+| **Monkey** | Steals 1 coin from each other player who has any (skips 0) into the drawer's at-risk streak as one synthetic coin. The only card that reduces others' banks. |
+| **Davey Jones** | The dread card. A forced `DAVEY_WAGER` (5, or whole bank if less) wager on a deterministic coin toss. **Win (2×):** keep your streak, take the doubled wager, and **sail on** (turn continues). **Lose (squid) / empty bank:** streak dragged under + wager sunk + turn ends (await END_TURN). The only card that can shrink banked treasure; ends the turn only on a loss (`daveyEndedTurn`). |
+
+**Determinism:** Davey's toss uses `eventRng(seed#cursor)` (mulberry32), namespaced off the shuffle stream; `rngSeed`/`rngCursor` are persisted on `GameState` and round-tripped through the DB, never broadcast, so replays reproduce outcomes.
+
+**Telemetry (deferred — GRE-69):** the engine already tracks `amuletsSaved`, `monkeyStolen`/`monkeyLost`, `daveyWins`/`daveyLosses` per player, but rolling these into `user_stats`/achievements is not yet wired.
 
 ## Winning
 

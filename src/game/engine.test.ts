@@ -105,6 +105,20 @@ describe('START_GAME', () => {
       expect(s.status).toBe('active');
       expect(s.deck.length).toBe(DECKS.greedy.length);
    });
+
+   it('retains the seed on state with a zeroed rng cursor', () => {
+      const s = startGame(buildLobby(p('a'), p('b')), 'keep-me');
+      expect(s.rngSeed).toBe('keep-me');
+      expect(s.rngCursor).toBe(0);
+   });
+
+   it('zeroes turn-scoped special-card effect state', () => {
+      const s = startGame(buildLobby(p('a'), p('b')));
+      expect(s.amuletArmed).toBe(false);
+      expect(s.multiplierRemaining).toBe(0);
+      expect(s.bankLocked).toBe(false);
+      expect(s.pendingDecision).toBeNull();
+   });
 });
 
 describe('DRAW gold', () => {
@@ -454,10 +468,17 @@ describe('telemetry', () => {
 
    it('resets telemetry on START_GAME', () => {
       const started = startGame(buildLobby(p('a'), p('b')));
-      expect(started.telemetry).toEqual({
-         a: { maxStreakLength: 0, biggestBank: 0, piratesEncountered: 0 },
-         b: { maxStreakLength: 0, biggestBank: 0, piratesEncountered: 0 },
-      });
+      const zero = {
+         maxStreakLength: 0,
+         biggestBank: 0,
+         piratesEncountered: 0,
+         amuletsSaved: 0,
+         monkeyStolen: 0,
+         monkeyLost: 0,
+         daveyWins: 0,
+         daveyLosses: 0,
+      };
+      expect(started.telemetry).toEqual({ a: zero, b: zero });
    });
 });
 

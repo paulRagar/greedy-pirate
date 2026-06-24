@@ -3,11 +3,31 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { applyAction, findGameByCode, isPlayerTurn, parseEngineState, RoomError } from '@/server/game-room';
+import type { Tx } from '@/server/game-room';
 import { db } from '@/server/db/client';
 import { gamePlayers } from '@/server/db/schema';
 import { EngineError } from '@/game/engine';
-import type { GameAction } from '@/game/types';
+import { SPYGLASS_PEEK } from '@/game/rules';
+import type { Card, GameAction, GameState } from '@/game/types';
 import { getSupabaseServer } from '@/server/supabase/server';
+
+/**
+ * Mirror engine player coins/flags into the `game_players` rows after an
+ * action. Shared by every turn action so cross-player changes (Monkey theft,
+ * Davey Jones tosses) persist to the queryable mirror, not just `games.state`.
+ */
+async function writePlayers(tx: Tx, gameId: string, next: GameState): Promise<void> {
+   for (const player of next.players) {
+      await tx
+         .update(gamePlayers)
+         .set({
+            coins: player.coins,
+            isWinner: next.winnerId === player.id,
+            piratesEncountered: next.telemetry[player.id]?.piratesEncountered ?? 0,
+         })
+         .where(sql`${gamePlayers.gameId} = ${gameId} and ${gamePlayers.userId} = ${player.id}`);
+   }
+}
 
 /**
  * Map an error thrown out of `applyAction` to a `TurnResult`.
@@ -64,20 +84,7 @@ async function dispatch(code: string, action: GameAction, eventType: Parameters<
                throw new RoomError('FORBIDDEN', 'Not your turn');
             }
          },
-         onPlayers: async (tx, gameId, next) => {
-            for (const player of next.players) {
-               await tx
-                  .update(gamePlayers)
-                  .set({
-                     coins: player.coins,
-                     isWinner: next.winnerId === player.id,
-                     piratesEncountered: next.telemetry[player.id]?.piratesEncountered ?? 0,
-                  })
-                  .where(
-                     sql`${gamePlayers.gameId} = ${gameId} and ${gamePlayers.userId} = ${player.id}`,
-                  );
-            }
-         },
+         onPlayers: writePlayers,
       });
    } catch (err) {
       return toTurnResult(err, `dispatch ${eventType}`);
@@ -86,8 +93,48 @@ async function dispatch(code: string, action: GameAction, eventType: Parameters<
    return { ok: true };
 }
 
-export async function drawOnline(code: string): Promise<TurnResult> {
-   return dispatch(code, { type: 'DRAW' }, 'DRAW');
+/** DRAW carries a private Spyglass peek back to the actor only — never broadcast. */
+export type DrawResult = { ok: true; peek?: Card[] } | { ok: false; error: string };
+
+export async function drawOnline(code: string): Promise<DrawResult> {
+   const parsed = InputSchema.safeParse({ code });
+   if (!parsed.success) return { ok: false, error: 'Invalid input' };
+
+   const supabase = await getSupabaseServer();
+   const {
+      data: { user },
+   } = await supabase.auth.getUser();
+   if (!user) return { ok: false, error: 'Not signed in' };
+
+   const game = await findGameByCode(parsed.data.code);
+   if (!game) return { ok: false, error: 'Room not found' };
+   if (game.status !== 'active') return { ok: false, error: 'Game not active' };
+
+   const state = parseEngineState(game);
+   if (!isPlayerTurn(state, user.id)) return { ok: false, error: 'Not your turn' };
+
+   try {
+      const { next } = await applyAction(game.id, { type: 'DRAW' }, 'DRAW', {
+         actorId: user.id,
+         code: parsed.data.code,
+         guard: (current) => {
+            if (!isPlayerTurn(current, user.id)) throw new RoomError('FORBIDDEN', 'Not your turn');
+         },
+         onPlayers: writePlayers,
+      });
+      // Spyglass: hand the actor the next few cards privately. The deck is never
+      // in the broadcast, so the peek can only reach the player who drew it.
+      if (next.currentCard?.kind === 'spyglass') {
+         return { ok: true, peek: next.deck.slice(0, SPYGLASS_PEEK) };
+      }
+      return { ok: true };
+   } catch (err) {
+      return toTurnResult(err, 'dispatch DRAW');
+   }
+}
+
+export async function resolveMultiplierOnline(code: string, secure: boolean): Promise<TurnResult> {
+   return dispatch(code, { type: 'RESOLVE_MULTIPLIER', secure }, 'RESOLVE_MULTIPLIER');
 }
 
 export async function bankOnline(code: string): Promise<TurnResult> {

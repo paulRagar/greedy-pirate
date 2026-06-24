@@ -15,7 +15,7 @@ type SearchParams = Promise<{
    evenGreedier?: string;
 }>;
 
-const VALID_VARIANTS: ReadonlyArray<DeckVariant> = ['greedy', 'even_greedier', 'super_greedy'];
+const VALID_VARIANTS: ReadonlyArray<DeckVariant> = ['greedy', 'even_greedier', 'super_greedy', 'cursed'];
 
 function resolveVariant(params: Awaited<SearchParams>): DeckVariant {
    if (params.variant && (VALID_VARIANTS as readonly string[]).includes(params.variant)) {

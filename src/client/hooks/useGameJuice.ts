@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { GameStatus } from '@/game/types';
+import type { Card, GameStatus } from '@/game/types';
 import { haptics } from '@/client/juice/haptics';
 
 /**
@@ -15,7 +15,7 @@ import { haptics } from '@/client/juice/haptics';
 export type JuiceSnapshot = {
    status: GameStatus;
    turnIndex: number;
-   currentCardKind: 'gold' | 'pirate' | null;
+   currentCardKind: Card['kind'] | null;
    /** Value of the revealed card when it's gold (else null) — used to include
        the final auto-banked card in the bank burst. */
    currentCardValue: number | null;
@@ -47,6 +47,20 @@ export function useGameJuice(snap: JuiceSnapshot) {
 
       if (snap.streakLength > p.streakLength) {
          haptics.tap();
+      }
+
+      // Cursed Seas reveals get a tactile flourish — Davey Jones hits hardest.
+      if (snap.currentCardKind !== p.currentCardKind) {
+         if (snap.currentCardKind === 'davey_jones') {
+            haptics.heavy();
+         } else if (
+            snap.currentCardKind === 'monkey' ||
+            snap.currentCardKind === 'multiplier' ||
+            snap.currentCardKind === 'spyglass' ||
+            snap.currentCardKind === 'amulet'
+         ) {
+            haptics.tap();
+         }
       }
 
       // Pirate revealed — sink the streak that was just lost into the card.
