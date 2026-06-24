@@ -1,0 +1,22 @@
+src/ui/game-room/SpecialCardStatus.tsx
+  s_c8c5d107f2449c::t_501bea57932702 4
+  s_c8c5d107f2449c::t_03daee90592c47 45
+src/ui/game-room/DaveyCoinFlip.tsx
+  s_c8c5d107f2449c::t_dc20faf578d09d 1-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "4aaf00514fcba723ccaace6db4904c019dc7f869",
+  "prompts": {},
+  "sessions": {
+    "s_c8c5d107f2449c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1a04c13-68b8-4407-ab8d-90580ae8af86",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
