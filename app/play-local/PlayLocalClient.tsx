@@ -70,7 +70,9 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
    const isDavey = state.currentCard?.kind === 'davey_jones';
    const isSpyglass = state.currentCard?.kind === 'spyglass';
    const pendingMultiplier = state.pendingDecision?.kind === 'multiplier';
-   const turnEnder = isPirate || isDavey; // revealed card that ends the turn (await Pass)
+   // Davey ends the turn only on a lost toss; a win keeps the turn live.
+   const daveyEnded = isDavey && !state.daveyToss?.won;
+   const turnEnder = isPirate || daveyEnded; // revealed card that ends the turn (await Pass)
    const isComplete = state.status === 'complete';
    const isBootstrapping = state.status === 'lobby';
    const winner = state.winnerId ? (state.players.find((p) => p.id === state.winnerId) ?? null) : null;

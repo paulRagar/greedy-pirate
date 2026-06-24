@@ -1340,7 +1340,9 @@ function Play({
    const isCurrent = currentPlayer?.id === userId;
    const isPirate = state.currentCard?.kind === 'pirate';
    const isDavey = state.currentCard?.kind === 'davey_jones';
-   const turnEnder = isPirate || isDavey; // revealed card with no decision — just hands off
+   // Davey ends the turn only on a lost toss; a winning toss keeps it live.
+   const daveyEnded = isDavey && !state.daveyToss?.won;
+   const turnEnder = isPirate || daveyEnded; // revealed card with no decision — just hands off
    const pendingMultiplier = state.pendingDecision?.kind === 'multiplier';
    const isComplete = state.status === 'complete';
    // Who the helm passes to once this turn ends — mirrors the engine's

@@ -132,20 +132,30 @@ describe('Monkey', () => {
 });
 
 describe('Davey Jones', () => {
-   it('drags the streak under, then forces a 5-coin bank wager on a coin toss', () => {
+   it('forces a 5-coin bank wager; WIN keeps streak + continues, LOSS wipes + ends', () => {
       let s = active([gold(2), { kind: 'davey_jones' }, gold(1)], { coins: { a: 10 } });
       const actor = s.players[s.turnIndex]!.id;
       s = reduce(s, { type: 'DRAW' }); // gold(2) -> streak [2]
       s = reduce(s, { type: 'DRAW' }); // Davey
       expect(s.currentCard?.kind).toBe('davey_jones');
-      expect(s.currentStreak).toEqual([]); // streak dragged under
       expect(s.daveyToss).not.toBeNull();
       expect(s.daveyToss!.amount).toBe(5);
       expect(s.rngCursor).toBe(1);
       const coins = s.players.find((x) => x.id === actor)!.coins;
-      expect(coins).toBe(s.daveyToss!.won ? 15 : 5); // 10 ±5
-      s = reduce(s, { type: 'END_TURN' }); // ends like a pirate
-      expect(s.players[s.turnIndex]!.id).not.toBe(actor);
+      if (s.daveyToss!.won) {
+         expect(coins).toBe(15); // 10 + 5
+         expect(s.currentStreak).toEqual([{ kind: 'gold', value: 2 }]); // streak kept
+         // Turn continues — drawing is allowed, END_TURN is not.
+         expect(() => reduce(s, { type: 'END_TURN' })).toThrow(/Davey/);
+         const after = reduce(s, { type: 'DRAW' });
+         expect(after.players[after.turnIndex]!.id).toBe(actor);
+      } else {
+         expect(coins).toBe(5); // 10 - 5
+         expect(s.currentStreak).toEqual([]); // dragged under
+         expect(() => reduce(s, { type: 'DRAW' })).toThrow(/end turn/i);
+         s = reduce(s, { type: 'END_TURN' });
+         expect(s.players[s.turnIndex]!.id).not.toBe(actor);
+      }
    });
 
    it('wagers the whole bank when it holds less than 5', () => {
@@ -172,10 +182,14 @@ describe('Davey Jones', () => {
       expect(r1.players).toEqual(r2.players);
    });
 
-   it('rejects DRAW while Davey Jones is revealed (must END_TURN)', () => {
+   it('blocks DRAW after a LOST toss (must END_TURN); allows it after a WIN', () => {
       let s = active([{ kind: 'davey_jones' }, gold(1)], { coins: { a: 8 } });
       s = reduce(s, { type: 'DRAW' });
-      expect(() => reduce(s, { type: 'DRAW' })).toThrow(/end turn/i);
+      if (s.daveyToss!.won) {
+         expect(() => reduce(s, { type: 'DRAW' })).not.toThrow();
+      } else {
+         expect(() => reduce(s, { type: 'DRAW' })).toThrow(/end turn/i);
+      }
    });
 });
 

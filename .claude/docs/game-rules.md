@@ -54,7 +54,7 @@ An **opt-in alternate deck** that adds strategy + comeback swings. Its compositi
 | **Amulet** | Arms a one-shot shield (`amuletArmed`). The next pirate this turn keeps `floor(streak/2)`, banks it, and ends the turn like any pirate. |
 | **Cursed Doubloon** (multiplier) | Parks `pendingDecision: 'multiplier'`. `RESOLVE_MULTIPLIER { secure }` either banks the standing streak first (secure) or lets it ride, then opens a 3-card 2× window with `bankLocked` until it closes (or a pirate ends the turn). |
 | **Monkey** | Steals 1 coin from each other player who has any (skips 0) into the drawer's at-risk streak as one synthetic coin. The only card that reduces others' banks. |
-| **Davey Jones** | The dread card. Streak lost immediately (pirate-level), then a forced `DAVEY_WAGER` (5, or whole bank if less) wager on a deterministic coin toss — win doubles into the bank, lose sinks it. Ends the turn like a pirate. The only card that can shrink banked treasure. |
+| **Davey Jones** | The dread card. A forced `DAVEY_WAGER` (5, or whole bank if less) wager on a deterministic coin toss. **Win (2×):** keep your streak, take the doubled wager, and **sail on** (turn continues). **Lose (squid) / empty bank:** streak dragged under + wager sunk + turn ends (await END_TURN). The only card that can shrink banked treasure; ends the turn only on a loss (`daveyEndedTurn`). |
 
 **Determinism:** Davey's toss uses `eventRng(seed#cursor)` (mulberry32), namespaced off the shuffle stream; `rngSeed`/`rngCursor` are persisted on `GameState` and round-tripped through the DB, never broadcast, so replays reproduce outcomes.
 

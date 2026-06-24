@@ -144,7 +144,9 @@ function handleStart(state: GameState, seed: string, variant = state.variant): G
 function handleDraw(state: GameState): GameState {
    assert(state.status === 'active', 'game not active');
    assert(state.currentCard?.kind !== 'pirate', 'pirate revealed; end turn before drawing');
-   assert(state.currentCard?.kind !== 'davey_jones', 'Davey Jones revealed; end turn before drawing');
+   // Davey only ends the turn when the toss is lost (or there was nothing to
+   // wager). A winning toss lets the player sail on, so DRAW stays open.
+   assert(!daveyEndedTurn(state), 'Davey Jones took your turn; end turn before drawing');
    assert(state.pendingDecision === null, 'resolve the revealed card before drawing');
    assert(state.deck.length > 0, 'deck empty');
 
@@ -193,6 +195,15 @@ function handleDraw(state: GameState): GameState {
 
 function streakSum(streak: ReadonlyArray<GoldCard>): number {
    return streak.reduce((acc, c) => acc + c.value, 0);
+}
+
+/**
+ * True when a revealed Davey Jones has ENDED the turn — i.e. the toss was lost
+ * (or there was no bank to wager). A winning toss leaves Davey face-up but the
+ * turn live, so this is false and the player keeps drawing.
+ */
+function daveyEndedTurn(state: GameState): boolean {
+   return state.currentCard?.kind === 'davey_jones' && !state.daveyToss?.won;
 }
 
 function drawPirate(
@@ -341,8 +352,9 @@ function drawDaveyJones(
    let daveyToss: GameState['daveyToss'] = null;
    let rngCursor = state.rngCursor;
    let telemetry = state.telemetry;
+   let won = false;
    if (wager > 0) {
-      const won = eventRng(state)() < 0.5;
+      won = eventRng(state)() < 0.5;
       rngCursor = state.rngCursor + 1;
       const delta = won ? wager : -wager;
       players = state.players.map((p, i) =>
@@ -355,17 +367,22 @@ function drawDaveyJones(
          );
       }
    }
+   // The coin decides everything. WIN (2×): keep your streak, take the doubled
+   // wager, and SAIL ON — the turn continues. LOSE (squid) or an empty bank:
+   // the streak is dragged under and the turn ends (await END_TURN, like a
+   // pirate). This all-or-nothing flip is what makes Davey the dread card.
    const next: GameState = {
       ...state,
       deck: rest,
       currentCard: davey,
-      currentStreak: [],
+      currentStreak: won ? state.currentStreak : [],
       players,
       rngCursor,
       daveyToss,
       telemetry,
    };
-   return lastCard ? complete(next) : next;
+   if (lastCard) return won ? complete(bankToCurrentPlayer(next)) : complete(next);
+   return next;
 }
 
 function handleResolveMultiplier(state: GameState, secure: boolean): GameState {
@@ -402,10 +419,12 @@ function handleBank(state: GameState): GameState {
 
 function handleEndTurn(state: GameState): GameState {
    assert(state.status === 'active', 'game not active');
-   const kind = state.currentCard?.kind;
+   // Valid after a pirate, or a Davey Jones that ended the turn (lost toss).
+   // A winning Davey keeps the turn live, so END_TURN is rejected there — the
+   // player banks or draws instead (and never loses the streak they kept).
    assert(
-      kind === 'pirate' || kind === 'davey_jones',
-      'end turn only valid after a pirate or Davey Jones',
+      state.currentCard?.kind === 'pirate' || daveyEndedTurn(state),
+      'end turn only valid after a pirate or a lost Davey Jones toss',
    );
    return advanceTurn({ ...state, currentCard: null });
 }

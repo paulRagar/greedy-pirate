@@ -68,7 +68,7 @@ export function DaveyCoinFlip({ won, amount, onDone }: Props) {
                }
             >
                {won
-                  ? `2×! Your ${amount} comes back as ${amount * 2}.`
+                  ? `2×! Your ${amount} comes back as ${amount * 2} — streak kept, sail on!`
                   : `Davey Jones takes your ${amount} — and your streak.`}
             </span>
          )}

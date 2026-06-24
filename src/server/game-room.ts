@@ -250,10 +250,12 @@ export async function applyAction(
       // A revealed pirate carries no decision — pass on a short fuse instead of
       // the full turn clock. (Only ever set on the pirate-revealing DRAW; the
       // next holder's turn resets to the full clock.)
-      // Pirate and Davey Jones both reveal a no-decision card that just hands
-      // off — give them the short fuse, not the full turn clock.
+      // A pirate, or a Davey Jones whose toss was LOST, reveals a no-decision
+      // card that just hands off — give it the short fuse. A winning Davey toss
+      // keeps the turn live, so it gets the full clock like any active turn.
       const turnEnderRevealed =
-         next.currentCard?.kind === 'pirate' || next.currentCard?.kind === 'davey_jones';
+         next.currentCard?.kind === 'pirate' ||
+         (next.currentCard?.kind === 'davey_jones' && !next.daveyToss?.won);
       const clockMs = turnEnderRevealed ? PIRATE_PASS_MS : TURN_CLOCK_MS;
       const turnDeadline =
          next.status !== 'active'
