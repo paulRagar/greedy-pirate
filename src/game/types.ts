@@ -1,4 +1,9 @@
-export type GoldCard = { readonly kind: 'gold'; readonly value: number };
+export type GoldCard = {
+   readonly kind: 'gold';
+   readonly value: number;
+   /** Tags a coin pickpocketed by the Monkey, so the streak line-up can badge it. */
+   readonly source?: 'monkey';
+};
 export type PirateCard = { readonly kind: 'pirate' };
 /** Cursed Seas special cards. Each is a stateless marker; the effect lives on GameState. */
 export type SpyglassCard = { readonly kind: 'spyglass' };

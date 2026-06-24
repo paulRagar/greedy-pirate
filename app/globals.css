@@ -664,6 +664,23 @@
    will-change: transform, opacity;
 }
 
+/* Monkey heist: a coin flies from a rival's name up top, arcing down and in
+   toward the stash (per-coin --mdx/--mdy travel), then settles + fades. */
+@keyframes monkey-coin-fall {
+   0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+   18% { opacity: 1; transform: translate(calc(var(--mdx, 0px) * 0.15), -8px) scale(1); }
+   100% { transform: translate(var(--mdx, 0px), var(--mdy, 40vh)) scale(0.7); opacity: 0; }
+}
+
+.animate-monkey-coin {
+   animation: monkey-coin-fall 900ms cubic-bezier(0.45, 0.05, 0.3, 1) both;
+   will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .animate-monkey-coin { animation: none; opacity: 0; }
+}
+
 /* Hero Ken Burns — slow breathing pan for the landing backdrop.
    Scale never drops below 1.08 so parallax offsets (±14px) never
    expose the image edges. */

@@ -14,6 +14,7 @@ import type { AnnounceSnapshot } from '@/client/a11y/gameAnnouncement';
 import type { PublicGameState, RoomState, RoomSpectatorView } from '@/game/public';
 import type { Card } from '@/game/types';
 import { SpecialCardStatus } from '@/ui/game-room/SpecialCardStatus';
+import { MonkeyHeist } from '@/ui/game-room/MonkeyHeist';
 import {
    bankOnline,
    drawOnline,
@@ -1415,6 +1416,18 @@ function Play({
       if (shakeKey > 0) setShaking(true);
    }, [shakeKey]);
 
+   // Monkey heist flourish — fires on every client when a Monkey is revealed.
+   const [heistCoins, setHeistCoins] = useState<number | null>(null);
+   const heistKey = useRef(0);
+   useEffect(() => {
+      if (state.currentCard?.kind !== 'monkey') return;
+      const stolen = state.currentStreak.filter((c) => c.source === 'monkey').length;
+      if (stolen > 0) {
+         heistKey.current += 1;
+         setHeistCoins(stolen);
+      }
+   }, [state.currentCard, state.currentStreak]);
+
    // Hold the victory modal until the final card has landed and its streak has
    // resolved, so players see how the game ended before the standings appear.
    const [showVictory, setShowVictory] = useState(false);
@@ -1584,6 +1597,9 @@ function Play({
       >
          {announcer}
          {isPirate && !isComplete && <BustVignette />}
+         {heistCoins !== null && (
+            <MonkeyHeist key={heistKey.current} count={heistCoins} onDone={() => setHeistCoins(null)} />
+         )}
 
          <ScoreRibbon
             players={state.players.filter((p) => onlineIds.has(p.id) || p.id === userId)}

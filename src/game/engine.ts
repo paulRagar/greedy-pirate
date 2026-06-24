@@ -296,10 +296,10 @@ function drawMonkey(
       if (i === state.turnIndex) return p;
       return p.coins > 0 ? { ...p, coins: p.coins - 1 } : p;
    });
-   const currentStreak =
-      steal > 0
-         ? [...state.currentStreak, { kind: 'gold' as const, value: steal }]
-         : state.currentStreak;
+   // One coin per robbed rival, each tagged 'monkey' so the line-up badges it
+   // and the heist animation can fly one coin per victim into the stash.
+   const stolen: GoldCard[] = victims.map(() => ({ kind: 'gold', value: 1, source: 'monkey' }));
+   const currentStreak = steal > 0 ? [...state.currentStreak, ...stolen] : state.currentStreak;
    let telemetry = state.telemetry;
    if (currentId && steal > 0) {
       telemetry = withTelemetry(telemetry, currentId, (t) => ({

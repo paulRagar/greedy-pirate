@@ -13,6 +13,7 @@ import { PirateButton } from '@/ui/pirate-button/PirateButton';
 import { BustVignette } from '@/ui/effects/BustVignette';
 import { DeckDiscard } from '@/ui/game-room/DeckDiscard';
 import { SpecialCardStatus } from '@/ui/game-room/SpecialCardStatus';
+import { MonkeyHeist } from '@/ui/game-room/MonkeyHeist';
 import { ScoreRibbon } from '@/ui/game-room/ScoreRibbon';
 import { StreakBoard } from '@/ui/game-room/StreakBoard';
 import { StreakBankBurst } from '@/ui/game-room/StreakBankBurst';
@@ -122,6 +123,18 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
       if (shakeKey > 0) setShaking(true);
    }, [shakeKey]);
 
+   // Monkey heist flourish — fling one coin per robbed rival into the stash.
+   const [heistCoins, setHeistCoins] = useState<number | null>(null);
+   const heistKey = useRef(0);
+   useEffect(() => {
+      if (state.currentCard?.kind !== 'monkey') return;
+      const stolen = state.currentStreak.filter((c) => c.source === 'monkey').length;
+      if (stolen > 0) {
+         heistKey.current += 1;
+         setHeistCoins(stolen);
+      }
+   }, [state.currentCard, state.currentStreak]);
+
    // Hold the victory modal until the final card has landed and players have had
    // a beat to register it was the last one.
    const [showVictory, setShowVictory] = useState(false);
@@ -167,6 +180,9 @@ export default function PlayLocalClient({ variant = DEFAULT_VARIANT }: Props) {
       >
          {announcer}
          {isPirate && !isComplete && <BustVignette />}
+         {heistCoins !== null && (
+            <MonkeyHeist key={heistKey.current} count={heistCoins} onDone={() => setHeistCoins(null)} />
+         )}
 
          <ScoreRibbon players={state.players} currentPlayerId={currentPlayer?.id} />
 
