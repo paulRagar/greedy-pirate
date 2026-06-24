@@ -1,0 +1,26 @@
+app/play/[code]/OnlineRoomClient.tsx
+  s_c8c5d107f2449c::t_55f823a9383713 28
+  s_c8c5d107f2449c::t_1d802b9a567aa3 972-981
+  s_c8c5d107f2449c::t_81bd7d9b1ae24b 1160-1192
+  s_c8c5d107f2449c::t_312b380859a528 891-923
+app/play/new/NewRoomClient.tsx
+  s_c8c5d107f2449c::t_a74cd44beede5c 35-36
+src/server/actions/setRoomDeckVariant.ts
+  s_c8c5d107f2449c::t_89f5f8dffe8ec4 1-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.13",
+  "base_commit_sha": "aa15170d2759a0b42efd986e99bcad9841d780ad",
+  "prompts": {},
+  "sessions": {
+    "s_c8c5d107f2449c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1a04c13-68b8-4407-ab8d-90580ae8af86",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
