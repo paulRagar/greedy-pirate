@@ -1,0 +1,35 @@
+.claude/docs/game-rules.md
+  s_c8c5d107f2449c::t_3e6a865f2c98eb 57
+src/game/engine.ts
+  s_c8c5d107f2449c::t_eb9d354760fad1 355,357,370-373,378,384-385
+  s_c8c5d107f2449c::t_b1d8decdc79da6 422-424,426-427
+  s_c8c5d107f2449c::t_640b2529954fd0 147-149
+  s_c8c5d107f2449c::t_49dbf4d733fcc5 200-208
+app/play-local/PlayLocalClient.tsx
+  s_c8c5d107f2449c::t_5b281153b4b809 73-75
+src/server/game-room.ts
+  s_c8c5d107f2449c::t_967aa189dcd923 253-255,257-258
+src/game/special-cards.test.ts
+  s_c8c5d107f2449c::t_c9662d334080f9 185,188-192
+  s_c8c5d107f2449c::t_4b256c9f42cd42 135,145-158
+src/ui/game-room/DaveyCoinFlip.tsx
+  s_c8c5d107f2449c::t_38deabcc97a4ac 71
+app/play/[code]/OnlineRoomClient.tsx
+  s_c8c5d107f2449c::t_81d1774ca8de60 1343-1345
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "a914b694364eb69946dcb1fdae1fdd65f32242d8",
+  "prompts": {},
+  "sessions": {
+    "s_c8c5d107f2449c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1a04c13-68b8-4407-ab8d-90580ae8af86",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulRagar <paul.ragar@gmail.com>"
+    }
+  }
+}
